@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { 
   FileQuestion, 
@@ -20,7 +22,10 @@ import {
   LogOut,
   Grid3x3,
   List,
-  BookOpen
+  BookOpen,
+  Search,
+  Filter,
+  X
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { H5pContent, ContentType } from "@shared/schema";
@@ -37,10 +42,36 @@ export default function Dashboard() {
   const { user, logout } = useAuth();
   const [_, navigate] = useLocation();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [tagFilter, setTagFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Build query key with filters
+  const filters: Record<string, string> = {};
+  if (searchQuery) filters.search = searchQuery;
+  if (typeFilter !== "all") filters.type = typeFilter;
+  if (tagFilter) filters.tags = tagFilter;
+  if (startDate) filters.startDate = startDate;
+  if (endDate) filters.endDate = endDate;
+
+  const hasFilters = Object.keys(filters).length > 0;
 
   const { data: contents, isLoading } = useQuery<H5pContent[]>({
-    queryKey: ["/api/content"],
+    queryKey: hasFilters ? ["/api/content", filters] : ["/api/content"],
   });
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setTypeFilter("all");
+    setTagFilter("");
+    setStartDate("");
+    setEndDate("");
+  };
+
+  const hasActiveFilters = searchQuery || typeFilter !== "all" || tagFilter || startDate || endDate;
 
   const getInitials = (name?: string) => {
     if (!name) return "??";
@@ -73,10 +104,11 @@ export default function Dashboard() {
   };
 
   const groupedContents = contents?.reduce((acc, content) => {
-    if (!acc[content.type]) {
-      acc[content.type] = [];
+    const type = content.type as ContentType;
+    if (!acc[type]) {
+      acc[type] = [];
     }
-    acc[content.type].push(content);
+    acc[type].push(content);
     return acc;
   }, {} as Record<ContentType, H5pContent[]>);
 
@@ -150,9 +182,105 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Search and Filters */}
+        <div className="mb-6 space-y-4">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="Search by title or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+                data-testid="input-search"
+              />
+            </div>
+            <Button
+              variant={showFilters ? "secondary" : "outline"}
+              onClick={() => setShowFilters(!showFilters)}
+              data-testid="button-toggle-filters"
+            >
+              <Filter className="h-5 w-5 mr-2" />
+              Filters
+            </Button>
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                onClick={clearFilters}
+                data-testid="button-clear-filters"
+              >
+                <X className="h-5 w-5 mr-2" />
+                Clear
+              </Button>
+            )}
+          </div>
+
+          {showFilters && (
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">Content Type</label>
+                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                      <SelectTrigger data-testid="select-type-filter">
+                        <SelectValue placeholder="All types" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All types</SelectItem>
+                        <SelectItem value="quiz">Quiz</SelectItem>
+                        <SelectItem value="flashcard">Flashcard</SelectItem>
+                        <SelectItem value="interactive-video">Interactive Video</SelectItem>
+                        <SelectItem value="image-hotspot">Image Hotspot</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">Tags</label>
+                    <Input
+                      placeholder="e.g., science, math"
+                      value={tagFilter}
+                      onChange={(e) => setTagFilter(e.target.value)}
+                      data-testid="input-tag-filter"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Comma-separated</p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">From Date</label>
+                    <Input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      data-testid="input-start-date"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">To Date</label>
+                    <Input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      data-testid="input-end-date"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
         {/* View Mode Toggle */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-foreground">My Content</h3>
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">My Content</h3>
+            {contents && (
+              <p className="text-sm text-muted-foreground">
+                {contents.length} {contents.length === 1 ? "item" : "items"} found
+              </p>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}

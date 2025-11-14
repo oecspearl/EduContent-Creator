@@ -129,7 +129,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Content routes
   app.get("/api/content", requireAuth, async (req, res) => {
     try {
-      const contents = await storage.getContentByUserId(req.session.userId!);
+      const { search, type, tags, startDate, endDate } = req.query;
+      let contents = await storage.getContentByUserId(req.session.userId!);
+      
+      // Apply search filter (title or description)
+      if (search && typeof search === 'string') {
+        const searchLower = search.toLowerCase();
+        contents = contents.filter(c => 
+          c.title.toLowerCase().includes(searchLower) || 
+          (c.description && c.description.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      // Apply content type filter
+      if (type && typeof type === 'string') {
+        contents = contents.filter(c => c.type === type);
+      }
+      
+      // Apply tags filter (comma-separated)
+      if (tags && typeof tags === 'string') {
+        const tagList = tags.split(',').map(t => t.trim().toLowerCase());
+        contents = contents.filter(c => 
+          c.tags && c.tags.some(tag => tagList.includes(tag.toLowerCase()))
+        );
+      }
+      
+      // Apply date range filter
+      if (startDate && typeof startDate === 'string') {
+        const start = new Date(startDate);
+        if (!isNaN(start.getTime())) {
+          contents = contents.filter(c => {
+            if (!c.updatedAt) return false;
+            const updated = new Date(c.updatedAt);
+            return !isNaN(updated.getTime()) && updated >= start;
+          });
+        }
+      }
+      if (endDate && typeof endDate === 'string') {
+        const end = new Date(endDate);
+        if (!isNaN(end.getTime())) {
+          end.setHours(23, 59, 59, 999); // Include the entire end date
+          contents = contents.filter(c => {
+            if (!c.updatedAt) return false;
+            const updated = new Date(c.updatedAt);
+            return !isNaN(updated.getTime()) && updated <= end;
+          });
+        }
+      }
+      
       res.json(contents);
     } catch (error: any) {
       console.error("Get content error:", error);
