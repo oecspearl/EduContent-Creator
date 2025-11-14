@@ -2,7 +2,12 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import session from "express-session";
 import { storage } from "./storage";
-import { aiGenerationSchema } from "@shared/schema";
+import { 
+  aiGenerationSchema, 
+  insertLearnerProgressSchema, 
+  insertQuizAttemptSchema, 
+  insertInteractionEventSchema 
+} from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { 
   generateQuizQuestions, 
@@ -345,6 +350,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("AI generation error:", error);
       res.status(500).json({ message: error.message || "Failed to generate content" });
+    }
+  });
+
+  // Progress tracking routes
+  app.post("/api/progress", requireAuth, async (req, res) => {
+    try {
+      const parsed = insertLearnerProgressSchema.parse({
+        ...req.body,
+        userId: req.session.userId!,
+        completedAt: req.body.completedAt 
+          ? new Date(req.body.completedAt) 
+          : (req.body.completionPercentage >= 100 ? new Date() : null),
+        lastAccessedAt: new Date(),
+      });
+
+      const progress = await storage.upsertLearnerProgress(parsed);
+      res.json(progress);
+    } catch (error: any) {
+      console.error("Save progress error:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to save progress" });
+    }
+  });
+
+  app.get("/api/progress/:contentId", requireAuth, async (req, res) => {
+    try {
+      const progress = await storage.getLearnerProgress(req.session.userId!, req.params.contentId);
+      res.json(progress || null);
+    } catch (error: any) {
+      console.error("Get progress error:", error);
+      res.status(500).json({ message: "Failed to fetch progress" });
+    }
+  });
+
+  app.get("/api/progress", requireAuth, async (req, res) => {
+    try {
+      const progress = await storage.getAllUserProgress(req.session.userId!);
+      res.json(progress);
+    } catch (error: any) {
+      console.error("Get all progress error:", error);
+      res.status(500).json({ message: "Failed to fetch progress" });
+    }
+  });
+
+  // Quiz attempt routes
+  app.post("/api/quiz-attempts", requireAuth, async (req, res) => {
+    try {
+      const parsed = insertQuizAttemptSchema.parse({
+        ...req.body,
+        userId: req.session.userId!,
+      });
+
+      const attempt = await storage.createQuizAttempt(parsed);
+      res.json(attempt);
+    } catch (error: any) {
+      console.error("Save quiz attempt error:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to save quiz attempt" });
+    }
+  });
+
+  app.get("/api/quiz-attempts/:contentId", requireAuth, async (req, res) => {
+    try {
+      const attempts = await storage.getQuizAttempts(req.session.userId!, req.params.contentId);
+      res.json(attempts);
+    } catch (error: any) {
+      console.error("Get quiz attempts error:", error);
+      res.status(500).json({ message: "Failed to fetch quiz attempts" });
+    }
+  });
+
+  // Interaction event routes
+  app.post("/api/interaction-events", requireAuth, async (req, res) => {
+    try {
+      const parsed = insertInteractionEventSchema.parse({
+        ...req.body,
+        userId: req.session.userId!,
+      });
+
+      const event = await storage.createInteractionEvent(parsed);
+      res.json(event);
+    } catch (error: any) {
+      console.error("Save interaction event error:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to save interaction event" });
+    }
+  });
+
+  app.get("/api/interaction-events/:contentId", requireAuth, async (req, res) => {
+    try {
+      const events = await storage.getInteractionEvents(req.session.userId!, req.params.contentId);
+      res.json(events);
+    } catch (error: any) {
+      console.error("Get interaction events error:", error);
+      res.status(500).json({ message: "Failed to fetch interaction events" });
     }
   });
 

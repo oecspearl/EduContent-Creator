@@ -1,7 +1,14 @@
 import { db } from "../db";
-import { profiles, h5pContent, contentShares } from "@shared/schema";
-import type { Profile, InsertProfile, H5pContent, InsertH5pContent, ContentShare, InsertContentShare } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { profiles, h5pContent, contentShares, learnerProgress, quizAttempts, interactionEvents } from "@shared/schema";
+import type { 
+  Profile, InsertProfile, 
+  H5pContent, InsertH5pContent, 
+  ContentShare, InsertContentShare,
+  LearnerProgress, InsertLearnerProgress,
+  QuizAttempt, InsertQuizAttempt,
+  InteractionEvent, InsertInteractionEvent
+} from "@shared/schema";
+import { eq, and, desc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -21,6 +28,20 @@ export interface IStorage {
   // Share methods
   createShare(share: InsertContentShare): Promise<ContentShare>;
   getSharesByContentId(contentId: string): Promise<ContentShare[]>;
+  
+  // Progress tracking methods
+  upsertLearnerProgress(progress: InsertLearnerProgress): Promise<LearnerProgress>;
+  getLearnerProgress(userId: string, contentId: string): Promise<LearnerProgress | undefined>;
+  getUserProgressByContentId(contentId: string): Promise<LearnerProgress[]>;
+  getAllUserProgress(userId: string): Promise<LearnerProgress[]>;
+  
+  // Quiz attempt methods
+  createQuizAttempt(attempt: InsertQuizAttempt): Promise<QuizAttempt>;
+  getQuizAttempts(userId: string, contentId: string): Promise<QuizAttempt[]>;
+  
+  // Interaction event methods
+  createInteractionEvent(event: InsertInteractionEvent): Promise<InteractionEvent>;
+  getInteractionEvents(userId: string, contentId: string): Promise<InteractionEvent[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -86,6 +107,76 @@ export class DbStorage implements IStorage {
 
   async getSharesByContentId(contentId: string): Promise<ContentShare[]> {
     return await db.select().from(contentShares).where(eq(contentShares.contentId, contentId));
+  }
+
+  async upsertLearnerProgress(progress: InsertLearnerProgress): Promise<LearnerProgress> {
+    // Try to insert, on conflict update
+    const [result] = await db
+      .insert(learnerProgress)
+      .values(progress)
+      .onConflictDoUpdate({
+        target: [learnerProgress.userId, learnerProgress.contentId],
+        set: {
+          completionPercentage: progress.completionPercentage,
+          completedAt: progress.completedAt,
+          lastAccessedAt: new Date(),
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return result;
+  }
+
+  async getLearnerProgress(userId: string, contentId: string): Promise<LearnerProgress | undefined> {
+    const [progress] = await db
+      .select()
+      .from(learnerProgress)
+      .where(and(
+        eq(learnerProgress.userId, userId),
+        eq(learnerProgress.contentId, contentId)
+      ))
+      .limit(1);
+    return progress;
+  }
+
+  async getUserProgressByContentId(contentId: string): Promise<LearnerProgress[]> {
+    return await db.select().from(learnerProgress).where(eq(learnerProgress.contentId, contentId));
+  }
+
+  async getAllUserProgress(userId: string): Promise<LearnerProgress[]> {
+    return await db.select().from(learnerProgress).where(eq(learnerProgress.userId, userId));
+  }
+
+  async createQuizAttempt(attempt: InsertQuizAttempt): Promise<QuizAttempt> {
+    const [created] = await db.insert(quizAttempts).values(attempt).returning();
+    return created;
+  }
+
+  async getQuizAttempts(userId: string, contentId: string): Promise<QuizAttempt[]> {
+    return await db
+      .select()
+      .from(quizAttempts)
+      .where(and(
+        eq(quizAttempts.userId, userId),
+        eq(quizAttempts.contentId, contentId)
+      ))
+      .orderBy(desc(quizAttempts.completedAt));
+  }
+
+  async createInteractionEvent(event: InsertInteractionEvent): Promise<InteractionEvent> {
+    const [created] = await db.insert(interactionEvents).values(event).returning();
+    return created;
+  }
+
+  async getInteractionEvents(userId: string, contentId: string): Promise<InteractionEvent[]> {
+    return await db
+      .select()
+      .from(interactionEvents)
+      .where(and(
+        eq(interactionEvents.userId, userId),
+        eq(interactionEvents.contentId, contentId)
+      ))
+      .orderBy(desc(interactionEvents.createdAt));
   }
 }
 
