@@ -214,10 +214,11 @@ export default function ChatAssistant({}: ChatAssistantProps) {
       <Button
         size="icon"
         variant="default"
-        className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl z-50 hover-elevate active-elevate-2 animate-pulse hover:animate-none"
+        className="!fixed !bottom-6 !right-6 !h-16 !w-16 !rounded-full !shadow-2xl !z-50 hover-elevate active-elevate-2 !animate-pulse hover:!animate-none"
         onClick={() => setIsOpen(true)}
         data-testid="button-open-chat"
         aria-label="Open AI assistant chat"
+        style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem' }}
       >
         <MessageCircle className="h-7 w-7" />
       </Button>
@@ -226,11 +227,12 @@ export default function ChatAssistant({}: ChatAssistantProps) {
 
   return (
     <Card 
-      className="fixed bottom-6 right-6 w-[calc(100%-3rem)] sm:w-96 h-[calc(100vh-3rem)] sm:h-[600px] flex flex-col shadow-2xl z-50 border-2"
+      className="!fixed !bottom-6 !right-6 w-[calc(100%-3rem)] sm:w-96 h-[calc(100vh-3rem)] sm:h-[600px] flex flex-col shadow-2xl !z-50 border-2"
       role="dialog"
       aria-label="AI Assistant Chat"
       aria-modal="false"
       data-testid="card-chat-assistant"
+      style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem' }}
     >
       <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3 border-b">
         <div className="flex items-center gap-2">
