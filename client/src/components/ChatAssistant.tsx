@@ -32,7 +32,8 @@ export default function ChatAssistant({}: ChatAssistantProps) {
   const [isStreaming, setIsStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { toast } = useToast();
+  const activeRequestIdRef = useRef<number>(0);
+  const { toast} = useToast();
   const chatContext = useChatContext();
 
   const { data: history = [] } = useQuery<ChatMessage[]>({
@@ -59,6 +60,9 @@ export default function ChatAssistant({}: ChatAssistantProps) {
 
   const sendMessage = async () => {
     if (!message.trim() || isStreaming) return;
+
+    // Generate unique request ID to prevent overlapping streams
+    const requestId = ++activeRequestIdRef.current;
 
     const userMessage = message.trim();
     setMessage("");
@@ -119,14 +123,54 @@ export default function ChatAssistant({}: ChatAssistantProps) {
         }
       }
 
-      // Refresh history after streaming is complete
-      await queryClient.invalidateQueries({ queryKey: ["/api/chat/history"] });
+      // Verify the assistant message is persisted in history before clearing
+      // This prevents clearing streamingMessage before the message appears in history
+      const verifyMessagePersisted = async (): Promise<boolean> => {
+        const maxAttempts = 10; // Try 10 times max
+        
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          // Actively refetch from server to get latest data
+          await queryClient.refetchQueries({ queryKey: ["/api/chat/history"] });
+          
+          const currentHistory = queryClient.getQueryData<ChatMessage[]>(["/api/chat/history"]);
+          
+          if (currentHistory && currentHistory.length > 0) {
+            const lastMessage = currentHistory[currentHistory.length - 1];
+            // Check if the last message matches our streamed response
+            if (lastMessage.role === "assistant" && lastMessage.content === fullResponse) {
+              return true; // Message confirmed in history
+            }
+          }
+          
+          // If not the active request anymore, stop checking
+          if (requestId !== activeRequestIdRef.current) {
+            return false;
+          }
+          
+          // Wait before next refetch (except on last attempt)
+          if (attempt < maxAttempts - 1) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+        }
+        
+        return false; // Timeout
+      };
       
-      // Wait a brief moment for the query to refetch before clearing streaming message
-      // This prevents the message from disappearing before it appears in history
-      setTimeout(() => {
+      const verified = await verifyMessagePersisted();
+      
+      // Only clear if message is verified AND still the active request
+      if (verified && requestId === activeRequestIdRef.current) {
         setStreamingMessage("");
-      }, 100);
+      } else if (!verified && requestId === activeRequestIdRef.current) {
+        // IMPORTANT: Don't clear if verification failed - leave message visible
+        // This prevents the disappearing message bug
+        console.warn("Chat message not verified in history - keeping streamingMessage visible");
+        toast({
+          title: "Message delivery delayed",
+          description: "Your message was sent but may take a moment to appear",
+          variant: "default",
+        });
+      }
     } catch (error: any) {
       console.error("Chat error:", error);
       toast({
