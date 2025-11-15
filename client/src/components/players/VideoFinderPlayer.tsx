@@ -91,12 +91,10 @@ export function VideoFinderPlayer({ data }: VideoFinderPlayerProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {data.searchResults.map((video) => (
               <Card key={video.id} className="overflow-hidden hover-elevate">
-                <a
-                  href={`https://www.youtube.com/watch?v=${video.videoId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                  data-testid={`link-video-${video.id}`}
+                <button
+                  onClick={() => setSelectedVideo(video.videoId)}
+                  className="block w-full text-left"
+                  data-testid={`button-video-${video.id}`}
                 >
                   <div className="relative w-full aspect-video bg-muted group">
                     <img
@@ -124,16 +122,72 @@ export function VideoFinderPlayer({ data }: VideoFinderPlayerProps) {
                       </p>
                     )}
                     <div className="flex items-center gap-1 text-sm text-primary pt-2">
-                      <span>Watch on YouTube</span>
-                      <ExternalLink className="h-4 w-4" />
+                      <Play className="h-4 w-4" />
+                      <span>Watch Video</span>
                     </div>
                   </div>
-                </a>
+                </button>
+                <div className="px-4 pb-4">
+                  <a
+                    href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid={`link-youtube-${video.id}`}
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    <span>Open on YouTube</span>
+                  </a>
+                </div>
               </Card>
             ))}
           </div>
         )}
       </div>
+
+      {/* Video Player Dialog */}
+      <Dialog open={!!selectedVideo} onOpenChange={(open) => !open && setSelectedVideo(null)}>
+        <DialogContent className="max-w-4xl p-0">
+          <DialogHeader className="p-6 pb-4">
+            <DialogTitle>
+              {selectedVideo && data.searchResults.find(v => v.videoId === selectedVideo)?.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="w-full aspect-video bg-black">
+            {selectedVideo && (
+              <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube.com/embed/${selectedVideo}?autoplay=1`}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                data-testid="iframe-youtube-player"
+              />
+            )}
+          </div>
+          <div className="p-6 pt-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">
+                  {selectedVideo && data.searchResults.find(v => v.videoId === selectedVideo)?.channelTitle}
+                </p>
+              </div>
+              <a
+                href={`https://www.youtube.com/watch?v=${selectedVideo}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-primary hover:underline"
+                data-testid="link-open-youtube"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span>Open on YouTube</span>
+              </a>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
