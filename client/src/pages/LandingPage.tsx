@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
-import heroBackground from "@assets/stock_images/children_learning_in_f1eda0ab.jpg";
+import heroBackground from "@assets/lboard_1763248872214.png";
 
 export default function LandingPage() {
   const [_, navigate] = useLocation();
