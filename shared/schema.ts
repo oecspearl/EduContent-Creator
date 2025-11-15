@@ -264,6 +264,8 @@ export type BookPage = {
   id: string;
   title: string;
   content: string; // Rich text/HTML content
+  embeddedContentId?: string; // Reference to h5pContent.id (new format)
+  // Legacy format (backward compatibility)
   embeddedContent?: {
     type: ContentType;
     data: QuizData | FlashcardData | InteractiveVideoData | ImageHotspotData | DragAndDropData | FillInBlanksData | MemoryGameData;

@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import DOMPurify from "dompurify";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
-import type { InteractiveBookData } from "@shared/schema";
+import type { InteractiveBookData, H5pContent } from "@shared/schema";
 import { useProgressTracker } from "@/hooks/use-progress-tracker";
 import { QuizPlayer } from "./QuizPlayer";
 import { FlashcardPlayer } from "./FlashcardPlayer";
@@ -22,6 +23,30 @@ type InteractiveBookPlayerProps = {
 export function InteractiveBookPlayer({ data, contentId }: InteractiveBookPlayerProps) {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [viewedPages, setViewedPages] = useState<Set<number>>(new Set([0]));
+
+  const currentPage = data.pages[currentPageIndex];
+  
+  const { data: embeddedContent, isLoading: isLoadingEmbedded, error: embeddedError } = useQuery<H5pContent>({
+    queryKey: ["/api/content", currentPage.embeddedContentId],
+    enabled: !!currentPage.embeddedContentId,
+  });
+
+  const hasLegacySnapshot = !!currentPage.embeddedContent;
+  const shouldUseFetched = embeddedContent && !embeddedError;
+  const shouldFallbackToLegacy = hasLegacySnapshot && (!currentPage.embeddedContentId || embeddedError || (!isLoadingEmbedded && !embeddedContent));
+  
+  const effectiveEmbeddedData = shouldUseFetched 
+    ? embeddedContent.data 
+    : (shouldFallbackToLegacy ? currentPage.embeddedContent!.data : null);
+  const effectiveEmbeddedType = shouldUseFetched 
+    ? embeddedContent.type 
+    : (shouldFallbackToLegacy ? currentPage.embeddedContent!.type : null);
+  const effectiveEmbeddedId = shouldUseFetched 
+    ? embeddedContent.id 
+    : contentId;
+  const effectiveEmbeddedTitle = shouldUseFetched 
+    ? embeddedContent.title 
+    : "Embedded Activity";
 
   const { progress: savedProgress, isProgressFetched, updateProgress, logInteraction, isAuthenticated } = useProgressTracker(contentId);
   const [lastSentProgress, setLastSentProgress] = useState<number>(-1);
@@ -92,7 +117,6 @@ export function InteractiveBookPlayer({ data, contentId }: InteractiveBookPlayer
     }
   };
 
-  const currentPage = data.pages[currentPageIndex];
   const completionPercentage = (viewedPages.size / data.pages.length) * 100;
 
   return (
@@ -124,32 +148,32 @@ export function InteractiveBookPlayer({ data, contentId }: InteractiveBookPlayer
         </CardContent>
       </Card>
 
-      {currentPage.embeddedContent && (
+      {effectiveEmbeddedData && effectiveEmbeddedType && (
         <Card>
           <CardContent className="p-6">
             <div className="mb-4">
-              <p className="text-sm text-muted-foreground uppercase tracking-wide">Interactive Activity</p>
+              <p className="text-sm text-muted-foreground uppercase tracking-wide">Interactive Activity: {effectiveEmbeddedTitle}</p>
             </div>
-            {currentPage.embeddedContent.type === "quiz" && (
-              <QuizPlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            {effectiveEmbeddedType === "quiz" && (
+              <QuizPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
             )}
-            {currentPage.embeddedContent.type === "flashcard" && (
-              <FlashcardPlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            {effectiveEmbeddedType === "flashcard" && (
+              <FlashcardPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
             )}
-            {currentPage.embeddedContent.type === "interactive-video" && (
-              <VideoPlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            {effectiveEmbeddedType === "interactive-video" && (
+              <VideoPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
             )}
-            {currentPage.embeddedContent.type === "image-hotspot" && (
-              <ImageHotspotPlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            {effectiveEmbeddedType === "image-hotspot" && (
+              <ImageHotspotPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
             )}
-            {currentPage.embeddedContent.type === "drag-drop" && (
-              <DragDropPlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            {effectiveEmbeddedType === "drag-drop" && (
+              <DragDropPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
             )}
-            {currentPage.embeddedContent.type === "fill-blanks" && (
-              <FillBlanksPlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            {effectiveEmbeddedType === "fill-blanks" && (
+              <FillBlanksPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
             )}
-            {currentPage.embeddedContent.type === "memory-game" && (
-              <MemoryGamePlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            {effectiveEmbeddedType === "memory-game" && (
+              <MemoryGamePlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
             )}
           </CardContent>
         </Card>

@@ -96,13 +96,9 @@ export default function InteractiveBookCreator() {
 
   const embedContent = (selectedContent: H5pContent) => {
     const updated = [...pages];
-    const embeddableData = selectedContent.data as any;
     updated[currentPageIndex] = {
       ...updated[currentPageIndex],
-      embeddedContent: {
-        type: selectedContent.type as ContentType,
-        data: embeddableData,
-      },
+      embeddedContentId: selectedContent.id,
     };
     setPages(updated);
     setShowEmbedDialog(false);
@@ -113,6 +109,7 @@ export default function InteractiveBookCreator() {
     const updated = [...pages];
     updated[currentPageIndex] = {
       ...updated[currentPageIndex],
+      embeddedContentId: undefined,
       embeddedContent: undefined,
     };
     setPages(updated);
@@ -276,7 +273,7 @@ export default function InteractiveBookCreator() {
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <Label>Interactive Content (Optional)</Label>
-                          {!pages[currentPageIndex].embeddedContent && (
+                          {!pages[currentPageIndex].embeddedContentId && !pages[currentPageIndex].embeddedContent && (
                             <Dialog open={showEmbedDialog} onOpenChange={setShowEmbedDialog}>
                               <DialogTrigger asChild>
                                 <Button variant="outline" size="sm" data-testid="button-embed-content">
@@ -314,11 +311,17 @@ export default function InteractiveBookCreator() {
                             </Dialog>
                           )}
                         </div>
-                        {pages[currentPageIndex].embeddedContent && (
+                        {(pages[currentPageIndex].embeddedContentId || pages[currentPageIndex].embeddedContent) && (
                           <Card className="bg-accent/10">
                             <CardContent className="p-4 flex items-center justify-between">
                               <div>
-                                <p className="font-medium text-sm">Embedded: {getContentTypeLabel(pages[currentPageIndex].embeddedContent!.type)}</p>
+                                <p className="font-medium text-sm">
+                                  Embedded: {
+                                    pages[currentPageIndex].embeddedContentId 
+                                      ? (availableContent?.find(c => c.id === pages[currentPageIndex].embeddedContentId)?.title || "Content")
+                                      : (pages[currentPageIndex].embeddedContent ? `${getContentTypeLabel(pages[currentPageIndex].embeddedContent!.type as ContentType)} (Legacy)` : "Content")
+                                  }
+                                </p>
                                 <p className="text-xs text-muted-foreground">This interactive element will appear after the page content</p>
                               </div>
                               <Button
