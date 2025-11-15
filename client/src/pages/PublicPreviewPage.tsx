@@ -85,7 +85,7 @@ export default function PublicPreviewPage() {
       {/* Footer */}
       <div className="border-t bg-card mt-12">
         <div className="max-w-7xl mx-auto px-6 py-4 text-center text-sm text-muted-foreground">
-          Created with <span className="text-primary font-semibold">EduCreate</span>
+          Created with <span className="text-primary font-semibold">OECS Content Creator</span>
         </div>
       </div>
     </div>

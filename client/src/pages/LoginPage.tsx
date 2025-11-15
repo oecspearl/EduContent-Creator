@@ -59,7 +59,7 @@ export default function LoginPage() {
         registerData.role,
         registerData.institution || undefined
       );
-      toast({ title: "Account created!", description: "Welcome to EduCreate." });
+      toast({ title: "Account created!", description: "Welcome to OECS Content Creator." });
     } catch (error: any) {
       toast({
         title: "Registration failed",
@@ -80,8 +80,8 @@ export default function LoginPage() {
               <GraduationCap className="h-10 w-10 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-foreground">EduCreate</h1>
-          <p className="text-muted-foreground mt-2">Create engaging interactive educational content</p>
+          <h1 className="text-3xl font-bold text-foreground">OECS Content Creator</h1>
+          <p className="text-muted-foreground mt-2">Create. Engage. Educate.</p>
         </div>
 
         <Tabs defaultValue="login" className="w-full">

@@ -1,8 +1,8 @@
-# EduCreate - Interactive Educational Content Creator
+# OECS Content Creator - Create. Engage. Educate.
 
 ## Overview
 
-EduCreate is a full-stack web application designed for educators to create, manage, and share interactive educational content. The platform supports eight content types: quizzes, flashcards, interactive videos, image hotspots, drag and drop, fill in the blanks, memory games, and interactive books with rich text editing. Content creation is enhanced with AI-powered generation capabilities using OpenAI's GPT models.
+OECS Content Creator is a full-stack web application designed for educators across the Organization of Eastern Caribbean States to create, manage, and share interactive educational content. The platform supports eight content types: quizzes, flashcards, interactive videos, image hotspots, drag and drop, fill in the blanks, memory games, and interactive books with rich text editing. Content creation is enhanced with AI-powered generation capabilities using OpenAI's GPT models.
 
 The application enables educators to build engaging learning materials, preview them in real-time, publish content for public access, and share educational resources with students and other educators.
 

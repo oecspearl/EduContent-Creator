@@ -130,7 +130,7 @@ export default function Dashboard() {
               <BookOpen className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">EduCreate</h1>
+              <h1 className="text-xl font-bold text-foreground">OECS Content Creator</h1>
             </div>
           </div>
           <div className="flex items-center gap-4">
