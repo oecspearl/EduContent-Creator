@@ -6,6 +6,13 @@ import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
 import type { InteractiveBookData } from "@shared/schema";
 import { useProgressTracker } from "@/hooks/use-progress-tracker";
+import { QuizPlayer } from "./QuizPlayer";
+import { FlashcardPlayer } from "./FlashcardPlayer";
+import { VideoPlayer } from "./VideoPlayer";
+import { ImageHotspotPlayer } from "./ImageHotspotPlayer";
+import { DragDropPlayer } from "./DragDropPlayer";
+import { FillBlanksPlayer } from "./FillBlanksPlayer";
+import { MemoryGamePlayer } from "./MemoryGamePlayer";
 
 type InteractiveBookPlayerProps = {
   data: InteractiveBookData;
@@ -116,6 +123,37 @@ export function InteractiveBookPlayer({ data, contentId }: InteractiveBookPlayer
           />
         </CardContent>
       </Card>
+
+      {currentPage.embeddedContent && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground uppercase tracking-wide">Interactive Activity</p>
+            </div>
+            {currentPage.embeddedContent.type === "quiz" && (
+              <QuizPlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            )}
+            {currentPage.embeddedContent.type === "flashcard" && (
+              <FlashcardPlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            )}
+            {currentPage.embeddedContent.type === "interactive-video" && (
+              <VideoPlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            )}
+            {currentPage.embeddedContent.type === "image-hotspot" && (
+              <ImageHotspotPlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            )}
+            {currentPage.embeddedContent.type === "drag-drop" && (
+              <DragDropPlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            )}
+            {currentPage.embeddedContent.type === "fill-blanks" && (
+              <FillBlanksPlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            )}
+            {currentPage.embeddedContent.type === "memory-game" && (
+              <MemoryGamePlayer data={currentPage.embeddedContent.data as any} contentId={contentId} />
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {data.settings.showNavigation && (
         <div className="flex items-center justify-between">

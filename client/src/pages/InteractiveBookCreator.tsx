@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { RichTextEditor } from "@/components/RichTextEditor";
-import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight } from "lucide-react";
-import type { H5pContent, InteractiveBookData } from "@shared/schema";
+import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight, Layers, X } from "lucide-react";
+import type { H5pContent, InteractiveBookData, ContentType } from "@shared/schema";
 
 export default function InteractiveBookCreator() {
   const params = useParams();
@@ -30,10 +31,15 @@ export default function InteractiveBookCreator() {
   });
   const [isPublished, setIsPublished] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showEmbedDialog, setShowEmbedDialog] = useState(false);
 
   const { data: content } = useQuery<H5pContent>({
     queryKey: ["/api/content", contentId],
     enabled: isEditing,
+  });
+
+  const { data: availableContent } = useQuery<H5pContent[]>({
+    queryKey: ["/api/content"],
   });
 
   useEffect(() => {
@@ -86,6 +92,45 @@ export default function InteractiveBookCreator() {
       title: "",
       content: "",
     }]);
+  };
+
+  const embedContent = (selectedContent: H5pContent) => {
+    const updated = [...pages];
+    const embeddableData = selectedContent.data as any;
+    updated[currentPageIndex] = {
+      ...updated[currentPageIndex],
+      embeddedContent: {
+        type: selectedContent.type as ContentType,
+        data: embeddableData,
+      },
+    };
+    setPages(updated);
+    setShowEmbedDialog(false);
+    toast({ title: "Embedded!", description: `${selectedContent.title} has been embedded in this page.` });
+  };
+
+  const removeEmbeddedContent = () => {
+    const updated = [...pages];
+    updated[currentPageIndex] = {
+      ...updated[currentPageIndex],
+      embeddedContent: undefined,
+    };
+    setPages(updated);
+    toast({ title: "Removed", description: "Embedded content has been removed from this page." });
+  };
+
+  const getContentTypeLabel = (type: ContentType) => {
+    const labels: Record<ContentType, string> = {
+      "quiz": "Quiz",
+      "flashcard": "Flashcard",
+      "interactive-video": "Interactive Video",
+      "image-hotspot": "Image Hotspot",
+      "drag-drop": "Drag & Drop",
+      "fill-blanks": "Fill in the Blanks",
+      "memory-game": "Memory Game",
+      "interactive-book": "Interactive Book",
+    };
+    return labels[type] || type;
   };
 
   return (
@@ -226,6 +271,67 @@ export default function InteractiveBookCreator() {
                           }}
                           placeholder="Write your page content here. Use the toolbar to format text and add images..."
                         />
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <Label>Interactive Content (Optional)</Label>
+                          {!pages[currentPageIndex].embeddedContent && (
+                            <Dialog open={showEmbedDialog} onOpenChange={setShowEmbedDialog}>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" data-testid="button-embed-content">
+                                  <Layers className="h-4 w-4 mr-2" />
+                                  Embed Content
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle>Select Content to Embed</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-2">
+                                  {availableContent?.filter(c => c.type !== "interactive-book" && c.id !== contentId).map((c) => (
+                                    <Card
+                                      key={c.id}
+                                      className="cursor-pointer hover-elevate"
+                                      onClick={() => embedContent(c)}
+                                      data-testid={`embed-option-${c.id}`}
+                                    >
+                                      <CardContent className="p-4 flex items-center justify-between">
+                                        <div>
+                                          <h4 className="font-medium">{c.title}</h4>
+                                          <p className="text-sm text-muted-foreground">{getContentTypeLabel(c.type as ContentType)}</p>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  ))}
+                                  {(!availableContent || availableContent.filter(c => c.type !== "interactive-book").length === 0) && (
+                                    <p className="text-sm text-muted-foreground text-center py-4">
+                                      No content available to embed. Create some quizzes, flashcards, or other interactive content first!
+                                    </p>
+                                  )}
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          )}
+                        </div>
+                        {pages[currentPageIndex].embeddedContent && (
+                          <Card className="bg-accent/10">
+                            <CardContent className="p-4 flex items-center justify-between">
+                              <div>
+                                <p className="font-medium text-sm">Embedded: {getContentTypeLabel(pages[currentPageIndex].embeddedContent!.type)}</p>
+                                <p className="text-xs text-muted-foreground">This interactive element will appear after the page content</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={removeEmbeddedContent}
+                                data-testid="button-remove-embedded-content"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        )}
                       </div>
                     </div>
                   )}
