@@ -132,3 +132,40 @@ Preferred communication style: Simple, everyday language.
 - React Query cache isolation: Progress data from previous user sessions may leak if multiple users log in/out without page refresh. Workaround: refresh page after logout.
 - Cross-account scenarios not fully tested: Switching between user accounts in same browser session may cause stale progress data.
 - Suggested future improvements: Per-user query keys, proactive cache clearing on logout, comprehensive e2e testing for auth transition flows.
+
+## Analytics Dashboard
+
+**Overview Metrics**:
+- Total content count with published/draft breakdown
+- Total unique viewers across all content
+- Average completion rate across all content
+- Total interaction events (card flips, hotspot views, video playback)
+
+**Content Performance Table**:
+- Lists all created content with title, type, status, viewers, completion rate, interactions, and creation date
+- Sortable columns for data analysis
+- "View Learners" action button for each content item
+
+**Individual Learner Performance View**:
+- Displays authenticated users who have accessed specific content
+- Shows learner profile (name, email, role)
+- Completion percentage with completion date if finished
+- Total interaction count for engagement tracking
+- Quiz attempt history with scores and timestamps (last 5 attempts)
+- First access date and last access date for time tracking
+- Best quiz score highlighted for quick assessment
+
+**Technical Implementation**:
+- Backend API endpoint: `GET /api/analytics/overview` for aggregate statistics
+- Backend API endpoint: `GET /api/analytics/content/:contentId/learners` for individual learner data
+- Optimized batch queries to prevent N+1 query patterns
+- Authorization: Only content creator can view learner analytics
+- Real-time updates via React Query caching
+- Visualizations using recharts (bar chart for top content)
+- Responsive design with cards and tables
+
+**Privacy & Authorization**:
+- Only authenticated user progress is tracked and displayed
+- Content creators can only view analytics for their own content
+- Email addresses visible only to content creator for their learners
+- Anonymous viewers can view content but are not tracked

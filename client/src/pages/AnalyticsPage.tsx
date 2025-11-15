@@ -7,6 +7,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -33,10 +40,13 @@ import {
   PenTool,
   Brain,
   BookOpenCheck,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { useState } from "react";
 
 function getInitials(name: string): string {
   return name
@@ -61,14 +71,22 @@ const contentTypeConfig: Record<string, { icon: typeof FileQuestion; label: stri
 export default function AnalyticsPage() {
   const { user, logout } = useAuth();
   const [_, navigate] = useLocation();
+  const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
 
   const { data: analytics, isLoading } = useQuery<any[]>({
     queryKey: ["/api/analytics/overview"],
   });
 
+  const { data: learners, isLoading: isLoadingLearners } = useQuery<any[]>({
+    queryKey: ["/api/analytics/content", selectedContentId, "learners"],
+    enabled: !!selectedContentId,
+  });
+
   const handleLogout = async () => {
     await logout();
   };
+
+  const selectedContent = analytics?.find(item => item.contentId === selectedContentId);
 
   // Calculate summary statistics
   const totalViews = analytics?.reduce((sum, item) => sum + item.uniqueViewers, 0) || 0;
@@ -289,6 +307,7 @@ export default function AnalyticsPage() {
                           <TableHead className="text-right">Avg Completion</TableHead>
                           <TableHead className="text-right">Interactions</TableHead>
                           <TableHead className="text-right">Created</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -327,6 +346,17 @@ export default function AnalyticsPage() {
                               <TableCell className="text-right text-muted-foreground text-sm">
                                 {format(new Date(item.createdAt), "MMM d, yyyy")}
                               </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setSelectedContentId(item.contentId)}
+                                  data-testid={`button-view-learners-${item.contentId}`}
+                                >
+                                  <Users className="h-4 w-4 mr-2" />
+                                  View Learners
+                                </Button>
+                              </TableCell>
                             </TableRow>
                           );
                         })}
@@ -339,6 +369,149 @@ export default function AnalyticsPage() {
           </>
         )}
       </main>
+
+      {/* Learner Details Dialog */}
+      <Dialog open={!!selectedContentId} onOpenChange={(open) => !open && setSelectedContentId(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Individual Learner Performance
+            </DialogTitle>
+            <DialogDescription>
+              {selectedContent && (
+                <span>Viewing learner data for: <strong>{selectedContent.title}</strong></span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {isLoadingLearners ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <Skeleton key={i} className="h-20" />
+              ))}
+            </div>
+          ) : !learners || learners.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No Learner Data</h3>
+              <p className="text-muted-foreground">
+                No authenticated users have interacted with this content yet
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {learners.map((learner, idx) => (
+                <Card key={learner.userId} data-testid={`card-learner-${idx}`}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12">
+                          <AvatarFallback className="bg-primary text-primary-foreground">
+                            {getInitials(learner.displayName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h4 className="font-semibold text-foreground" data-testid={`text-learner-name-${idx}`}>
+                            {learner.displayName}
+                          </h4>
+                          <p className="text-sm text-muted-foreground" data-testid={`text-learner-email-${idx}`}>
+                            {learner.email}
+                          </p>
+                          {learner.role && (
+                            <Badge variant="outline" className="mt-1">{learner.role}</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                          <Clock className="h-3 w-3" />
+                          Last accessed: {format(new Date(learner.lastAccessedAt), "MMM d, yyyy")}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          First accessed: {format(new Date(learner.firstAccessedAt), "MMM d, yyyy")}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Completion */}
+                      <div className="bg-muted rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Target className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Completion</span>
+                        </div>
+                        <div className="text-2xl font-bold" data-testid={`text-learner-completion-${idx}`}>
+                          {learner.completionPercentage.toFixed(1)}%
+                        </div>
+                        {learner.completedAt && (
+                          <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Completed {format(new Date(learner.completedAt), "MMM d")}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Interactions */}
+                      <div className="bg-muted rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Activity className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Interactions</span>
+                        </div>
+                        <div className="text-2xl font-bold" data-testid={`text-learner-interactions-${idx}`}>
+                          {learner.totalInteractions}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Total engagement events
+                        </div>
+                      </div>
+
+                      {/* Quiz Performance */}
+                      <div className="bg-muted rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileQuestion className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Quiz Attempts</span>
+                        </div>
+                        <div className="text-2xl font-bold" data-testid={`text-learner-quiz-attempts-${idx}`}>
+                          {learner.quizAttempts.length}
+                        </div>
+                        {learner.quizAttempts.length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Best: {Math.max(...learner.quizAttempts.map((a: any) => parseFloat(a.percentage)))}%
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Quiz Attempt Details */}
+                    {learner.quizAttempts.length > 0 && (
+                      <div className="mt-4">
+                        <h5 className="text-sm font-semibold mb-2">Recent Quiz Attempts</h5>
+                        <div className="space-y-2">
+                          {learner.quizAttempts.map((attempt: any, attemptIdx: number) => (
+                            <div 
+                              key={attemptIdx} 
+                              className="flex items-center justify-between bg-muted rounded px-3 py-2 text-sm"
+                              data-testid={`text-quiz-attempt-${idx}-${attemptIdx}`}
+                            >
+                              <span>
+                                {attempt.score} / {attempt.totalQuestions} correct ({attempt.percentage}%)
+                              </span>
+                              <span className="text-muted-foreground">
+                                {format(new Date(attempt.completedAt), "MMM d, yyyy h:mm a")}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
