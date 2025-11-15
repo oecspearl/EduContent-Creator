@@ -193,6 +193,37 @@ The platform implements comprehensive accessibility features to ensure education
 - Role attributes on all major sections (banner, main, region)
 - ARIA attributes properly applied (aria-label, aria-labelledby, aria-checked, aria-live, aria-atomic)
 
+## AI Chat Assistant
+
+**Overview**:
+- Context-aware AI assistant using OpenAI's GPT-5 model
+- Floating chat button in bottom-right corner (only for authenticated users)
+- Helps educators with content creation, platform guidance, and educational best practices
+
+**Features**:
+- Streaming responses for real-time interaction
+- Chat history persistence in database
+- Markdown rendering with code syntax highlighting
+- Context-aware prompts (knows current page, content type, user role)
+- Responsive design (full-screen on mobile, floating card on desktop)
+
+**Technical Implementation**:
+- Backend: Server-Sent Events (SSE) for streaming responses
+- Frontend: React component with markdown rendering (react-markdown, remark-gfm)
+- Database: chat_messages table for history storage
+- Context: Automatic injection of user role, institution, current page, and content being edited
+- Accessibility: ARIA roles (dialog), focus management, keyboard shortcuts (ESC to close, Enter to send)
+
+**API Endpoints**:
+- `POST /api/chat` - Send message with streaming response
+- `GET /api/chat/history` - Retrieve chat history
+- `DELETE /api/chat/history` - Clear chat history
+
+**Privacy**:
+- Chat history is user-specific and not shared
+- Context includes only non-sensitive metadata (page, content type, role)
+- Messages stored for continuity across sessions
+
 ## Analytics Dashboard
 
 **Overview Metrics**:
