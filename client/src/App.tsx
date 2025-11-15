@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ChatContextProvider } from "@/hooks/useChatContext";
 import ChatAssistant from "@/components/ChatAssistant";
+import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
 import Dashboard from "@/pages/Dashboard";
 import QuizCreator from "@/pages/QuizCreator";
@@ -49,11 +50,9 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 function Router() {
   return (
     <Switch>
+      <Route path="/" component={LandingPage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/public/:id" component={PublicPreviewPage} />
-      <Route path="/">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
       <Route path="/dashboard">
         <ProtectedRoute component={Dashboard} />
       </Route>
