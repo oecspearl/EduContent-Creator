@@ -30,7 +30,8 @@ import {
   Search,
   Filter,
   X,
-  HelpCircle
+  HelpCircle,
+  BarChart3
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { H5pContent, ContentType } from "@shared/schema";
@@ -135,6 +136,14 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/analytics")}
+              data-testid="button-analytics"
+            >
+              <BarChart3 className="h-5 w-5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"

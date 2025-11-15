@@ -8,7 +8,7 @@ import type {
   QuizAttempt, InsertQuizAttempt,
   InteractionEvent, InsertInteractionEvent
 } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql, count, avg, sum } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -42,6 +42,10 @@ export interface IStorage {
   // Interaction event methods
   createInteractionEvent(event: InsertInteractionEvent): Promise<InteractionEvent>;
   getInteractionEvents(userId: string, contentId: string): Promise<InteractionEvent[]>;
+  
+  // Analytics methods
+  getContentAnalytics(contentId: string): Promise<any>;
+  getUserContentAnalytics(userId: string): Promise<any[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -177,6 +181,108 @@ export class DbStorage implements IStorage {
         eq(interactionEvents.contentId, contentId)
       ))
       .orderBy(desc(interactionEvents.createdAt));
+  }
+
+  async getContentAnalytics(contentId: string): Promise<any> {
+    // Get content info
+    const content = await this.getContentById(contentId);
+    if (!content) return null;
+
+    // Get unique viewers and average completion
+    const progressStats = await db
+      .select({
+        uniqueViewers: count(learnerProgress.userId),
+        avgCompletion: avg(learnerProgress.completionPercentage),
+        totalCompleted: sum(sql`CASE WHEN ${learnerProgress.completionPercentage} >= 100 THEN 1 ELSE 0 END`),
+      })
+      .from(learnerProgress)
+      .where(eq(learnerProgress.contentId, contentId));
+
+    // Get quiz stats if it's a quiz
+    const quizStats = await db
+      .select({
+        totalAttempts: count(quizAttempts.id),
+        avgScore: avg(quizAttempts.score),
+        avgPercentage: sql<number>`AVG(CAST(${quizAttempts.score} AS FLOAT) / NULLIF(${quizAttempts.totalQuestions}, 0) * 100)`,
+      })
+      .from(quizAttempts)
+      .where(eq(quizAttempts.contentId, contentId));
+
+    // Get interaction count
+    const interactionStats = await db
+      .select({
+        totalInteractions: count(interactionEvents.id),
+      })
+      .from(interactionEvents)
+      .where(eq(interactionEvents.contentId, contentId));
+
+    // Get recent progress entries (last 7 days)
+    const recentProgress = await db
+      .select()
+      .from(learnerProgress)
+      .where(eq(learnerProgress.contentId, contentId))
+      .orderBy(desc(learnerProgress.lastAccessedAt))
+      .limit(10);
+
+    return {
+      content,
+      stats: {
+        uniqueViewers: Number(progressStats[0]?.uniqueViewers || 0),
+        avgCompletion: Number(progressStats[0]?.avgCompletion || 0),
+        totalCompleted: Number(progressStats[0]?.totalCompleted || 0),
+        totalAttempts: Number(quizStats[0]?.totalAttempts || 0),
+        avgScore: Number(quizStats[0]?.avgScore || 0),
+        avgPercentage: Number(quizStats[0]?.avgPercentage || 0),
+        totalInteractions: Number(interactionStats[0]?.totalInteractions || 0),
+      },
+      recentProgress,
+    };
+  }
+
+  async getUserContentAnalytics(userId: string): Promise<any[]> {
+    // Get all content owned by user
+    const userContent = await this.getContentByUserId(userId);
+
+    // Get analytics for each content item
+    const analyticsPromises = userContent.map(async (content) => {
+      const progressStats = await db
+        .select({
+          uniqueViewers: count(learnerProgress.userId),
+          avgCompletion: avg(learnerProgress.completionPercentage),
+        })
+        .from(learnerProgress)
+        .where(eq(learnerProgress.contentId, content.id));
+
+      const quizStats = await db
+        .select({
+          totalAttempts: count(quizAttempts.id),
+          avgScore: avg(quizAttempts.score),
+        })
+        .from(quizAttempts)
+        .where(eq(quizAttempts.contentId, content.id));
+
+      const interactionStats = await db
+        .select({
+          totalInteractions: count(interactionEvents.id),
+        })
+        .from(interactionEvents)
+        .where(eq(interactionEvents.contentId, content.id));
+
+      return {
+        contentId: content.id,
+        title: content.title,
+        type: content.type,
+        isPublished: content.isPublished,
+        createdAt: content.createdAt,
+        uniqueViewers: Number(progressStats[0]?.uniqueViewers || 0),
+        avgCompletion: Number(progressStats[0]?.avgCompletion || 0),
+        totalAttempts: Number(quizStats[0]?.totalAttempts || 0),
+        avgScore: Number(quizStats[0]?.avgScore || 0),
+        totalInteractions: Number(interactionStats[0]?.totalInteractions || 0),
+      };
+    });
+
+    return await Promise.all(analyticsPromises);
   }
 }
 

@@ -470,6 +470,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Analytics routes
+  app.get("/api/analytics/overview", requireAuth, async (req, res) => {
+    try {
+      const analytics = await storage.getUserContentAnalytics(req.session.userId!);
+      res.json(analytics);
+    } catch (error: any) {
+      console.error("Get analytics overview error:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  app.get("/api/analytics/content/:contentId", requireAuth, async (req, res) => {
+    try {
+      // First verify user owns this content
+      const content = await storage.getContentById(req.params.contentId);
+      if (!content || content.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to view analytics for this content" });
+      }
+
+      const analytics = await storage.getContentAnalytics(req.params.contentId);
+      res.json(analytics);
+    } catch (error: any) {
+      console.error("Get content analytics error:", error);
+      res.status(500).json({ message: "Failed to fetch content analytics" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
