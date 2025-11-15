@@ -20,6 +20,7 @@ import {
   generateInteractiveBookPages,
   getOpenAIClient
 } from "./openai";
+import { searchEducationalVideos } from "./youtube";
 
 // Type augmentation for session
 declare module "express-session" {
@@ -663,6 +664,37 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     } catch (error: any) {
       console.error("Get content learners error:", error);
       res.status(500).json({ message: "Failed to fetch learner data" });
+    }
+  });
+
+  // YouTube video search route
+  app.post("/api/youtube/search", requireAuth, async (req, res) => {
+    try {
+      const { subject, topic, learningOutcome, gradeLevel, ageRange, videoCount } = req.body;
+
+      if (!subject || !topic || !learningOutcome || !gradeLevel || !videoCount) {
+        return res.status(400).json({ message: "Missing required search criteria" });
+      }
+
+      if (videoCount < 1 || videoCount > 50) {
+        return res.status(400).json({ message: "Video count must be between 1 and 50" });
+      }
+
+      const results = await searchEducationalVideos({
+        subject,
+        topic,
+        learningOutcome,
+        gradeLevel,
+        ageRange: ageRange || '',
+        maxResults: videoCount,
+      });
+
+      res.json({ results, searchDate: new Date().toISOString() });
+    } catch (error: any) {
+      console.error("YouTube search error:", error);
+      res.status(500).json({ 
+        message: error.message || "Failed to search YouTube videos. Please try again." 
+      });
     }
   });
 

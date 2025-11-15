@@ -46,6 +46,7 @@ const contentTypeConfig: Record<ContentType, { icon: typeof FileQuestion; label:
   "fill-blanks": { icon: PenTool, label: "Fill in the Blanks", pluralLabel: "Fill in the Blanks", color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300" },
   "memory-game": { icon: Brain, label: "Memory Game", pluralLabel: "Memory Games", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300" },
   "interactive-book": { icon: BookOpenCheck, label: "Interactive Book", pluralLabel: "Interactive Books", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300" },
+  "video-finder": { icon: Search, label: "Video Finder", pluralLabel: "Video Finders", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300" },
 };
 
 export default function Dashboard() {

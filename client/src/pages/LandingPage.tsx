@@ -10,6 +10,7 @@ import {
   Edit3, 
   Brain, 
   BookText,
+  Search,
   Sparkles,
   Users,
   Globe,
@@ -39,6 +40,7 @@ export default function LandingPage() {
     { icon: Edit3, name: "Fill in Blanks", description: "Complete sentences with missing words", color: "bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400" },
     { icon: Brain, name: "Memory Game", description: "Flip cards to find matching pairs", color: "bg-yellow-100 dark:bg-yellow-950 text-yellow-600 dark:text-yellow-400" },
     { icon: BookText, name: "Interactive Book", description: "Rich multimedia books", color: "bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400" },
+    { icon: Search, name: "Video Finder", description: "Find educational videos from YouTube", color: "bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400" },
   ];
 
   const features = [
@@ -166,7 +168,7 @@ export default function LandingPage() {
           {/* Stats */}
           <div className="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
-              <div className="text-4xl font-bold text-white mb-2" style={{ color: '#a3e635' }}>8</div>
+              <div className="text-4xl font-bold text-white mb-2" style={{ color: '#a3e635' }}>9</div>
               <div className="text-sm text-gray-100">Content Types</div>
             </div>
             <div className="text-center">
@@ -214,7 +216,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h3 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              8 Interactive Content Types
+              9 Interactive Content Types
             </h3>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Choose from a variety of engaging formats to match your teaching style

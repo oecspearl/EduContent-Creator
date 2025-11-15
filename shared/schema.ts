@@ -157,7 +157,7 @@ export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 
 // Content type definitions
-export type ContentType = "quiz" | "flashcard" | "interactive-video" | "image-hotspot" | "drag-drop" | "fill-blanks" | "memory-game" | "interactive-book";
+export type ContentType = "quiz" | "flashcard" | "interactive-video" | "image-hotspot" | "drag-drop" | "fill-blanks" | "memory-game" | "interactive-book" | "video-finder";
 
 export type QuizQuestion = {
   id: string;
@@ -304,6 +304,31 @@ export type InteractiveBookData = {
     showProgress: boolean;
     requireCompletion: boolean; // Must complete embedded activities to proceed
   };
+};
+
+// Video Finder types
+export type VideoResult = {
+  id: string;
+  videoId: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string;
+  channelTitle: string;
+  publishedAt: string;
+  duration?: string;
+};
+
+export type VideoFinderData = {
+  searchCriteria: {
+    subject: string;
+    topic: string;
+    learningOutcome: string;
+    gradeLevel: string;
+    ageRange: string;
+    videoCount: number;
+  };
+  searchResults: VideoResult[];
+  searchDate: string;
 };
 
 // AI Generation request

@@ -18,6 +18,7 @@ import DragDropCreator from "@/pages/DragDropCreator";
 import FillBlanksCreator from "@/pages/FillBlanksCreator";
 import MemoryGameCreator from "@/pages/MemoryGameCreator";
 import InteractiveBookCreator from "@/pages/InteractiveBookCreator";
+import VideoFinderCreator from "@/pages/VideoFinderCreator";
 import PreviewPage from "@/pages/PreviewPage";
 import SharePage from "@/pages/SharePage";
 import PublicPreviewPage from "@/pages/PublicPreviewPage";
@@ -103,6 +104,12 @@ function Router() {
       </Route>
       <Route path="/create/interactive-book/:id">
         <ProtectedRoute component={InteractiveBookCreator} />
+      </Route>
+      <Route path="/create/video-finder">
+        <ProtectedRoute component={VideoFinderCreator} />
+      </Route>
+      <Route path="/create/video-finder/:id">
+        <ProtectedRoute component={VideoFinderCreator} />
       </Route>
       <Route path="/preview/:id">
         <ProtectedRoute component={PreviewPage} />
