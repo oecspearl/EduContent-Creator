@@ -171,7 +171,7 @@ export default function ChatAssistant({}: ChatAssistantProps) {
 
   return (
     <Card 
-      className="fixed bottom-4 right-4 w-96 h-[600px] flex flex-col shadow-2xl z-50 border-2"
+      className="fixed bottom-4 right-4 w-[calc(100%-2rem)] sm:w-96 h-[calc(100vh-2rem)] sm:h-[600px] flex flex-col shadow-2xl z-50 border-2"
       role="dialog"
       aria-label="AI Assistant Chat"
       aria-modal="false"
