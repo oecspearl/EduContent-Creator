@@ -40,16 +40,16 @@ export const contentShares = pgTable("content_shares", {
 // Learner progress table - tracks overall completion for each content item
 export const learnerProgress = pgTable("learner_progress", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").references(() => profiles.id, { onDelete: "cascade" }), // Nullable to support anonymous users
   contentId: varchar("content_id").notNull().references(() => h5pContent.id, { onDelete: "cascade" }),
+  sessionId: varchar("session_id"), // For anonymous users without accounts
+  learnerName: text("learner_name"), // Optional name for anonymous users who want to identify themselves
   completionPercentage: real("completion_percentage").notNull().default(0), // 0-100
   completedAt: timestamp("completed_at"),
   lastAccessedAt: timestamp("last_accessed_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => ({
-  uniqueUserContent: unique().on(table.userId, table.contentId),
-}));
+});
 
 // Quiz attempts table - stores individual quiz attempt details
 export const quizAttempts = pgTable("quiz_attempts", {
@@ -95,6 +95,9 @@ export const insertLearnerProgressSchema = createInsertSchema(learnerProgress).o
   createdAt: true,
   updatedAt: true,
 }).extend({
+  userId: z.string().optional().nullable(),
+  sessionId: z.string().optional().nullable(),
+  learnerName: z.string().optional().nullable(),
   completionPercentage: z.number().min(0).max(100),
   completedAt: z.date().optional().nullable(),
   lastAccessedAt: z.date(),

@@ -497,6 +497,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/analytics/content/:contentId/learners", requireAuth, async (req, res) => {
+    try {
+      // First verify user owns this content
+      const content = await storage.getContentById(req.params.contentId);
+      if (!content || content.userId !== req.session.userId!) {
+        return res.status(403).json({ message: "Not authorized to view learner data for this content" });
+      }
+
+      const learners = await storage.getContentLearners(req.params.contentId);
+      res.json(learners);
+    } catch (error: any) {
+      console.error("Get content learners error:", error);
+      res.status(500).json({ message: "Failed to fetch learner data" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -37,7 +37,7 @@ type InteractionEvent = {
   createdAt: string;
 };
 
-export function useProgressTracker(contentId: string) {
+export function useProgressTracker(contentId: string, learnerName?: string | null) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -57,6 +57,7 @@ export function useProgressTracker(contentId: string) {
       return await apiRequest("POST", `/api/progress`, {
         contentId,
         completionPercentage,
+        learnerName: learnerName || null,
       });
     },
     onSuccess: () => {

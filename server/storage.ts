@@ -46,6 +46,7 @@ export interface IStorage {
   // Analytics methods
   getContentAnalytics(contentId: string): Promise<any>;
   getUserContentAnalytics(userId: string): Promise<any[]>;
+  getContentLearners(contentId: string): Promise<any[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -121,6 +122,7 @@ export class DbStorage implements IStorage {
       .onConflictDoUpdate({
         target: [learnerProgress.userId, learnerProgress.contentId],
         set: {
+          learnerName: progress.learnerName,
           completionPercentage: progress.completionPercentage,
           completedAt: progress.completedAt,
           lastAccessedAt: new Date(),
@@ -283,6 +285,75 @@ export class DbStorage implements IStorage {
     });
 
     return await Promise.all(analyticsPromises);
+  }
+
+  async getContentLearners(contentId: string): Promise<any[]> {
+    // Get all learners who have accessed this content with their progress
+    const learners = await db
+      .select({
+        userId: learnerProgress.userId,
+        learnerName: learnerProgress.learnerName,
+        completionPercentage: learnerProgress.completionPercentage,
+        completedAt: learnerProgress.completedAt,
+        lastAccessedAt: learnerProgress.lastAccessedAt,
+        createdAt: learnerProgress.createdAt,
+      })
+      .from(learnerProgress)
+      .where(eq(learnerProgress.contentId, contentId))
+      .orderBy(desc(learnerProgress.lastAccessedAt));
+
+    // Get user profile info for authenticated users
+    const learnersWithProfiles = await Promise.all(
+      learners.map(async (learner) => {
+        const profile = await this.getProfileById(learner.userId);
+        
+        // Get quiz attempts if any
+        const attempts = await db
+          .select({
+            score: quizAttempts.score,
+            totalQuestions: quizAttempts.totalQuestions,
+            completedAt: quizAttempts.completedAt,
+          })
+          .from(quizAttempts)
+          .where(and(
+            eq(quizAttempts.userId, learner.userId),
+            eq(quizAttempts.contentId, contentId)
+          ))
+          .orderBy(desc(quizAttempts.completedAt))
+          .limit(5);
+
+        // Get interaction count
+        const interactionStats = await db
+          .select({
+            totalInteractions: count(interactionEvents.id),
+          })
+          .from(interactionEvents)
+          .where(and(
+            eq(interactionEvents.userId, learner.userId),
+            eq(interactionEvents.contentId, contentId)
+          ));
+
+        return {
+          userId: learner.userId,
+          displayName: learner.learnerName || profile?.fullName || "Anonymous",
+          email: profile?.email || null,
+          isAuthenticated: !!profile,
+          completionPercentage: learner.completionPercentage,
+          completedAt: learner.completedAt,
+          lastAccessedAt: learner.lastAccessedAt,
+          firstAccessedAt: learner.createdAt,
+          quizAttempts: attempts.map(attempt => ({
+            score: attempt.score,
+            totalQuestions: attempt.totalQuestions,
+            percentage: (attempt.score / attempt.totalQuestions * 100).toFixed(1),
+            completedAt: attempt.completedAt,
+          })),
+          totalInteractions: Number(interactionStats[0]?.totalInteractions || 0),
+        };
+      })
+    );
+
+    return learnersWithProfiles;
   }
 }
 
