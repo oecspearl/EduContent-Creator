@@ -18,7 +18,8 @@ import {
   Trash2, 
   GripVertical, 
   Settings,
-  Globe
+  Globe,
+  Image as ImageIcon
 } from "lucide-react";
 import type { H5pContent, FlashcardData } from "@shared/schema";
 
@@ -108,6 +109,8 @@ export default function FlashcardCreator() {
       front: "",
       back: "",
       category: "",
+      frontImageUrl: "",
+      backImageUrl: "",
     };
     setCards([...cards, newCard]);
   };
@@ -259,6 +262,31 @@ export default function FlashcardCreator() {
                                 className="h-24 resize-none"
                                 data-testid={`textarea-front-${index}`}
                               />
+                              <div className="space-y-1.5">
+                                <Label className="text-xs flex items-center gap-1">
+                                  <ImageIcon className="h-3 w-3" />
+                                  Front Image URL (Optional)
+                                </Label>
+                                <Input
+                                  placeholder="https://example.com/image.jpg"
+                                  value={card.frontImageUrl || ""}
+                                  onChange={(e) => updateCard(index, { frontImageUrl: e.target.value })}
+                                  className="text-sm"
+                                  data-testid={`input-front-image-${index}`}
+                                />
+                                {card.frontImageUrl && (
+                                  <div className="mt-2 rounded-md overflow-hidden border">
+                                    <img 
+                                      src={card.frontImageUrl} 
+                                      alt="Front preview" 
+                                      className="w-full h-32 object-cover"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             <div className="space-y-2">
                               <Label>Back</Label>
@@ -269,6 +297,31 @@ export default function FlashcardCreator() {
                                 className="h-24 resize-none"
                                 data-testid={`textarea-back-${index}`}
                               />
+                              <div className="space-y-1.5">
+                                <Label className="text-xs flex items-center gap-1">
+                                  <ImageIcon className="h-3 w-3" />
+                                  Back Image URL (Optional)
+                                </Label>
+                                <Input
+                                  placeholder="https://example.com/image.jpg"
+                                  value={card.backImageUrl || ""}
+                                  onChange={(e) => updateCard(index, { backImageUrl: e.target.value })}
+                                  className="text-sm"
+                                  data-testid={`input-back-image-${index}`}
+                                />
+                                {card.backImageUrl && (
+                                  <div className="mt-2 rounded-md overflow-hidden border">
+                                    <img 
+                                      src={card.backImageUrl} 
+                                      alt="Back preview" 
+                                      className="w-full h-32 object-cover"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
 
