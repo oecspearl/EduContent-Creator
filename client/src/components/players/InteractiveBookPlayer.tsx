@@ -4,7 +4,8 @@ import DOMPurify from "dompurify";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChevronLeft, ChevronRight, BookOpen, Check } from "lucide-react";
 import type { InteractiveBookData, H5pContent } from "@shared/schema";
 import { useProgressTracker } from "@/hooks/use-progress-tracker";
 import { QuizPlayer } from "./QuizPlayer";
@@ -120,112 +121,158 @@ export function InteractiveBookPlayer({ data, contentId }: InteractiveBookPlayer
   const completionPercentage = (viewedPages.size / data.pages.length) * 100;
 
   return (
-    <div className="space-y-6">
-      {data.settings.showProgress && (
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted-foreground">
-              Page {currentPageIndex + 1} of {data.pages.length}
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {viewedPages.size} of {data.pages.length} pages viewed
-            </span>
-          </div>
-          <Progress value={completionPercentage} data-testid="progress-bar" />
-        </div>
-      )}
-
-      <Card>
-        <CardContent className="p-8">
-          <div className="flex items-center gap-3 mb-6">
-            <BookOpen className="h-6 w-6 text-primary" />
-            <h2 className="text-2xl font-bold">{currentPage.title}</h2>
-          </div>
-          <div 
-            className="prose prose-slate max-w-none dark:prose-invert"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentPage.content) }}
-          />
-        </CardContent>
-      </Card>
-
-      {effectiveEmbeddedData && effectiveEmbeddedType && (
-        <Card>
-          <CardContent className="p-6">
-            <div className="mb-4">
-              <p className="text-sm text-muted-foreground uppercase tracking-wide">Interactive Activity: {effectiveEmbeddedTitle}</p>
-            </div>
-            {effectiveEmbeddedType === "quiz" && (
-              <QuizPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
+    <div className="flex gap-6">
+      {/* Sidebar - Desktop Only */}
+      <aside className="hidden lg:block w-64 flex-shrink-0">
+        <Card className="sticky top-4">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-semibold mb-3">Table of Contents</h3>
+            {data.settings.showProgress && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-muted-foreground">Progress</span>
+                  <span className="text-xs text-muted-foreground">
+                    {viewedPages.size}/{data.pages.length}
+                  </span>
+                </div>
+                <Progress value={completionPercentage} className="h-1" data-testid="progress-bar" />
+              </div>
             )}
-            {effectiveEmbeddedType === "flashcard" && (
-              <FlashcardPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
-            )}
-            {effectiveEmbeddedType === "interactive-video" && (
-              <VideoPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
-            )}
-            {effectiveEmbeddedType === "image-hotspot" && (
-              <ImageHotspotPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
-            )}
-            {effectiveEmbeddedType === "drag-drop" && (
-              <DragDropPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
-            )}
-            {effectiveEmbeddedType === "fill-blanks" && (
-              <FillBlanksPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
-            )}
-            {effectiveEmbeddedType === "memory-game" && (
-              <MemoryGamePlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
-            )}
+            <nav className="space-y-1">
+              {data.pages.map((page, idx) => (
+                <button
+                  key={page.id}
+                  onClick={() => goToPage(idx)}
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2 ${
+                    idx === currentPageIndex
+                      ? "bg-primary text-primary-foreground"
+                      : "hover-elevate"
+                  }`}
+                  data-testid={`button-page-${idx}`}
+                >
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center text-xs">
+                    {viewedPages.has(idx) ? (
+                      <Check className="h-3 w-3" />
+                    ) : (
+                      idx + 1
+                    )}
+                  </span>
+                  <span className="truncate">{page.title || "Untitled"}</span>
+                </button>
+              ))}
+            </nav>
           </CardContent>
         </Card>
-      )}
+      </aside>
 
-      {data.settings.showNavigation && (
-        <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            onClick={() => goToPage(currentPageIndex - 1)}
-            disabled={currentPageIndex === 0}
-            data-testid="button-prev"
-          >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => goToPage(currentPageIndex + 1)}
-            disabled={currentPageIndex === data.pages.length - 1}
-            data-testid="button-next"
-          >
-            Next
-            <ChevronRight className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
-      )}
-
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="text-sm font-medium mb-3">Table of Contents</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {data.pages.map((page, idx) => (
-              <Button
-                key={page.id}
-                variant={idx === currentPageIndex ? "default" : "outline"}
-                size="sm"
-                onClick={() => goToPage(idx)}
-                className="justify-start"
-                data-testid={`button-page-${idx}`}
-              >
-                <span className="truncate">
-                  {idx + 1}. {page.title || "Untitled"}
-                </span>
-                {viewedPages.has(idx) && idx !== currentPageIndex && (
-                  <span className="ml-1">✓</span>
-                )}
-              </Button>
-            ))}
+      {/* Main Content */}
+      <div className="flex-1 min-w-0 space-y-6">
+        {data.settings.showProgress && (
+          <div className="lg:hidden">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">
+                Page {currentPageIndex + 1} of {data.pages.length}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                {viewedPages.size} of {data.pages.length} pages viewed
+              </span>
+            </div>
+            <Progress value={completionPercentage} data-testid="progress-bar-mobile" />
           </div>
-        </CardContent>
-      </Card>
+        )}
+
+        <Card>
+          <CardContent className="p-6 md:p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <BookOpen className="h-6 w-6 text-primary" />
+              <h2 className="text-2xl font-bold">{currentPage.title}</h2>
+            </div>
+            <div 
+              className="prose prose-slate max-w-none dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentPage.content) }}
+            />
+          </CardContent>
+        </Card>
+
+        {effectiveEmbeddedData && effectiveEmbeddedType && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="mb-4">
+                <p className="text-sm text-muted-foreground uppercase tracking-wide">Interactive Activity: {effectiveEmbeddedTitle}</p>
+              </div>
+              {effectiveEmbeddedType === "quiz" && (
+                <QuizPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
+              )}
+              {effectiveEmbeddedType === "flashcard" && (
+                <FlashcardPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
+              )}
+              {effectiveEmbeddedType === "interactive-video" && (
+                <VideoPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
+              )}
+              {effectiveEmbeddedType === "image-hotspot" && (
+                <ImageHotspotPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
+              )}
+              {effectiveEmbeddedType === "drag-drop" && (
+                <DragDropPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
+              )}
+              {effectiveEmbeddedType === "fill-blanks" && (
+                <FillBlanksPlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
+              )}
+              {effectiveEmbeddedType === "memory-game" && (
+                <MemoryGamePlayer data={effectiveEmbeddedData as any} contentId={effectiveEmbeddedId} />
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {data.settings.showNavigation && (
+          <div className="flex items-center justify-between gap-4">
+            <Button
+              variant="outline"
+              onClick={() => goToPage(currentPageIndex - 1)}
+              disabled={currentPageIndex === 0}
+              data-testid="button-prev"
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Previous</span>
+            </Button>
+            
+            {/* Mobile Page Selector */}
+            <div className="lg:hidden flex-1 max-w-xs">
+              <Select
+                value={currentPageIndex.toString()}
+                onValueChange={(value) => goToPage(parseInt(value))}
+              >
+                <SelectTrigger data-testid="select-page-mobile">
+                  <SelectValue placeholder="Go to page..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {data.pages.map((page, idx) => (
+                    <SelectItem key={page.id} value={idx.toString()}>
+                      <div className="flex items-center gap-2">
+                        {viewedPages.has(idx) && <Check className="h-3 w-3" />}
+                        <span>
+                          {idx + 1}. {page.title || "Untitled"}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              variant="outline"
+              onClick={() => goToPage(currentPageIndex + 1)}
+              disabled={currentPageIndex === data.pages.length - 1}
+              data-testid="button-next"
+            >
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
