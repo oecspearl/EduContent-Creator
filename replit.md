@@ -2,7 +2,7 @@
 
 ## Overview
 
-EduCreate is a full-stack web application designed for educators to create, manage, and share interactive educational content. The platform supports four main content types: quizzes, flashcards, interactive videos, and image hotspots. Content creation is enhanced with AI-powered generation capabilities using OpenAI's GPT models.
+EduCreate is a full-stack web application designed for educators to create, manage, and share interactive educational content. The platform supports eight content types: quizzes, flashcards, interactive videos, image hotspots, drag and drop, fill in the blanks, memory games, and interactive books with rich text editing. Content creation is enhanced with AI-powered generation capabilities using OpenAI's GPT models.
 
 The application enables educators to build engaging learning materials, preview them in real-time, publish content for public access, and share educational resources with students and other educators.
 
@@ -28,7 +28,9 @@ Preferred communication style: Simple, everyday language.
 **Component Library**
 - Radix UI primitives for accessible, unstyled components
 - shadcn/ui component system built on top of Radix UI with Tailwind styling
-- Custom content player components for each interactive content type (quiz, flashcard, video, image hotspot)
+- TipTap rich text editor with formatting toolbar and image insertion for Interactive Book
+- DOMPurify for HTML sanitization before rendering user-generated content
+- Custom content player components for each interactive content type
 
 **Design System**
 - Typography: Inter for UI/body text, JetBrains Mono for code
@@ -57,9 +59,10 @@ Preferred communication style: Simple, everyday language.
 - Protected routes requiring valid session middleware
 
 **Content Management**
-- Four content types with JSON-based data storage: quiz, flashcard, interactive-video, image-hotspot
+- Eight content types with JSON-based data storage: quiz, flashcard, interactive-video, image-hotspot, drag-drop, fill-blanks, memory-game, interactive-book
 - Publication workflow: draft → published (public access enabled)
 - Share link generation for published content
+- Rich text editing for Interactive Book using TipTap with formatting and image support
 
 ### Data Storage
 
@@ -86,7 +89,7 @@ Preferred communication style: Simple, everyday language.
 
 **AI Integration**
 - OpenAI API (GPT-5 model) for intelligent content generation
-- Content types supported: quiz questions, flashcard pairs, video hotspots, image hotspots
+- Content types supported: quiz questions, flashcard pairs, video hotspots, image hotspots, drag-drop items, fill-blank sentences, memory card pairs, interactive book pages
 - Structured JSON output with response formatting for predictable parsing
 - Configurable generation parameters: topic, difficulty, grade level, number of items, language, additional context
 

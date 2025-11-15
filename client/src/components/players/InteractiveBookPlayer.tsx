@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import DOMPurify from "dompurify";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -111,7 +112,7 @@ export function InteractiveBookPlayer({ data, contentId }: InteractiveBookPlayer
           </div>
           <div 
             className="prose prose-slate max-w-none dark:prose-invert"
-            dangerouslySetInnerHTML={{ __html: currentPage.content }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentPage.content) }}
           />
         </CardContent>
       </Card>
