@@ -107,8 +107,9 @@ Preferred communication style: Simple, everyday language.
 - TypeScript compiler for type checking across client/server/shared code
 
 **Session Storage**
-- In-memory session storage for development
-- Configurable for production session stores (Redis, PostgreSQL via connect-pg-simple)
+- In-memory session storage for development and production
+- Session configuration includes trust proxy for Replit deployments
+- Cookies use secure flag in production with sameSite: 'lax' for same-origin requests
 
 **Build & Deployment**
 - esbuild for server-side bundling (ESM format, platform: node)

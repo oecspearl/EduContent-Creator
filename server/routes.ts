@@ -30,6 +30,7 @@ declare module "express-session" {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Trust proxy for deployed apps (Replit uses reverse proxy)
+  // This is critical for secure cookies to work properly
   if (process.env.NODE_ENV === "production") {
     app.set("trust proxy", 1);
   }
@@ -43,7 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cookie: {
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        sameSite: "lax", // Use 'lax' since frontend and backend are same-origin
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       },
     })
@@ -440,6 +441,15 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
         role: "user",
         content: message,
         context: context || null,
+      });
+
+      // CRITICAL: Save session before starting SSE stream
+      // This ensures auth cookies remain valid during streaming in production
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
 
       // Set headers for streaming

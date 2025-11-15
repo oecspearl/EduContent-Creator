@@ -120,7 +120,13 @@ export default function ChatAssistant({}: ChatAssistantProps) {
       }
 
       // Refresh history after streaming is complete
-      queryClient.invalidateQueries({ queryKey: ["/api/chat/history"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/chat/history"] });
+      
+      // Wait a brief moment for the query to refetch before clearing streaming message
+      // This prevents the message from disappearing before it appears in history
+      setTimeout(() => {
+        setStreamingMessage("");
+      }, 100);
     } catch (error: any) {
       console.error("Chat error:", error);
       toast({
@@ -128,9 +134,9 @@ export default function ChatAssistant({}: ChatAssistantProps) {
         description: error.message || "Please try again",
         variant: "destructive",
       });
+      setStreamingMessage("");
     } finally {
       setIsStreaming(false);
-      setStreamingMessage("");
     }
   };
 
