@@ -35,15 +35,15 @@ import { useLocation } from "wouter";
 import type { H5pContent, ContentType } from "@shared/schema";
 import { format } from "date-fns";
 
-const contentTypeConfig: Record<ContentType, { icon: typeof FileQuestion; label: string; color: string }> = {
-  quiz: { icon: FileQuestion, label: "Quiz", color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
-  flashcard: { icon: Layers, label: "Flashcard", color: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
-  "interactive-video": { icon: Video, label: "Interactive Video", color: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" },
-  "image-hotspot": { icon: ImageIcon, label: "Image Hotspot", color: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" },
-  "drag-drop": { icon: Move, label: "Drag & Drop", color: "bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300" },
-  "fill-blanks": { icon: PenTool, label: "Fill in the Blanks", color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300" },
-  "memory-game": { icon: Brain, label: "Memory Game", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300" },
-  "interactive-book": { icon: BookOpenCheck, label: "Interactive Book", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300" },
+const contentTypeConfig: Record<ContentType, { icon: typeof FileQuestion; label: string; pluralLabel: string; color: string }> = {
+  quiz: { icon: FileQuestion, label: "Quiz", pluralLabel: "Quizzes", color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
+  flashcard: { icon: Layers, label: "Flashcard", pluralLabel: "Flashcards", color: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+  "interactive-video": { icon: Video, label: "Interactive Video", pluralLabel: "Interactive Videos", color: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" },
+  "image-hotspot": { icon: ImageIcon, label: "Image Hotspot", pluralLabel: "Image Hotspots", color: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" },
+  "drag-drop": { icon: Move, label: "Drag & Drop", pluralLabel: "Drag & Drop", color: "bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300" },
+  "fill-blanks": { icon: PenTool, label: "Fill in the Blanks", pluralLabel: "Fill in the Blanks", color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300" },
+  "memory-game": { icon: Brain, label: "Memory Game", pluralLabel: "Memory Games", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300" },
+  "interactive-book": { icon: BookOpenCheck, label: "Interactive Book", pluralLabel: "Interactive Books", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300" },
 };
 
 export default function Dashboard() {
@@ -356,7 +356,7 @@ export default function Dashboard() {
                 <div key={type}>
                   <h4 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
                     <Icon className="h-5 w-5" />
-                    {config.label}s
+                    {config.pluralLabel}
                     <Badge variant="secondary">{typeContents.length}</Badge>
                   </h4>
                   <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
