@@ -26,6 +26,7 @@ export interface IStorage {
   getContentById(id: string): Promise<H5pContent | undefined>;
   getContentByUserId(userId: string): Promise<H5pContent[]>;
   getPublishedContent(id: string): Promise<H5pContent | undefined>;
+  getPublicContent(): Promise<H5pContent[]>;
   
   // Share methods
   createShare(share: InsertContentShare): Promise<ContentShare>;
@@ -123,6 +124,14 @@ export class DbStorage implements IStorage {
       .where(and(eq(h5pContent.id, id), eq(h5pContent.isPublished, true)))
       .limit(1);
     return content;
+  }
+
+  async getPublicContent(): Promise<H5pContent[]> {
+    return await db
+      .select()
+      .from(h5pContent)
+      .where(and(eq(h5pContent.isPublic, true), eq(h5pContent.isPublished, true)))
+      .orderBy(desc(h5pContent.createdAt));
   }
 
   async createShare(insertShare: InsertContentShare): Promise<ContentShare> {

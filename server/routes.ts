@@ -440,6 +440,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public content route
+  app.get("/api/content/public", requireAuth, async (req, res) => {
+    try {
+      const { search, type, tags } = req.query;
+      let contents = await storage.getPublicContent();
+      
+      // Apply search filter (title or description)
+      if (search && typeof search === 'string') {
+        const searchLower = search.toLowerCase();
+        contents = contents.filter(c => 
+          c.title.toLowerCase().includes(searchLower) || 
+          (c.description && c.description.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      // Apply content type filter
+      if (type && typeof type === 'string') {
+        contents = contents.filter(c => c.type === type);
+      }
+      
+      // Apply tags filter (comma-separated)
+      if (tags && typeof tags === 'string') {
+        const tagList = tags.split(',').map(t => t.trim().toLowerCase());
+        contents = contents.filter(c => 
+          c.tags && c.tags.some(tag => tagList.includes(tag.toLowerCase()))
+        );
+      }
+      
+      res.json(contents);
+    } catch (error: any) {
+      console.error("Get public content error:", error);
+      res.status(500).json({ message: "Failed to fetch public content" });
+    }
+  });
+
   app.get("/api/content/:id", requireAuth, async (req, res) => {
     try {
       const content = await storage.getContentById(req.params.id);
@@ -460,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/content", requireAuth, async (req, res) => {
     try {
-      const { title, description, type, data, isPublished, tags } = req.body;
+      const { title, description, type, data, isPublished, isPublic, tags } = req.body;
 
       if (!title || !type || !data) {
         return res.status(400).json({ message: "Missing required fields" });
@@ -473,6 +508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data,
         userId: req.session.userId!,
         isPublished: isPublished || false,
+        isPublic: isPublic || false,
         tags: tags || null,
       });
 
@@ -494,13 +530,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden" });
       }
 
-      const { title, description, data, isPublished, tags } = req.body;
+      const { title, description, data, isPublished, isPublic, tags } = req.body;
       const updates: any = {};
 
       if (title !== undefined) updates.title = title;
       if (description !== undefined) updates.description = description;
       if (data !== undefined) updates.data = data;
       if (isPublished !== undefined) updates.isPublished = isPublished;
+      if (isPublic !== undefined) updates.isPublic = isPublic;
       if (tags !== undefined) updates.tags = tags;
 
       const updated = await storage.updateContent(req.params.id, updates);
