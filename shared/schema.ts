@@ -160,7 +160,7 @@ export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 
 // Content type definitions
-export type ContentType = "quiz" | "flashcard" | "interactive-video" | "image-hotspot" | "drag-drop" | "fill-blanks" | "memory-game" | "interactive-book" | "video-finder";
+export type ContentType = "quiz" | "flashcard" | "interactive-video" | "image-hotspot" | "drag-drop" | "fill-blanks" | "memory-game" | "interactive-book" | "video-finder" | "google-slides";
 
 export type QuizQuestion = {
   id: string;
@@ -335,6 +335,41 @@ export type VideoFinderData = {
   viewingInstructions?: string; // Pedagogical guidance for learners
   guidingQuestions?: string[]; // Questions to focus learning
 };
+
+// Google Slides types
+export type SlideContent = {
+  id: string;
+  type: "title" | "content" | "guiding-questions" | "reflection" | "image";
+  title?: string;
+  content?: string;
+  bulletPoints?: string[];
+  imageUrl?: string;
+  imageAlt?: string;
+  questions?: string[];
+  notes?: string; // Speaker notes with pedagogical guidance
+};
+
+export type GoogleSlidesData = {
+  topic: string;
+  gradeLevel: string;
+  ageRange: string;
+  learningOutcomes: string[];
+  slides: SlideContent[];
+  presentationId?: string; // Google Slides presentation ID if created
+  presentationUrl?: string; // Public URL to the presentation
+  generatedDate: string;
+};
+
+// Google Slides Generation request
+export const googleSlidesGenerationSchema = z.object({
+  topic: z.string().min(1),
+  gradeLevel: z.string().min(1),
+  ageRange: z.string().min(1),
+  learningOutcomes: z.array(z.string()).min(1).max(10),
+  numberOfSlides: z.number().min(5).max(30).default(10),
+});
+
+export type GoogleSlidesGenerationRequest = z.infer<typeof googleSlidesGenerationSchema>;
 
 // AI Generation request
 export const aiGenerationSchema = z.object({
