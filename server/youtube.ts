@@ -2,10 +2,11 @@ import { google } from 'googleapis';
 
 // Get YouTube client using Google API Key
 function getYouTubeClient() {
-  const apiKey = process.env.GOOGLE_API_KEY;
+  // Accept both YOUTUBE_API_KEY and GOOGLE_API_KEY for flexibility
+  const apiKey = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_API_KEY;
   
   if (!apiKey) {
-    throw new Error('GOOGLE_API_KEY not found in environment variables');
+    throw new Error('YouTube API key not found. Please set YOUTUBE_API_KEY or GOOGLE_API_KEY in environment variables.');
   }
   
   return google.youtube({
