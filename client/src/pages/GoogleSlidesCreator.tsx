@@ -29,6 +29,7 @@ export default function GoogleSlidesCreator() {
   const [generatedDate, setGeneratedDate] = useState("");
   const [isPublished, setIsPublished] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [presentationId, setPresentationId] = useState<string>("");
   const [presentationUrl, setPresentationUrl] = useState<string>("");
 
   const { data: content, isLoading: isLoadingContent } = useQuery<H5pContent>({
@@ -48,6 +49,7 @@ export default function GoogleSlidesCreator() {
       setSlides(data.slides || []);
       setGeneratedDate(data.generatedDate);
       setIsPublished(content.isPublished);
+      setPresentationId(data.presentationId || "");
       setPresentationUrl(data.presentationUrl || "");
     }
   }, [content]);
@@ -61,6 +63,8 @@ export default function GoogleSlidesCreator() {
         learningOutcomes: learningOutcomes.filter(o => o.trim()),
         slides,
         generatedDate: generatedDate || new Date().toISOString(),
+        ...(presentationId && { presentationId }),
+        ...(presentationUrl && { presentationUrl }),
       };
 
       if (isEditing) {
@@ -125,7 +129,8 @@ export default function GoogleSlidesCreator() {
       });
       return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      setPresentationId(data.presentationId);
       setPresentationUrl(data.url);
       toast({ 
         title: "Created in Google Slides!", 
@@ -134,23 +139,32 @@ export default function GoogleSlidesCreator() {
       
       // Save the presentation URL to content
       if (isEditing && contentId) {
-        const updatedData: GoogleSlidesData = {
-          topic,
-          gradeLevel,
-          ageRange,
-          learningOutcomes: learningOutcomes.filter(o => o.trim()),
-          slides,
-          generatedDate: generatedDate || new Date().toISOString(),
-          presentationId: data.presentationId,
-          presentationUrl: data.url,
-        };
-        
-        apiRequest("PUT", `/api/content/${contentId}`, {
-          title,
-          description,
-          data: updatedData,
-          isPublished,
-        });
+        try {
+          const updatedData: GoogleSlidesData = {
+            topic,
+            gradeLevel,
+            ageRange,
+            learningOutcomes: learningOutcomes.filter(o => o.trim()),
+            slides,
+            generatedDate: generatedDate || new Date().toISOString(),
+            presentationId: data.presentationId,
+            presentationUrl: data.url,
+          };
+          
+          await apiRequest("PUT", `/api/content/${contentId}`, {
+            title,
+            description,
+            data: updatedData,
+            isPublished,
+          });
+          queryClient.invalidateQueries({ queryKey: [`/api/content/${contentId}`] });
+        } catch (error: any) {
+          toast({
+            title: "Warning",
+            description: "Presentation created but failed to save URL. Please save manually.",
+            variant: "destructive",
+          });
+        }
       }
     },
     onError: (error: any) => {
@@ -406,8 +420,22 @@ export default function GoogleSlidesCreator() {
               <Button
                 onClick={handleGenerate}
                 className="w-full"
-                disabled={generateMutation.isPending}
+                disabled={
+                  generateMutation.isPending ||
+                  !topic ||
+                  !gradeLevel ||
+                  !ageRange ||
+                  learningOutcomes.filter(o => o.trim()).length === 0
+                }
                 data-testid="button-generate"
+                aria-label={`Generate slides button. Status: ${
+                  generateMutation.isPending ? 'Loading' :
+                  !topic ? 'Topic required' :
+                  !gradeLevel ? 'Grade level required' :
+                  !ageRange ? 'Age range required' :
+                  learningOutcomes.filter(o => o.trim()).length === 0 ? 'Learning outcomes required' :
+                  'Ready'
+                }`}
               >
                 {generateMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
