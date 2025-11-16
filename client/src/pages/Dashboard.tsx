@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { 
   FileQuestion, 
@@ -54,6 +57,7 @@ const contentTypeConfig: Record<ContentType, { icon: typeof FileQuestion; label:
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
+  const { toast } = useToast();
   const [_, navigate] = useLocation();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
@@ -62,6 +66,8 @@ export default function Dashboard() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [contentToDelete, setContentToDelete] = useState<{ id: string; title: string } | null>(null);
 
   // Build query key with filters
   const filters: Record<string, string> = {};
@@ -115,6 +121,44 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     await logout();
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: async (contentId: string) => {
+      await apiRequest("DELETE", `/api/content/${contentId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return Array.isArray(queryKey) && queryKey[0] === "/api/content";
+        }
+      });
+      toast({
+        title: "Content deleted",
+        description: "Your content has been permanently deleted.",
+      });
+      setDeleteDialogOpen(false);
+      setContentToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete failed",
+        description: error.message || "Failed to delete content. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteClick = (id: string, title: string) => {
+    setContentToDelete({ id, title });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (contentToDelete) {
+      deleteMutation.mutate(contentToDelete.id);
+    }
   };
 
   const groupedContents = contents?.reduce((acc, content) => {
@@ -455,6 +499,7 @@ export default function Dashboard() {
                             size="icon"
                             onClick={() => handlePlay(content.id)}
                             data-testid={`button-play-${content.id}`}
+                            aria-label="Preview content"
                           >
                             <Play className="h-4 w-4" />
                           </Button>
@@ -463,8 +508,18 @@ export default function Dashboard() {
                             size="icon"
                             onClick={() => handleShare(content.id)}
                             data-testid={`button-share-${content.id}`}
+                            aria-label="Share content"
                           >
                             <Share2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleDeleteClick(content.id, content.title)}
+                            data-testid={`button-delete-${content.id}`}
+                            aria-label="Delete content"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </CardFooter>
                       </Card>
@@ -476,6 +531,31 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent data-testid="dialog-delete-confirmation">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Content?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{contentToDelete?.title}"? This action cannot be undone and will permanently remove this content and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete" disabled={deleteMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
