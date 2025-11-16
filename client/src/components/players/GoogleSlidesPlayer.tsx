@@ -8,11 +8,52 @@ interface GoogleSlidesPlayerProps {
   data: GoogleSlidesData;
 }
 
+// Color scheme definitions
+const colorSchemes = {
+  blue: {
+    bg: "bg-blue-50 dark:bg-blue-950",
+    accent: "bg-blue-600",
+    text: "text-blue-900 dark:text-blue-100",
+    border: "border-blue-200 dark:border-blue-800"
+  },
+  green: {
+    bg: "bg-green-50 dark:bg-green-950",
+    accent: "bg-green-600",
+    text: "text-green-900 dark:text-green-100",
+    border: "border-green-200 dark:border-green-800"
+  },
+  purple: {
+    bg: "bg-purple-50 dark:bg-purple-950",
+    accent: "bg-purple-600",
+    text: "text-purple-900 dark:text-purple-100",
+    border: "border-purple-200 dark:border-purple-800"
+  },
+  orange: {
+    bg: "bg-orange-50 dark:bg-orange-950",
+    accent: "bg-orange-600",
+    text: "text-orange-900 dark:text-orange-100",
+    border: "border-orange-200 dark:border-orange-800"
+  },
+  teal: {
+    bg: "bg-teal-50 dark:bg-teal-950",
+    accent: "bg-teal-600",
+    text: "text-teal-900 dark:text-teal-100",
+    border: "border-teal-200 dark:border-teal-800"
+  },
+  red: {
+    bg: "bg-red-50 dark:bg-red-950",
+    accent: "bg-red-600",
+    text: "text-red-900 dark:text-red-100",
+    border: "border-red-200 dark:border-red-800"
+  },
+};
+
 export default function GoogleSlidesPlayer({ data }: GoogleSlidesPlayerProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [viewMode, setViewMode] = useState<"presentation" | "grid">("presentation");
   
   const currentSlide = data.slides[currentSlideIndex];
+  const theme = colorSchemes[data.colorScheme as keyof typeof colorSchemes] || colorSchemes.blue;
   
   const goToNextSlide = () => {
     if (currentSlideIndex < data.slides.length - 1) {
@@ -32,42 +73,56 @@ export default function GoogleSlidesPlayer({ data }: GoogleSlidesPlayerProps) {
   };
 
   const renderSlideContent = (slide: SlideContent) => {
+    const isImageUrl = slide.imageUrl && slide.imageUrl.startsWith('http');
+    
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {slide.imageUrl && isImageUrl && (
+          <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-6">
+            <img
+              src={slide.imageUrl}
+              alt={slide.imageAlt || slide.title || "Slide image"}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+        
         {slide.title && (
-          <h2 className="text-3xl font-bold">{slide.title}</h2>
+          <h2 className={`text-4xl font-bold ${theme.text}`}>{slide.title}</h2>
         )}
         
         {slide.content && (
-          <p className="text-lg leading-relaxed">{slide.content}</p>
+          <p className="text-xl leading-relaxed">{slide.content}</p>
         )}
         
         {slide.bulletPoints && slide.bulletPoints.length > 0 && (
-          <ul className="space-y-2 text-lg">
+          <ul className="space-y-3 text-lg">
             {slide.bulletPoints.map((point, i) => (
               <li key={i} className="flex items-start gap-3">
-                <span className="text-primary mt-1">•</span>
-                <span>{point}</span>
+                <span className={`${theme.accent} text-white rounded-full w-7 h-7 flex items-center justify-center flex-shrink-0 mt-1 text-sm font-bold`}>
+                  {i + 1}
+                </span>
+                <span className="flex-1">{point}</span>
               </li>
             ))}
           </ul>
         )}
         
         {slide.questions && slide.questions.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {slide.questions.map((question, i) => (
-              <div key={i} className="bg-muted rounded-lg p-4">
+              <div key={i} className={`${theme.bg} ${theme.border} border-2 rounded-lg p-5`}>
                 <p className="text-lg">
-                  <span className="font-semibold text-primary">{i + 1}.</span> {question}
+                  <span className={`font-semibold ${theme.text}`}>{i + 1}.</span> {question}
                 </p>
               </div>
             ))}
           </div>
         )}
         
-        {slide.imageUrl && (
-          <div className="bg-muted rounded-lg p-6 text-center">
-            <div className="text-sm text-muted-foreground mb-2">Suggested Image:</div>
+        {slide.imageUrl && !isImageUrl && (
+          <div className={`${theme.bg} ${theme.border} border-2 rounded-lg p-6 text-center`}>
+            <div className="text-sm text-muted-foreground mb-2">Image suggestion:</div>
             <p className="font-medium">{slide.imageUrl}</p>
             {slide.imageAlt && (
               <p className="text-sm text-muted-foreground mt-2 italic">{slide.imageAlt}</p>

@@ -135,10 +135,53 @@ export default function GoogleSlidesCreator() {
       });
       return await response.json();
     },
-    onSuccess: (data) => {
-      setSlides(data.slides || []);
+    onSuccess: async (data) => {
+      let slidesData = data.slides || [];
+      
+      // Fetch images from Unsplash for slides with search queries
+      try {
+        const slidesWithImages = await Promise.all(
+          slidesData.map(async (slide: SlideContent) => {
+            if (slide.imageUrl && !slide.imageUrl.startsWith('http')) {
+              // This is a search query, fetch actual image
+              try {
+                const imageResponse = await apiRequest("POST", "/api/unsplash/search", {
+                  query: slide.imageUrl,
+                  count: 1,
+                });
+                const imageData = await imageResponse.json();
+                
+                if (imageData.photos && imageData.photos.length > 0) {
+                  const photo = imageData.photos[0];
+                  return {
+                    ...slide,
+                    imageUrl: photo.urls.regular,
+                    imageAlt: slide.imageAlt || photo.alt_description || photo.description,
+                  };
+                }
+              } catch (err) {
+                console.error("Failed to fetch image for slide:", err);
+              }
+            }
+            return slide;
+          })
+        );
+        
+        setSlides(slidesWithImages);
+        toast({ 
+          title: "Generated with Images!", 
+          description: "Slides content and images generated successfully." 
+        });
+      } catch (err) {
+        // Fallback to slides without images if image fetching fails
+        setSlides(slidesData);
+        toast({ 
+          title: "Generated!", 
+          description: "Slides content generated. Some images may not have loaded." 
+        });
+      }
+      
       setGeneratedDate(data.generatedDate);
-      toast({ title: "Generated!", description: "Slides content generated successfully." });
     },
     onError: (error: any) => {
       toast({
