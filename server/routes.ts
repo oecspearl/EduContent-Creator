@@ -281,34 +281,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/microsoft/callback", async (req: any, res) => {
+    console.log("Microsoft callback received with query:", req.query);
+    
     if (!isMicrosoftOAuthAvailable) {
+      console.error("Microsoft OAuth not configured");
       return res.redirect("/login?error=microsoft_not_configured");
     }
     
     try {
       const msalClient = getMsalClient();
       if (!msalClient) {
+        console.error("Failed to get MSAL client");
         return res.redirect("/login?error=microsoft_not_configured");
       }
+
+      const redirectUri = getRedirectUri();
+      console.log("Using redirect URI:", redirectUri);
 
       const tokenRequest = {
         code: req.query.code as string,
         scopes: ["user.read"],
-        redirectUri: getRedirectUri(),
+        redirectUri,
       };
 
+      console.log("Attempting to acquire token...");
       const response = await msalClient.acquireTokenByCode(tokenRequest);
+      console.log("Token acquired successfully");
+      
       const email = response.account?.username;
       const name = response.account?.name || email;
       const microsoftId = response.account?.homeAccountId;
 
+      console.log("Microsoft account info - email:", email, "name:", name);
+
       if (!email || !microsoftId) {
+        console.error("Missing email or Microsoft ID from response");
         return res.redirect("/login?error=no_email");
       }
 
       // Find or create user
       let user = await storage.getProfileByEmail(email);
       if (!user) {
+        console.log("Creating new user for Microsoft account:", email);
         // Create new Microsoft OAuth user with sentinel password
         const sentinelPassword = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
 
@@ -323,6 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           microsoftId,
         });
       } else if (!user.microsoftId) {
+        console.log("Linking Microsoft account to existing user:", email);
         // Link Microsoft account to existing user
         await storage.updateProfile(user.id, {
           microsoftId,
@@ -332,10 +347,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set session
       req.session.userId = user.id;
       req.session.save(() => {
+        console.log("Session saved, redirecting to dashboard");
         res.redirect("/dashboard");
       });
     } catch (error: any) {
       console.error("Microsoft OAuth callback error:", error);
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack,
+        errorCode: error.errorCode,
+        errorMessage: error.errorMessage,
+      });
       res.redirect("/login?error=microsoft_auth_failed");
     }
   });
