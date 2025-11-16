@@ -31,7 +31,8 @@ import {
   Filter,
   X,
   HelpCircle,
-  BarChart3
+  BarChart3,
+  Presentation
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { H5pContent, ContentType } from "@shared/schema";
@@ -47,6 +48,7 @@ const contentTypeConfig: Record<ContentType, { icon: typeof FileQuestion; label:
   "memory-game": { icon: Brain, label: "Memory Game", pluralLabel: "Memory Games", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300" },
   "interactive-book": { icon: BookOpenCheck, label: "Interactive Book", pluralLabel: "Interactive Books", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300" },
   "video-finder": { icon: Search, label: "Video Finder", pluralLabel: "Video Finders", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300" },
+  "google-slides": { icon: Presentation, label: "Google Slides", pluralLabel: "Google Slides", color: "bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300" },
 };
 
 export default function Dashboard() {

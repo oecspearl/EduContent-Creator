@@ -2,7 +2,7 @@ import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Share2 } from "lucide-react";
-import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, VideoFinderData } from "@shared/schema";
+import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, VideoFinderData, GoogleSlidesData } from "@shared/schema";
 import { QuizPlayer } from "@/components/players/QuizPlayer";
 import { FlashcardPlayer } from "@/components/players/FlashcardPlayer";
 import { VideoPlayer } from "@/components/players/VideoPlayer";
@@ -12,6 +12,7 @@ import { FillBlanksPlayer } from "@/components/players/FillBlanksPlayer";
 import { MemoryGamePlayer } from "@/components/players/MemoryGamePlayer";
 import { InteractiveBookPlayer } from "@/components/players/InteractiveBookPlayer";
 import { VideoFinderPlayer } from "@/components/players/VideoFinderPlayer";
+import GoogleSlidesPlayer from "@/components/players/GoogleSlidesPlayer";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PreviewPage() {
@@ -85,6 +86,7 @@ export default function PreviewPage() {
         {content.type === "memory-game" && <MemoryGamePlayer data={content.data as MemoryGameData} contentId={content.id} />}
         {content.type === "interactive-book" && <InteractiveBookPlayer data={content.data as InteractiveBookData} contentId={content.id} />}
         {content.type === "video-finder" && <VideoFinderPlayer data={content.data as VideoFinderData} />}
+        {content.type === "google-slides" && <GoogleSlidesPlayer data={content.data as GoogleSlidesData} />}
       </main>
     </div>
   );
