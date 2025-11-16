@@ -34,6 +34,12 @@ export function AIGenerationModal({ open, onOpenChange, contentType, onGenerated
     flashcard: "flashcard pairs",
     "interactive-video": "video hotspots",
     "image-hotspot": "image hotspots",
+    "drag-drop": "drag and drop items",
+    "fill-blanks": "fill in the blanks",
+    "memory-game": "memory cards",
+    "interactive-book": "book pages",
+    "video-finder": "video lessons",
+    "google-slides": "presentation slides",
   };
 
   const handleGenerate = async () => {
@@ -145,12 +151,11 @@ export function AIGenerationModal({ open, onOpenChange, contentType, onGenerated
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="gradeLevel">Grade Level (Optional)</Label>
-              <Select value={formData.gradeLevel} onValueChange={(value) => setFormData({ ...formData, gradeLevel: value })}>
+              <Select value={formData.gradeLevel || undefined} onValueChange={(value) => setFormData({ ...formData, gradeLevel: value })}>
                 <SelectTrigger id="gradeLevel" data-testid="select-ai-grade">
                   <SelectValue placeholder="Select grade level" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Not specified</SelectItem>
                   <SelectItem value="Pre-K">Pre-K</SelectItem>
                   <SelectItem value="Kindergarten">Kindergarten</SelectItem>
                   <SelectItem value="K-2">K-2 (Grades K-2)</SelectItem>
