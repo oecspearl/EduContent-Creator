@@ -11,11 +11,13 @@ import {
   Brain, 
   BookText,
   Search,
+  Presentation,
   Sparkles,
   Users,
   Globe,
   ArrowRight,
-  CheckCircle2
+  CheckCircle2,
+  GraduationCap
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
@@ -41,10 +43,12 @@ export default function LandingPage() {
     { icon: Brain, name: "Memory Game", description: "Flip cards to find matching pairs", color: "bg-yellow-100 dark:bg-yellow-950 text-yellow-600 dark:text-yellow-400" },
     { icon: BookText, name: "Interactive Book", description: "Rich multimedia books", color: "bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400" },
     { icon: Search, name: "Video Finder", description: "Find educational videos from YouTube", color: "bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400" },
+    { icon: Presentation, name: "Google Slides", description: "AI-generated presentations with real images", color: "bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400" },
   ];
 
   const features = [
     { icon: Sparkles, title: "AI-Powered Generation", description: "Create content faster with AI assistance using GPT-5" },
+    { icon: GraduationCap, title: "Google Classroom Integration", description: "Share all content types directly to your courses" },
     { icon: Users, title: "Progress Tracking", description: "Monitor student engagement and completion rates" },
     { icon: Globe, title: "Public Sharing", description: "Share content with shareable links" },
     { icon: CheckCircle2, title: "Accessible Design", description: "WCAG 2.1 AA compliant for all learners" },
@@ -170,7 +174,7 @@ export default function LandingPage() {
           {/* Stats */}
           <div className="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
-              <div className="text-4xl font-bold text-white mb-2" style={{ color: '#a3e635' }}>9</div>
+              <div className="text-4xl font-bold text-white mb-2" style={{ color: '#a3e635' }}>10</div>
               <div className="text-sm text-gray-100">Content Types</div>
             </div>
             <div className="text-center">
@@ -197,7 +201,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {features.map((feature, index) => (
               <Card key={index} className="hover-elevate">
                 <CardContent className="p-6">
@@ -218,14 +222,14 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h3 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              9 Interactive Content Types
+              10 Interactive Content Types
             </h3>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Choose from a variety of engaging formats to match your teaching style
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             {contentTypes.map((type, index) => (
               <Card key={index} className="hover-elevate">
                 <CardContent className="p-6">
