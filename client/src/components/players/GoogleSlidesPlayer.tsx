@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, LayoutGrid, Presentation } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, Presentation, ExternalLink } from "lucide-react";
 import type { GoogleSlidesData, SlideContent } from "@shared/schema";
 
 interface GoogleSlidesPlayerProps {
@@ -83,15 +83,28 @@ export default function GoogleSlidesPlayer({ data }: GoogleSlidesPlayerProps) {
       <div className="space-y-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">All Slides ({data.slides.length})</h3>
-          <Button
-            onClick={() => setViewMode("presentation")}
-            variant="outline"
-            size="sm"
-            data-testid="button-presentation-mode"
-          >
-            <Presentation className="h-4 w-4 mr-2" />
-            Presentation Mode
-          </Button>
+          <div className="flex gap-2">
+            {data.presentationUrl && (
+              <Button
+                onClick={() => window.open(data.presentationUrl, '_blank')}
+                variant="outline"
+                size="sm"
+                data-testid="button-open-slides"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open in Google Slides
+              </Button>
+            )}
+            <Button
+              onClick={() => setViewMode("presentation")}
+              variant="outline"
+              size="sm"
+              data-testid="button-presentation-mode"
+            >
+              <Presentation className="h-4 w-4 mr-2" />
+              Presentation Mode
+            </Button>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -137,6 +150,17 @@ export default function GoogleSlidesPlayer({ data }: GoogleSlidesPlayerProps) {
           Slide {currentSlideIndex + 1} of {data.slides.length}
         </div>
         <div className="flex gap-2">
+          {data.presentationUrl && (
+            <Button
+              onClick={() => window.open(data.presentationUrl, '_blank')}
+              variant="outline"
+              size="sm"
+              data-testid="button-open-slides"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Open in Google Slides
+            </Button>
+          )}
           <Button
             onClick={() => setViewMode("grid")}
             variant="outline"

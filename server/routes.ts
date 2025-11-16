@@ -939,6 +939,75 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   });
 
+  // Create actual Google Slides presentation from generated content
+  app.post("/api/google-slides/create-presentation", requireAuth, async (req, res) => {
+    try {
+      const { title, slides } = req.body;
+
+      if (!title || !slides || !Array.isArray(slides)) {
+        return res.status(400).json({ message: "Missing required fields: title and slides" });
+      }
+
+      // Get user profile to access Google OAuth tokens
+      const user = await storage.getProfileById(req.session.userId!);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (!user.googleAccessToken || !user.googleRefreshToken) {
+        return res.status(403).json({ 
+          message: "Please sign in with Google to create presentations in Google Slides. Your current account doesn't have Google Slides access." 
+        });
+      }
+
+      // Import services (dynamic to avoid loading if not needed)
+      const { createPresentation, addSlidesToPresentation } = await import('./google-slides');
+      const { searchPhotos, getAltText, generateAttribution } = await import('./unsplash');
+
+      // Fetch real images for slides that need them
+      const slidesWithImages = await Promise.all(slides.map(async (slide: any) => {
+        if (slide.imageUrl && typeof slide.imageUrl === 'string' && !slide.imageUrl.startsWith('http')) {
+          // imageUrl contains a search query, not an actual URL
+          const photos = await searchPhotos(slide.imageUrl, 1);
+          if (photos.length > 0) {
+            const photo = photos[0];
+            return {
+              ...slide,
+              imageUrl: photo.urls.regular,
+              imageAlt: slide.imageAlt || getAltText(photo),
+              imageAttribution: generateAttribution(photo),
+            };
+          }
+        }
+        return slide;
+      }));
+
+      // Create presentation
+      const { presentationId, url } = await createPresentation(user, title);
+
+      // Add slides to presentation
+      await addSlidesToPresentation(user, presentationId, slidesWithImages);
+
+      res.json({ 
+        presentationId, 
+        url,
+        message: "Google Slides presentation created successfully!" 
+      });
+    } catch (error: any) {
+      console.error("Create Google Slides presentation error:", error);
+      
+      if (error.message?.includes('not connected their Google account')) {
+        return res.status(403).json({ 
+          message: "Please sign in with Google to create presentations. Go to Settings and connect your Google account." 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: error.message || "Failed to create Google Slides presentation. Please try again." 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

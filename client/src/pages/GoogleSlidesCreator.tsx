@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink } from "lucide-react";
 import type { GoogleSlidesData, SlideContent, H5pContent } from "@shared/schema";
 
 export default function GoogleSlidesCreator() {
@@ -29,6 +29,7 @@ export default function GoogleSlidesCreator() {
   const [generatedDate, setGeneratedDate] = useState("");
   const [isPublished, setIsPublished] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [presentationUrl, setPresentationUrl] = useState<string>("");
 
   const { data: content, isLoading: isLoadingContent } = useQuery<H5pContent>({
     queryKey: [`/api/content/${contentId}`],
@@ -47,6 +48,7 @@ export default function GoogleSlidesCreator() {
       setSlides(data.slides || []);
       setGeneratedDate(data.generatedDate);
       setIsPublished(content.isPublished);
+      setPresentationUrl(data.presentationUrl || "");
     }
   }, [content]);
 
@@ -110,6 +112,51 @@ export default function GoogleSlidesCreator() {
       toast({
         title: "Generation failed",
         description: error.message || "Failed to generate slides. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createPresentationMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/google-slides/create-presentation", {
+        title,
+        slides,
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setPresentationUrl(data.url);
+      toast({ 
+        title: "Created in Google Slides!", 
+        description: "Your presentation is ready. Click 'Open in Google Slides' to view it." 
+      });
+      
+      // Save the presentation URL to content
+      if (isEditing && contentId) {
+        const updatedData: GoogleSlidesData = {
+          topic,
+          gradeLevel,
+          ageRange,
+          learningOutcomes: learningOutcomes.filter(o => o.trim()),
+          slides,
+          generatedDate: generatedDate || new Date().toISOString(),
+          presentationId: data.presentationId,
+          presentationUrl: data.url,
+        };
+        
+        apiRequest("PUT", `/api/content/${contentId}`, {
+          title,
+          description,
+          data: updatedData,
+          isPublished,
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to create presentation",
+        description: error.message || "Please make sure you're signed in with Google and try again.",
         variant: "destructive",
       });
     },
@@ -376,10 +423,41 @@ export default function GoogleSlidesCreator() {
         <div>
           <Card>
             <CardHeader>
-              <CardTitle>
-                Generated Slides
-                {slides.length > 0 && ` (${slides.length} slides)`}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>
+                  Generated Slides
+                  {slides.length > 0 && ` (${slides.length} slides)`}
+                </CardTitle>
+                {slides.length > 0 && (
+                  <div className="flex gap-2">
+                    {presentationUrl ? (
+                      <Button
+                        onClick={() => window.open(presentationUrl, '_blank')}
+                        size="sm"
+                        variant="outline"
+                        data-testid="button-open-slides"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        Open in Google Slides
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => createPresentationMutation.mutate()}
+                        size="sm"
+                        disabled={createPresentationMutation.isPending}
+                        data-testid="button-create-slides"
+                      >
+                        {createPresentationMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        ) : (
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                        )}
+                        Create in Google Slides
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {slides.length === 0 ? (
