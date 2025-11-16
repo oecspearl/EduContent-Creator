@@ -12,6 +12,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        // Use relative path - Passport.js will automatically derive the full URL from the request
+        // This ensures it works across localhost, workspace URLs, and custom domains
         callbackURL: '/api/auth/google/callback',
       },
       async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: VerifyCallback) => {

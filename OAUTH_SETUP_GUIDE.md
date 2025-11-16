@@ -2,6 +2,18 @@
 
 This guide explains how to configure Google and Microsoft authentication for your OECS Content Creator application.
 
+## How Redirect URIs Are Determined
+
+The application automatically determines the correct redirect URI based on the environment:
+
+**Domain Precedence Order:**
+1. **Custom Domain** (if `REPLIT_DOMAINS` is set): `https://h5pcreator.org`
+2. **Workspace URL** (if deployed on Replit): `https://workspace.username.repl.co`
+3. **Production Fallback**: `https://h5pcreator.org`
+4. **Development**: `http://localhost:5000`
+
+This means you may need to register multiple redirect URIs in Google/Azure depending on your deployment setup.
+
 ## Required Secrets
 
 Add these secrets to your Replit project (Tools → Secrets):
@@ -43,11 +55,15 @@ Add these secrets to your Replit project (Tools → Secrets):
 5. **Authorized JavaScript origins**:
    - Development: `http://localhost:5000`
    - Production: `https://h5pcreator.org`
-6. **Authorized redirect URIs**:
+   - Workspace (if testing): `https://workspace.yourusername.repl.co`
+6. **Authorized redirect URIs** (add all that apply):
    - Development: `http://localhost:5000/api/auth/google/callback`
-   - Production: `https://h5pcreator.org/api/auth/google/callback`
+   - Custom domain: `https://h5pcreator.org/api/auth/google/callback`
+   - Workspace (optional): `https://workspace.yourusername.repl.co/api/auth/google/callback`
 7. Click **Create**
 8. Copy the **Client ID** and **Client Secret**
+
+**Note**: Google OAuth automatically uses the request host, so all configured redirect URIs will work. The app will redirect to whichever domain you're currently accessing.
 
 ### 4. Add Secrets to Replit
 
@@ -93,11 +109,14 @@ Add these secrets to your Replit project (Tools → Secrets):
 ### 4. Configure Platform Settings
 
 1. Go to **Authentication**
-2. Under **Platform configurations** → **Web**, add:
-   - Redirect URI for development: `http://localhost:5000/api/auth/microsoft/callback`
-   - Redirect URI for production: `https://h5pcreator.org/api/auth/microsoft/callback`
+2. Under **Platform configurations** → **Web**, add all relevant redirect URIs:
+   - Development: `http://localhost:5000/api/auth/microsoft/callback`
+   - Custom domain: `https://h5pcreator.org/api/auth/microsoft/callback`
+   - Workspace (optional): `https://workspace.yourusername.repl.co/api/auth/microsoft/callback`
 3. Under **Implicit grant and hybrid flows**, leave all unchecked (we use authorization code flow)
 4. Click **Save**
+
+**Note**: The app will automatically use the correct redirect URI based on the domain precedence order (see top of this guide).
 
 ### 5. Add API Permissions
 
