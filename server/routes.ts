@@ -1,6 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { Pool } from "pg";
+import crypto from "crypto";
 import { storage } from "./storage";
 import { 
   aiGenerationSchema, 
@@ -32,26 +35,98 @@ declare module "express-session" {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Validate required environment variables
+  if (!process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET environment variable is required");
+  }
+
   // Trust proxy for deployed apps (Replit uses reverse proxy)
   // This is critical for secure cookies to work properly
   if (process.env.NODE_ENV === "production") {
     app.set("trust proxy", 1);
   }
 
-  // Session middleware
-  app.use(
-    session({
-      secret: process.env.SESSION_SECRET || "educreat-secret-key-change-in-production",
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: process.env.NODE_ENV === "production",
-        httpOnly: true,
-        sameSite: "lax", // Use 'lax' since frontend and backend are same-origin
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+  // Configure session store (PostgreSQL or memory fallback)
+  let sessionStore: session.Store | undefined;
+  
+  if (process.env.DATABASE_URL) {
+    // Use PostgreSQL session store (recommended for production)
+    const PgSession = connectPgSimple(session);
+    const pgPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false,
       },
-    })
-  )
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000, // Increased timeout for Neon cold starts
+    });
+    
+    // Handle pool errors
+    pgPool.on('error', (err) => {
+      console.error('Unexpected error on idle PostgreSQL client', err);
+    });
+    
+    // Test database connection at startup
+    try {
+      await pgPool.query('SELECT NOW()');
+      console.log('✓ PostgreSQL connection verified');
+      
+      sessionStore = new PgSession({
+        pool: pgPool,
+        createTableIfMissing: true,
+        tableName: "session",
+        pruneSessionInterval: 900, // Clean up old sessions every 15 minutes
+        errorLog: (error) => {
+          console.error('Session store error:', error);
+        },
+      });
+      console.log('✓ Using PostgreSQL session store');
+    } catch (error) {
+      console.error('⚠ Failed to connect to PostgreSQL:', error);
+      console.warn('⚠ Falling back to memory session store (not recommended for production)');
+      sessionStore = undefined; // Will use default memory store
+    }
+  } else {
+    console.warn('⚠ DATABASE_URL not set. Using memory session store.');
+    console.warn('⚠ For production, set DATABASE_URL to use persistent session storage.');
+    sessionStore = undefined; // Will use default memory store
+  }
+  
+  // Check OAuth provider availability
+  const isGoogleOAuthAvailable = !!(
+    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+  );
+  const isMicrosoftOAuthAvailable = !!(
+    process.env.MICROSOFT_CLIENT_ID && 
+    process.env.MICROSOFT_CLIENT_SECRET && 
+    process.env.MICROSOFT_TENANT_ID
+  );
+  
+  console.log('OAuth providers:', {
+    google: isGoogleOAuthAvailable,
+    microsoft: isMicrosoftOAuthAvailable,
+  });
+
+  // Session middleware
+  const sessionConfig: session.SessionOptions = {
+    secret: process.env.SESSION_SECRET!,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax", // Use 'lax' since frontend and backend are same-origin
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    },
+  };
+  
+  // Add PostgreSQL store if available
+  if (sessionStore) {
+    sessionConfig.store = sessionStore;
+  }
+  
+  app.use(session(sessionConfig));
 
   // Initialize Passport
   app.use(passportConfig.initialize());
@@ -151,27 +226,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Google OAuth routes
-  app.get("/api/auth/google",
-    passportConfig.authenticate("google", { scope: ["profile", "email"] })
-  );
-
-  app.get("/api/auth/google/callback",
-    passportConfig.authenticate("google", { failureRedirect: "/login" }),
-    (req: any, res) => {
-      // Set session userId
-      req.session.userId = req.user.id;
-      req.session.save(() => {
-        res.redirect("/dashboard");
+  app.get("/api/auth/google", (req, res, next) => {
+    if (!isGoogleOAuthAvailable) {
+      return res.status(503).json({ 
+        message: "Google authentication is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET." 
       });
     }
-  );
+    passportConfig.authenticate("google", { scope: ["profile", "email"] })(req, res, next);
+  });
+
+  app.get("/api/auth/google/callback", (req, res, next) => {
+    if (!isGoogleOAuthAvailable) {
+      return res.redirect("/login?error=google_not_configured");
+    }
+    passportConfig.authenticate("google", { failureRedirect: "/login" })(req, res, next);
+  }, (req: any, res) => {
+    // Set session userId
+    req.session.userId = req.user.id;
+    req.session.save(() => {
+      res.redirect("/dashboard");
+    });
+  });
 
   // Microsoft OAuth routes
   app.get("/api/auth/microsoft", async (req, res) => {
+    if (!isMicrosoftOAuthAvailable) {
+      return res.status(503).json({ 
+        message: "Microsoft authentication is not configured. Please set MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, and MICROSOFT_TENANT_ID." 
+      });
+    }
+    
     try {
       const msalClient = getMsalClient();
       if (!msalClient) {
-        return res.status(500).json({ message: "Microsoft authentication not configured" });
+        return res.status(503).json({ message: "Microsoft authentication not configured" });
       }
 
       const authCodeUrlParameters = {
@@ -188,6 +276,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/microsoft/callback", async (req: any, res) => {
+    if (!isMicrosoftOAuthAvailable) {
+      return res.redirect("/login?error=microsoft_not_configured");
+    }
+    
     try {
       const msalClient = getMsalClient();
       if (!msalClient) {
@@ -212,9 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Find or create user
       let user = await storage.getProfileByEmail(email);
       if (!user) {
-        // Create new Microsoft OAuth user
-        const bcrypt = await import("bcryptjs");
-        const crypto = await import("crypto");
+        // Create new Microsoft OAuth user with sentinel password
         const sentinelPassword = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
 
         user = await storage.createProfile({
