@@ -27,6 +27,8 @@ import {
   LogOut,
   GraduationCap,
   User,
+  Grid3x3,
+  List,
 } from "lucide-react";
 import type { H5pContent } from "@shared/schema";
 
@@ -62,6 +64,7 @@ export default function SharedResourcesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const { data: contents = [], isLoading } = useQuery<H5pContent[]>({
     queryKey: [
