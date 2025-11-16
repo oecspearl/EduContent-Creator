@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle, Palette } from "lucide-react";
@@ -33,6 +34,7 @@ export default function GoogleSlidesCreator() {
   const [slides, setSlides] = useState<SlideContent[]>([]);
   const [generatedDate, setGeneratedDate] = useState("");
   const [isPublished, setIsPublished] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [presentationId, setPresentationId] = useState<string>("");
   const [presentationUrl, setPresentationUrl] = useState<string>("");
@@ -59,6 +61,7 @@ export default function GoogleSlidesCreator() {
       setSlides(data.slides || []);
       setGeneratedDate(data.generatedDate);
       setIsPublished(content.isPublished);
+      setIsPublic(content.isPublic || false);
       setPresentationId(data.presentationId || "");
       setPresentationUrl(data.presentationUrl || "");
       setColorScheme(data.colorScheme || "blue");
@@ -102,6 +105,7 @@ export default function GoogleSlidesCreator() {
           description,
           data,
           isPublished: params.publish,
+          isPublic,
         });
         return await response.json();
       } else {
@@ -111,6 +115,7 @@ export default function GoogleSlidesCreator() {
           type: "google-slides",
           data,
           isPublished: params.publish,
+          isPublic,
         });
         return await response.json();
       }
@@ -421,6 +426,20 @@ export default function GoogleSlidesCreator() {
                   placeholder="Brief description of this presentation"
                   rows={3}
                   data-testid="input-description"
+                />
+              </div>
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Allow other teachers to discover and use this Google Slides presentation on the Shared Resources page
+                  </p>
+                </div>
+                <Switch
+                  id="isPublic"
+                  checked={isPublic}
+                  onCheckedChange={setIsPublic}
+                  data-testid="switch-public"
                 />
               </div>
             </CardContent>

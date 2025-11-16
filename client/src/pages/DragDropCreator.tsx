@@ -30,6 +30,7 @@ export default function DragDropCreator() {
     allowRetry: true,
   });
   const [isPublished, setIsPublished] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -47,6 +48,7 @@ export default function DragDropCreator() {
       setZones(data.zones || []);
       setSettings(data.settings || settings);
       setIsPublished(content.isPublished);
+      setIsPublic(content.isPublic || false);
     }
   }, [content]);
 
@@ -56,12 +58,12 @@ export default function DragDropCreator() {
       
       if (isEditing) {
         const response = await apiRequest("PUT", `/api/content/${contentId}`, {
-          title, description, data, isPublished: publish,
+          title, description, data, isPublished: publish, isPublic,
         });
         return await response.json();
       } else {
         const response = await apiRequest("POST", "/api/content", {
-          title, description, type: "drag-drop", data, isPublished: publish,
+          title, description, type: "drag-drop", data, isPublished: publish, isPublic,
         });
         return await response.json();
       }
@@ -81,7 +83,7 @@ export default function DragDropCreator() {
       saveMutation.mutate(isPublished);
     }, 2000);
     return () => clearTimeout(timer);
-  }, [title, description, items, zones, settings]);
+  }, [title, description, items, zones, settings, isPublic]);
 
   const addZone = () => {
     setZones([...zones, {
@@ -172,6 +174,20 @@ export default function DragDropCreator() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Enter activity description"
                   data-testid="input-description"
+                />
+              </div>
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Allow other teachers to discover and use this drag & drop activity on the Shared Resources page
+                  </p>
+                </div>
+                <Switch
+                  id="isPublic"
+                  checked={isPublic}
+                  onCheckedChange={setIsPublic}
+                  data-testid="switch-public"
                 />
               </div>
             </CardContent>

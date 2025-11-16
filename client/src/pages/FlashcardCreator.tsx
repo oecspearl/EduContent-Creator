@@ -40,6 +40,7 @@ export default function FlashcardCreator() {
     autoFlipDelay: undefined as number | undefined,
   });
   const [isPublished, setIsPublished] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,6 +62,7 @@ export default function FlashcardCreator() {
         autoFlipDelay: flashcardData.settings?.autoFlipDelay ?? settings.autoFlipDelay,
       });
       setIsPublished(content.isPublished);
+      setIsPublic(content.isPublic || false);
     }
   }, [content]);
 
@@ -74,6 +76,7 @@ export default function FlashcardCreator() {
           description,
           data,
           isPublished: publish,
+          isPublic,
         });
         return await response.json();
       } else {
@@ -83,6 +86,7 @@ export default function FlashcardCreator() {
           type: "flashcard",
           data,
           isPublished: publish,
+          isPublic,
         });
         return await response.json();
       }
@@ -106,7 +110,7 @@ export default function FlashcardCreator() {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [title, description, cards, settings]);
+  }, [title, description, cards, settings, isPublic]);
 
   const addCard = () => {
     const newCard = {
@@ -222,6 +226,20 @@ export default function FlashcardCreator() {
                     onChange={(e) => setDescription(e.target.value)}
                     className="h-20 resize-none"
                     data-testid="textarea-description"
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Allow other teachers to discover and use this flashcard deck on the Shared Resources page
+                    </p>
+                  </div>
+                  <Switch
+                    id="isPublic"
+                    checked={isPublic}
+                    onCheckedChange={setIsPublic}
+                    data-testid="switch-public"
                   />
                 </div>
               </CardContent>

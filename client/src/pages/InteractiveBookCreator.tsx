@@ -31,6 +31,7 @@ export default function InteractiveBookCreator() {
     requireCompletion: false,
   });
   const [isPublished, setIsPublished] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showEmbedDialog, setShowEmbedDialog] = useState(false);
 
@@ -51,6 +52,7 @@ export default function InteractiveBookCreator() {
       setPages(data.pages || []);
       setSettings(data.settings || settings);
       setIsPublished(content.isPublished);
+      setIsPublic(content.isPublic || false);
     }
   }, [content]);
 
@@ -60,12 +62,12 @@ export default function InteractiveBookCreator() {
       
       if (isEditing) {
         const response = await apiRequest("PUT", `/api/content/${contentId}`, {
-          title, description, data, isPublished: publish,
+          title, description, data, isPublished: publish, isPublic,
         });
         return await response.json();
       } else {
         const response = await apiRequest("POST", "/api/content", {
-          title, description, type: "interactive-book", data, isPublished: publish,
+          title, description, type: "interactive-book", data, isPublished: publish, isPublic,
         });
         return await response.json();
       }
@@ -85,7 +87,7 @@ export default function InteractiveBookCreator() {
       saveMutation.mutate(isPublished);
     }, 2000);
     return () => clearTimeout(timer);
-  }, [title, description, pages, settings]);
+  }, [title, description, pages, settings, isPublic]);
 
   const addPage = () => {
     setPages([...pages, {
@@ -194,6 +196,20 @@ export default function InteractiveBookCreator() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Enter book description"
                   data-testid="input-description"
+                />
+              </div>
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Allow other teachers to discover and use this interactive book on the Shared Resources page
+                  </p>
+                </div>
+                <Switch
+                  id="isPublic"
+                  checked={isPublic}
+                  onCheckedChange={setIsPublic}
+                  data-testid="switch-public"
                 />
               </div>
             </CardContent>

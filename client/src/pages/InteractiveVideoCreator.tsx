@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -37,6 +38,7 @@ export default function InteractiveVideoCreator() {
   const [videoUrl, setVideoUrl] = useState("");
   const [hotspots, setHotspots] = useState<VideoHotspot[]>([]);
   const [isPublished, setIsPublished] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -57,6 +59,7 @@ export default function InteractiveVideoCreator() {
       setVideoUrl(videoData.videoUrl || "");
       setHotspots(videoData.hotspots || []);
       setIsPublished(content.isPublished);
+      setIsPublic(content.isPublic || false);
     }
   }, [content]);
 
@@ -70,6 +73,7 @@ export default function InteractiveVideoCreator() {
           description,
           data,
           isPublished: publish,
+          isPublic,
         });
         return await response.json();
       } else {
@@ -79,6 +83,7 @@ export default function InteractiveVideoCreator() {
           type: "interactive-video",
           data,
           isPublished: publish,
+          isPublic,
         });
         return await response.json();
       }
@@ -102,7 +107,7 @@ export default function InteractiveVideoCreator() {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [title, description, videoUrl, hotspots]);
+  }, [title, description, videoUrl, hotspots, isPublic]);
 
   const addHotspot = () => {
     const newHotspot: VideoHotspot = {
@@ -280,6 +285,20 @@ export default function InteractiveVideoCreator() {
                 <p className="text-xs text-muted-foreground">
                   Paste a YouTube video URL to add interactive hotspots
                 </p>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Allow other teachers to discover and use this interactive video on the Shared Resources page
+                  </p>
+                </div>
+                <Switch
+                  id="isPublic"
+                  checked={isPublic}
+                  onCheckedChange={setIsPublic}
+                  data-testid="switch-public"
+                />
               </div>
             </CardContent>
           </Card>

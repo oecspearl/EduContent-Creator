@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ArrowLeft, Search, Globe, ExternalLink, Play, Sparkles, X, CheckSquare, Square } from "lucide-react";
@@ -33,6 +34,7 @@ export default function VideoFinderCreator() {
   const [viewingInstructions, setViewingInstructions] = useState("");
   const [guidingQuestions, setGuidingQuestions] = useState<string[]>([]);
   const [isPublished, setIsPublished] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -59,6 +61,7 @@ export default function VideoFinderCreator() {
       setViewingInstructions(data.viewingInstructions || "");
       setGuidingQuestions(data.guidingQuestions || []);
       setIsPublished(content.isPublished);
+      setIsPublic(content.isPublic || false);
     }
   }, [content]);
 
@@ -86,6 +89,7 @@ export default function VideoFinderCreator() {
           description,
           data,
           isPublished: params.publish,
+          isPublic,
         });
         return await response.json();
       } else {
@@ -95,6 +99,7 @@ export default function VideoFinderCreator() {
           type: "video-finder",
           data,
           isPublished: params.publish,
+          isPublic,
         });
         return await response.json();
       }
@@ -376,6 +381,20 @@ export default function VideoFinderCreator() {
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Brief description of this video collection"
                     data-testid="input-description"
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Allow other teachers to discover and use this video collection on the Shared Resources page
+                    </p>
+                  </div>
+                  <Switch
+                    id="isPublic"
+                    checked={isPublic}
+                    onCheckedChange={setIsPublic}
+                    data-testid="switch-public"
                   />
                 </div>
               </CardContent>

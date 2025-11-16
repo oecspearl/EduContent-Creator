@@ -30,6 +30,7 @@ export default function MemoryGameCreator() {
     showMoves: true,
   });
   const [isPublished, setIsPublished] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -46,6 +47,7 @@ export default function MemoryGameCreator() {
       setCards(data.cards || []);
       setSettings(data.settings || settings);
       setIsPublished(content.isPublished);
+      setIsPublic(content.isPublic || false);
     }
   }, [content]);
 
@@ -55,12 +57,12 @@ export default function MemoryGameCreator() {
       
       if (isEditing) {
         const response = await apiRequest("PUT", `/api/content/${contentId}`, {
-          title, description, data, isPublished: publish,
+          title, description, data, isPublished: publish, isPublic,
         });
         return await response.json();
       } else {
         const response = await apiRequest("POST", "/api/content", {
-          title, description, type: "memory-game", data, isPublished: publish,
+          title, description, type: "memory-game", data, isPublished: publish, isPublic,
         });
         return await response.json();
       }
@@ -80,7 +82,7 @@ export default function MemoryGameCreator() {
       saveMutation.mutate(isPublished);
     }, 2000);
     return () => clearTimeout(timer);
-  }, [title, description, cards, settings]);
+  }, [title, description, cards, settings, isPublic]);
 
   const addPair = () => {
     const matchId = Date.now().toString();
@@ -170,6 +172,20 @@ export default function MemoryGameCreator() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Enter game description"
                   data-testid="input-description"
+                />
+              </div>
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Allow other teachers to discover and use this memory game on the Shared Resources page
+                  </p>
+                </div>
+                <Switch
+                  id="isPublic"
+                  checked={isPublic}
+                  onCheckedChange={setIsPublic}
+                  data-testid="switch-public"
                 />
               </div>
             </CardContent>

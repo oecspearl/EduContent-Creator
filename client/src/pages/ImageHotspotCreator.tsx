@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
@@ -33,6 +34,7 @@ export default function ImageHotspotCreator() {
   const [imageUrl, setImageUrl] = useState("");
   const [hotspots, setHotspots] = useState<ImageHotspot[]>([]);
   const [isPublished, setIsPublished] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -49,6 +51,7 @@ export default function ImageHotspotCreator() {
       setImageUrl(imageData.imageUrl || "");
       setHotspots(imageData.hotspots || []);
       setIsPublished(content.isPublished);
+      setIsPublic(content.isPublic || false);
     }
   }, [content]);
 
@@ -62,6 +65,7 @@ export default function ImageHotspotCreator() {
           description,
           data,
           isPublished: publish,
+          isPublic,
         });
         return await response.json();
       } else {
@@ -71,6 +75,7 @@ export default function ImageHotspotCreator() {
           type: "image-hotspot",
           data,
           isPublished: publish,
+          isPublic,
         });
         return await response.json();
       }
@@ -94,7 +99,7 @@ export default function ImageHotspotCreator() {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [title, description, imageUrl, hotspots]);
+  }, [title, description, imageUrl, hotspots, isPublic]);
 
   const addHotspot = () => {
     const newHotspot: ImageHotspot = {
@@ -217,6 +222,20 @@ export default function ImageHotspotCreator() {
                   <p className="text-xs text-muted-foreground">
                     Paste an image URL to add interactive hotspots
                   </p>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Allow other teachers to discover and use this image hotspot on the Shared Resources page
+                    </p>
+                  </div>
+                  <Switch
+                    id="isPublic"
+                    checked={isPublic}
+                    onCheckedChange={setIsPublic}
+                    data-testid="switch-public"
+                  />
                 </div>
               </CardContent>
             </Card>
