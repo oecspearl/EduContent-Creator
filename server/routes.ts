@@ -186,6 +186,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
+      // OAuth users have sentinel passwords and should not use password login
+      if (!profile.password) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
       const isValid = await bcrypt.compare(password, profile.password);
       if (!isValid) {
         return res.status(401).json({ message: "Invalid credentials" });
