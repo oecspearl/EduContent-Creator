@@ -52,10 +52,10 @@ const contentTypeLabels = {
 export default function SharedResourcesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [tagFilter, setTagFilter] = useState("");
+  const [tagFilter, setTagFilter] = useState("all");
 
   const { data: contents = [], isLoading } = useQuery<H5pContent[]>({
-    queryKey: ["/api/content/public", { search: searchQuery, type: typeFilter === "all" ? undefined : typeFilter, tags: tagFilter }],
+    queryKey: ["/api/content/public", { search: searchQuery, type: typeFilter === "all" ? undefined : typeFilter, tags: tagFilter === "all" ? undefined : tagFilter }],
   });
 
   // Get unique tags from all content
@@ -70,10 +70,10 @@ export default function SharedResourcesPage() {
   const clearFilters = () => {
     setSearchQuery("");
     setTypeFilter("all");
-    setTagFilter("");
+    setTagFilter("all");
   };
 
-  const hasActiveFilters = searchQuery || typeFilter !== "all" || tagFilter;
+  const hasActiveFilters = searchQuery || typeFilter !== "all" || tagFilter !== "all";
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -135,7 +135,7 @@ export default function SharedResourcesPage() {
                   <SelectValue placeholder="All Tags" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Tags</SelectItem>
+                  <SelectItem value="all">All Tags</SelectItem>
                   {allTags.map((tag) => (
                     <SelectItem key={tag} value={tag}>
                       {tag}
