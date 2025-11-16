@@ -15,11 +15,13 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         // Use relative path - Passport.js will automatically derive the full URL from the request
         // This ensures it works across localhost, workspace URLs, and custom domains
         callbackURL: '/api/auth/google/callback',
-        // Request Slides API access
+        // Request Slides API and Classroom API access
         scope: [
           'profile',
           'email',
           'https://www.googleapis.com/auth/presentations', // Google Slides API
+          'https://www.googleapis.com/auth/classroom.courses.readonly', // List Classroom courses
+          'https://www.googleapis.com/auth/classroom.coursework.students', // Create coursework/assignments
         ],
       } as any,
       async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: VerifyCallback) => {
