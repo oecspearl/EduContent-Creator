@@ -609,6 +609,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Copy public content to user's library
+  app.post("/api/content/:id/copy", requireAuth, async (req, res) => {
+    try {
+      const copiedContent = await storage.copyContent(req.params.id, req.session.userId!);
+      res.json(copiedContent);
+    } catch (error: any) {
+      console.error("Copy content error:", error);
+      if (error.message === "Content not found") {
+        return res.status(404).json({ message: error.message });
+      }
+      if (error.message === "Content must be published and public to be copied") {
+        return res.status(403).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to copy content" });
+    }
+  });
+
   // Public preview route
   app.get("/api/preview/:id", async (req, res) => {
     try {

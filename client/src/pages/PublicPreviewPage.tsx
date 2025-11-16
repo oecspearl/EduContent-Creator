@@ -1,8 +1,11 @@
-import { useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useParams, useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BookOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BookOpen, Copy } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, VideoFinderData, GoogleSlidesData } from "@shared/schema";
 import { QuizPlayer } from "@/components/players/QuizPlayer";
 import { FlashcardPlayer } from "@/components/players/FlashcardPlayer";
@@ -18,10 +21,36 @@ import GoogleSlidesPlayer from "@/components/players/GoogleSlidesPlayer";
 export default function PublicPreviewPage() {
   const params = useParams();
   const contentId = params.id;
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const { data: content, isLoading, error } = useQuery<H5pContent>({
     queryKey: ["/api/preview", contentId],
     retry: false,
+  });
+
+  const copyMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/content/${contentId}/copy`);
+      return (await res.json()) as H5pContent;
+    },
+    onSuccess: (copiedContent) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
+      toast({
+        title: "Content Copied!",
+        description: `"${copiedContent.title}" has been added to your content library.`,
+      });
+      setLocation("/dashboard");
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.message || "Failed to copy content. Please try again.";
+      toast({
+        title: "Copy Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
@@ -56,25 +85,37 @@ export default function PublicPreviewPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Skip to main content */}
-      <a href="#main-content" className="skip-to-content">
+      <a href="#main-content" className="skip-to-content" data-testid="link-skip-to-content">
         Skip to main content
       </a>
       
       {/* Header */}
       <div className="border-b bg-card" role="banner">
         <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-start gap-4">
-            <img 
-              src="/favicon.png" 
-              alt="OECS Content Creator Logo" 
-              className="h-12 w-12 rounded-lg flex-shrink-0"
-            />
-            <div>
-              <h1 className="text-2xl font-bold text-foreground mb-1">{content.title}</h1>
-              {content.description && (
-                <p className="text-muted-foreground">{content.description}</p>
-              )}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4 flex-1">
+              <img 
+                src="/favicon.png" 
+                alt="OECS Content Creator Logo" 
+                className="h-12 w-12 rounded-lg flex-shrink-0"
+                data-testid="img-logo"
+              />
+              <div>
+                <h1 className="text-2xl font-bold text-foreground mb-1" data-testid="text-content-title">{content.title}</h1>
+                {content.description && (
+                  <p className="text-muted-foreground" data-testid="text-content-description">{content.description}</p>
+                )}
+              </div>
             </div>
+            <Button 
+              onClick={() => copyMutation.mutate()}
+              disabled={copyMutation.isPending}
+              data-testid="button-copy-content"
+              className="flex-shrink-0"
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              {copyMutation.isPending ? "Copying..." : "Copy to My Content"}
+            </Button>
           </div>
         </div>
       </div>

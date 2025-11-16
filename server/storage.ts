@@ -27,6 +27,7 @@ export interface IStorage {
   getContentByUserId(userId: string): Promise<H5pContent[]>;
   getPublishedContent(id: string): Promise<H5pContent | undefined>;
   getPublicContent(): Promise<H5pContent[]>;
+  copyContent(contentId: string, userId: string): Promise<H5pContent>;
   
   // Share methods
   createShare(share: InsertContentShare): Promise<ContentShare>;
@@ -150,6 +151,38 @@ export class DbStorage implements IStorage {
       .orderBy(desc(h5pContent.createdAt));
     console.log(`[DEBUG] getPublicContent returned ${results.length} results`);
     return results;
+  }
+
+  async copyContent(contentId: string, userId: string): Promise<H5pContent> {
+    // Get the original content - only if it's published and public
+    const [original] = await db
+      .select()
+      .from(h5pContent)
+      .where(and(
+        eq(h5pContent.id, contentId),
+        eq(h5pContent.isPublished, true),
+        eq(h5pContent.isPublic, true)
+      ))
+      .limit(1);
+    
+    if (!original) {
+      throw new Error("Content not found or not available for copying");
+    }
+    
+    // Create a copy with new ownership and reset publication state
+    const copyData: InsertH5pContent = {
+      userId,
+      title: `Copy of ${original.title}`,
+      description: original.description,
+      type: original.type,
+      data: original.data as any,
+      tags: original.tags,
+      isPublished: false,
+      isPublic: false,
+    };
+    
+    const [copiedContent] = await db.insert(h5pContent).values(copyData).returning();
+    return copiedContent;
   }
 
   async createShare(insertShare: InsertContentShare): Promise<ContentShare> {
