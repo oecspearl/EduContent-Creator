@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle, Palette } from "lucide-react";
 import type { GoogleSlidesData, SlideContent, H5pContent } from "@shared/schema";
+import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
 export default function GoogleSlidesCreator() {
   const { id: contentId } = useParams();
@@ -366,6 +367,13 @@ export default function GoogleSlidesCreator() {
           </h1>
         </div>
         <div className="flex gap-2">
+          {contentId && presentationUrl && (
+            <ShareToClassroomDialog
+              contentTitle={title}
+              contentDescription={description}
+              materialLink={presentationUrl}
+            />
+          )}
           <Button
             onClick={handleSave}
             disabled={isSaving || !title || slides.length === 0}

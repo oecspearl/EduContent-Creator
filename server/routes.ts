@@ -256,7 +256,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.oauthReturnTo = returnTo;
     }
     
-    passportConfig.authenticate("google", { scope: ["profile", "email"] })(req, res, next);
+    // Request all required Google API scopes for Slides and Classroom integration
+    passportConfig.authenticate("google", {
+      scope: [
+        'profile',
+        'email',
+        'https://www.googleapis.com/auth/presentations', // Google Slides API
+        'https://www.googleapis.com/auth/classroom.courses.readonly', // List Classroom courses
+        'https://www.googleapis.com/auth/classroom.coursework.students', // Create assignments
+        'https://www.googleapis.com/auth/classroom.announcements', // Create announcements
+      ]
+    })(req, res, next);
   });
 
   app.get("/api/auth/google/callback", (req, res, next) => {

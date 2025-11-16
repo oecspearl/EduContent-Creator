@@ -59,6 +59,14 @@ The Google Slides content type enables teachers to create AI-generated education
 - **Keyboard navigation**: Support for arrow key navigation
 - **Accessible design**: Speaker notes visible to teachers, proper ARIA labels
 - **Google Slides link**: Opens the actual presentation in a new tab (when created)
+- **Google Classroom sharing**: One-click sharing to Google Classroom as assignment or announcement
+
+**Google Classroom Integration**:
+- **Share as Assignment**: Create coursework assignments with due dates and instructions
+- **Share as Announcement**: Post announcements with presentation links
+- **Course Selection**: Automatic listing of teacher's active Google Classroom courses
+- **Direct Integration**: Presentations shared directly from creator or player views
+- **OAuth Scopes**: Requires Google Classroom API permissions (courses.readonly, coursework.students)
 
 **Pedagogical Approach**:
 - Age-appropriate language and examples
@@ -73,6 +81,7 @@ The Google Slides content type enables teachers to create AI-generated education
 *   **AI Integration**: OpenAI API (GPT-5 model) for content generation.
 *   **OAuth Providers**: Google OAuth 2.0 (via Passport.js) and Microsoft OAuth 2.0 (via @azure/msal-node) for user authentication.
 *   **Google Slides API**: Google Slides API (via googleapis npm package) for creating actual presentations.
+*   **Google Classroom API**: Google Classroom API (via googleapis npm package) for sharing presentations to courses.
 *   **Unsplash API**: Unsplash API for fetching educational stock photos for presentations.
 *   **Database Service**: Neon PostgreSQL serverless database.
 *   **Font Delivery**: Google Fonts CDN for Inter and JetBrains Mono.
@@ -97,5 +106,9 @@ The application supports Google and Microsoft OAuth authentication. See `OAUTH_S
 - Secure sentinel passwords for OAuth-only accounts
 - Production-ready session persistence with PostgreSQL
 - Graceful fallback to memory sessions in development
-- **Google OAuth token storage**: Access tokens and refresh tokens stored for Google Slides API access
-- **OAuth scope management**: Requests Google Slides API scope (https://www.googleapis.com/auth/presentations) for presentation creation
+- **Google OAuth token storage**: Access tokens and refresh tokens stored for Google Slides API and Classroom API access
+- **OAuth scope management**: Requests multiple Google API scopes:
+  - `https://www.googleapis.com/auth/presentations` - Google Slides API for presentation creation
+  - `https://www.googleapis.com/auth/classroom.courses.readonly` - List teacher's Classroom courses
+  - `https://www.googleapis.com/auth/classroom.coursework.students` - Create assignments
+  - `https://www.googleapis.com/auth/classroom.announcements` - Create announcements

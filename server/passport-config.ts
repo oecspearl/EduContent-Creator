@@ -22,6 +22,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           'https://www.googleapis.com/auth/presentations', // Google Slides API
           'https://www.googleapis.com/auth/classroom.courses.readonly', // List Classroom courses
           'https://www.googleapis.com/auth/classroom.coursework.students', // Create coursework/assignments
+          'https://www.googleapis.com/auth/classroom.announcements', // Create announcements
         ],
       } as any,
       async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: VerifyCallback) => {

@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, LayoutGrid, Presentation, ExternalLink } from "lucide-react";
 import type { GoogleSlidesData, SlideContent } from "@shared/schema";
+import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
 interface GoogleSlidesPlayerProps {
   data: GoogleSlidesData;
@@ -140,15 +141,22 @@ export default function GoogleSlidesPlayer({ data }: GoogleSlidesPlayerProps) {
           <h3 className="text-lg font-semibold">All Slides ({data.slides.length})</h3>
           <div className="flex gap-2">
             {data.presentationUrl && (
-              <Button
-                onClick={() => window.open(data.presentationUrl, '_blank')}
-                variant="outline"
-                size="sm"
-                data-testid="button-open-slides"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open in Google Slides
-              </Button>
+              <>
+                <ShareToClassroomDialog
+                  contentTitle={data.topic}
+                  contentDescription={`Interactive presentation about ${data.topic}`}
+                  materialLink={data.presentationUrl}
+                />
+                <Button
+                  onClick={() => window.open(data.presentationUrl, '_blank')}
+                  variant="outline"
+                  size="sm"
+                  data-testid="button-open-slides"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open in Google Slides
+                </Button>
+              </>
             )}
             <Button
               onClick={() => setViewMode("presentation")}
@@ -206,15 +214,22 @@ export default function GoogleSlidesPlayer({ data }: GoogleSlidesPlayerProps) {
         </div>
         <div className="flex gap-2">
           {data.presentationUrl && (
-            <Button
-              onClick={() => window.open(data.presentationUrl, '_blank')}
-              variant="outline"
-              size="sm"
-              data-testid="button-open-slides"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Open in Google Slides
-            </Button>
+            <>
+              <ShareToClassroomDialog
+                contentTitle={data.topic}
+                contentDescription={`Interactive presentation about ${data.topic}`}
+                materialLink={data.presentationUrl}
+              />
+              <Button
+                onClick={() => window.open(data.presentationUrl, '_blank')}
+                variant="outline"
+                size="sm"
+                data-testid="button-open-slides"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open in Google Slides
+              </Button>
+            </>
           )}
           <Button
             onClick={() => setViewMode("grid")}
