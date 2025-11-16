@@ -20,7 +20,9 @@ import {
   Sparkles,
   Share2,
   Eye,
-  ArrowLeft
+  ArrowLeft,
+  Presentation,
+  GraduationCap
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -115,7 +117,7 @@ export default function HelpPage() {
               <div>
                 <h4 className="font-semibold text-foreground mb-1">Choose a Content Type</h4>
                 <p className="text-sm text-muted-foreground">
-                  Select from nine interactive content types on your dashboard: Quiz, Flashcard, Interactive Video, Image Hotspot, Drag & Drop, Fill in the Blanks, Memory Game, Interactive Book, or Video Finder.
+                  Select from ten interactive content types on your dashboard: Quiz, Flashcard, Interactive Video, Image Hotspot, Drag & Drop, Fill in the Blanks, Memory Game, Interactive Book, Video Finder, or Google Slides.
                 </p>
               </div>
             </div>
@@ -383,6 +385,43 @@ export default function HelpPage() {
                 </ul>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 rounded-lg flex items-center justify-center">
+                    <Presentation className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <CardTitle>Google Slides</CardTitle>
+                    <CardDescription>AI-generated educational presentations</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Create professional educational presentations powered by AI. Specify your topic, grade level, and learning outcomes, and the AI generates a complete slide deck with real educational images from Unsplash. Export directly to Google Slides for editing and presenting.
+                </p>
+                <p className="text-sm font-semibold text-foreground mb-2">Features:</p>
+                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                  <li>AI-generated pedagogically sound content following Universal Design for Learning (UDL)</li>
+                  <li>Real educational images automatically sourced from Unsplash</li>
+                  <li>Speaker notes with teaching tips and pedagogical guidance</li>
+                  <li>Guiding questions (recall to analysis to application levels)</li>
+                  <li>Reflection questions for deeper thinking</li>
+                  <li>One-click export to create actual Google Slides presentations</li>
+                  <li>Full editing capability in Google Slides</li>
+                </ul>
+                <p className="text-sm font-semibold text-foreground mt-3 mb-2">Best Practices:</p>
+                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                  <li>Provide clear learning outcomes for better AI results</li>
+                  <li>Specify accurate grade level and age range</li>
+                  <li>Review and customize AI-generated content before sharing</li>
+                  <li>Use speaker notes as a teaching guide</li>
+                  <li>Edit in Google Slides for advanced customization</li>
+                </ul>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
@@ -488,6 +527,65 @@ export default function HelpPage() {
                   <p className="text-sm text-muted-foreground">
                     Click the "Preview" button from the dashboard or during editing to see how students will experience your content.
                   </p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="classroom">
+              <AccordionTrigger>
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-primary" />
+                  <span>Google Classroom Integration</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  <p className="text-sm text-muted-foreground">
+                    Share any published content directly to your Google Classroom courses as assignments or announcements. This feature works with all 10 content types.
+                  </p>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">How to Share to Google Classroom:</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>Sign in with your Google account (required for Classroom access)</li>
+                      <li>Publish your content using the "Published" toggle</li>
+                      <li>Click the "Share to Classroom" button (appears in creator toolbar and preview page)</li>
+                      <li>Select whether to share as an Assignment or Announcement</li>
+                      <li>Choose the course from your list of active Google Classroom courses</li>
+                      <li>For assignments: optionally set a due date, time, and point value</li>
+                      <li>Click "Share" to post to Google Classroom</li>
+                    </ol>
+                  </div>
+                  <div className="bg-accent/50 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-foreground mb-2">Supported Content Types:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>✓ Quizzes</li>
+                      <li>✓ Flashcards</li>
+                      <li>✓ Interactive Videos</li>
+                      <li>✓ Image Hotspots</li>
+                      <li>✓ Drag & Drop Activities</li>
+                      <li>✓ Fill in the Blanks</li>
+                      <li>✓ Memory Games</li>
+                      <li>✓ Interactive Books</li>
+                      <li>✓ Video Finder Collections</li>
+                      <li>✓ Google Slides Presentations</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Requirements:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>Must sign in with a Google account that has access to Google Classroom</li>
+                      <li>Google Classroom API must be enabled in your Google Cloud Console</li>
+                      <li>Content must be published before sharing</li>
+                      <li>You must be the teacher of the course you're sharing to</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Share Locations:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li><strong>Creator Pages:</strong> Button appears in the toolbar when content is published</li>
+                      <li><strong>Preview Pages:</strong> Button appears in the header for all published content</li>
+                    </ul>
+                  </div>
                 </div>
               </AccordionContent>
             </AccordionItem>
