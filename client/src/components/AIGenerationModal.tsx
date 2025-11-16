@@ -145,13 +145,21 @@ export function AIGenerationModal({ open, onOpenChange, contentType, onGenerated
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="gradeLevel">Grade Level (Optional)</Label>
-              <Input
-                id="gradeLevel"
-                placeholder="e.g., 6th Grade, High School"
-                value={formData.gradeLevel}
-                onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
-                data-testid="input-ai-grade"
-              />
+              <Select value={formData.gradeLevel} onValueChange={(value) => setFormData({ ...formData, gradeLevel: value })}>
+                <SelectTrigger id="gradeLevel" data-testid="select-ai-grade">
+                  <SelectValue placeholder="Select grade level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Not specified</SelectItem>
+                  <SelectItem value="Pre-K">Pre-K</SelectItem>
+                  <SelectItem value="Kindergarten">Kindergarten</SelectItem>
+                  <SelectItem value="K-2">K-2 (Grades K-2)</SelectItem>
+                  <SelectItem value="3-5">3-5 (Grades 3-5)</SelectItem>
+                  <SelectItem value="6-8">6-8 (Grades 6-8)</SelectItem>
+                  <SelectItem value="9-12">9-12 (Grades 9-12)</SelectItem>
+                  <SelectItem value="Higher Education">Higher Education</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

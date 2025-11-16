@@ -469,13 +469,20 @@ export default function GoogleSlidesCreator() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="gradeLevel">Grade Level *</Label>
-                  <Input
-                    id="gradeLevel"
-                    value={gradeLevel}
-                    onChange={(e) => setGradeLevel(e.target.value)}
-                    placeholder="e.g., 5"
-                    data-testid="input-grade"
-                  />
+                  <Select value={gradeLevel} onValueChange={setGradeLevel}>
+                    <SelectTrigger id="gradeLevel" data-testid="select-grade">
+                      <SelectValue placeholder="Select grade level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pre-K">Pre-K</SelectItem>
+                      <SelectItem value="Kindergarten">Kindergarten</SelectItem>
+                      <SelectItem value="K-2">K-2 (Grades K-2)</SelectItem>
+                      <SelectItem value="3-5">3-5 (Grades 3-5)</SelectItem>
+                      <SelectItem value="6-8">6-8 (Grades 6-8)</SelectItem>
+                      <SelectItem value="9-12">9-12 (Grades 9-12)</SelectItem>
+                      <SelectItem value="Higher Education">Higher Education</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="ageRange">Age Range *</Label>
