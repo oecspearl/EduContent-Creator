@@ -134,9 +134,11 @@ export default function Dashboard() {
       <header className="border-b bg-card" role="banner">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-primary rounded-lg flex items-center justify-center">
-              <BookOpen className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <img 
+              src="/favicon.png" 
+              alt="OECS Content Creator Logo" 
+              className="h-10 w-10 rounded-lg"
+            />
             <div>
               <h1 className="text-xl font-bold text-foreground">OECS Content Creator</h1>
             </div>

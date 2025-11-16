@@ -58,9 +58,11 @@ export default function LandingPage() {
           <div className="flex h-16 items-center justify-between gap-4">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-primary-foreground" />
-              </div>
+              <img 
+                src="/favicon.png" 
+                alt="OECS Content Creator Logo" 
+                className="h-9 w-9 rounded-lg"
+              />
               <div className="hidden sm:block">
                 <h1 className="font-bold text-lg text-foreground">OECS Content Creator</h1>
                 <p className="text-xs text-muted-foreground">Create. Engage. Educate.</p>

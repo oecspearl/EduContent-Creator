@@ -62,9 +62,11 @@ export default function HelpPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-primary rounded-lg flex items-center justify-center">
-                <BookOpen className="h-6 w-6 text-primary-foreground" />
-              </div>
+              <img 
+                src="/favicon.png" 
+                alt="OECS Content Creator Logo" 
+                className="h-10 w-10 rounded-lg"
+              />
               <div>
                 <h1 className="text-xl font-bold text-foreground">OECS Content Creator</h1>
               </div>
