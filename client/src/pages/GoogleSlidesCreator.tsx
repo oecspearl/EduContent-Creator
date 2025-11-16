@@ -61,6 +61,19 @@ export default function GoogleSlidesCreator() {
     }
   }, [content]);
 
+  // Handle return from Google authentication
+  useEffect(() => {
+    const returnUrl = localStorage.getItem('googleAuthReturnUrl');
+    if (returnUrl && user?.googleAccessToken) {
+      // User just authenticated with Google, show success message
+      localStorage.removeItem('googleAuthReturnUrl');
+      toast({
+        title: "Google Account Connected!",
+        description: "You can now create Google Slides presentations. Click 'Create in Google Slides' to continue.",
+      });
+    }
+  }, [user, toast]);
+
   const saveMutation = useMutation({
     mutationFn: async (params: { publish: boolean }) => {
       const data: GoogleSlidesData = {
@@ -177,15 +190,21 @@ export default function GoogleSlidesCreator() {
     onError: (error: any) => {
       const errorMessage = error.message || "An error occurred";
       
-      if (errorMessage.includes("Google") || errorMessage.includes("OAuth")) {
+      if (errorMessage.includes("Google") || errorMessage.includes("OAuth") || errorMessage.includes("connect your account")) {
+        // Auto-redirect to Google authentication
         toast({
-          title: "Google Account Required",
-          description: "Please connect your Google account first. Click the 'Connect Google Account' button or sign out and sign in with Google.",
-          variant: "destructive",
+          title: "Google Authentication Required",
+          description: "Redirecting to Google sign-in...",
         });
         
-        // Force refresh user data
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        // Store current location to return after auth
+        const returnUrl = window.location.pathname + window.location.search;
+        localStorage.setItem('googleAuthReturnUrl', returnUrl);
+        
+        // Redirect to Google OAuth
+        setTimeout(() => {
+          window.location.href = "/api/auth/google";
+        }, 1500);
       } else {
         toast({
           title: "Failed to create presentation",

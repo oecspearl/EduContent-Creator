@@ -260,7 +260,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Set session userId
     req.session.userId = req.user.id;
     req.session.save(() => {
-      res.redirect("/dashboard");
+      // Redirect to stored return URL or dashboard
+      res.redirect("/dashboard?googleAuthSuccess=true");
     });
   });
 
