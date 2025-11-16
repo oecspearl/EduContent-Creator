@@ -401,7 +401,13 @@ Pedagogical Guidelines:
 - Questions should range from recall to analysis to application
 - Content should be culturally relevant and inclusive
 
-For image slides, suggest relevant, educational images and provide detailed alt text.
+IMPORTANT - Image Requirements:
+- AT LEAST 30-40% of slides should include relevant educational images
+- For ANY slide that would benefit from a visual (title, content, or image type), include an imageUrl
+- The imageUrl should be a short, specific search query (2-4 words) to find a relevant stock photo
+- Examples of good image queries: "students learning science", "mathematics geometric shapes", "rainforest ecosystem"
+- Always include detailed imageAlt text for accessibility
+- Images should enhance understanding and engagement
 
 Respond in JSON format:
 {
@@ -412,7 +418,7 @@ Respond in JSON format:
       "title": "slide title",
       "content": "main text content (optional)",
       "bulletPoints": ["point 1", "point 2"], // for content slides
-      "imageUrl": "suggested-image-description", // for image slides
+      "imageUrl": "concise search query for stock photo", // INCLUDE FOR MOST SLIDES - short query like "happy students learning"
       "imageAlt": "detailed accessibility description",
       "questions": ["question 1", "question 2"], // for question slides
       "notes": "speaker notes with pedagogical guidance"

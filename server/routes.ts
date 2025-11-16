@@ -964,6 +964,27 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   });
 
+  // Fetch image from Unsplash for a given query
+  app.post("/api/unsplash/search", requireAuth, async (req, res) => {
+    try {
+      const { query, count = 1 } = req.body;
+      
+      if (!query) {
+        return res.status(400).json({ message: "Query is required" });
+      }
+
+      const { searchPhotos } = await import('./unsplash');
+      const photos = await searchPhotos(query, count);
+      
+      res.json({ photos });
+    } catch (error: any) {
+      console.error("Unsplash search error:", error);
+      res.status(500).json({ 
+        message: error.message || "Failed to search for images" 
+      });
+    }
+  });
+
   // Create actual Google Slides presentation from generated content
   app.post("/api/google-slides/create-presentation", requireAuth, async (req, res) => {
     try {
