@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen } from "lucide-react";
-import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData } from "@shared/schema";
+import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, VideoFinderData } from "@shared/schema";
 import { QuizPlayer } from "@/components/players/QuizPlayer";
 import { FlashcardPlayer } from "@/components/players/FlashcardPlayer";
 import { VideoPlayer } from "@/components/players/VideoPlayer";
@@ -12,6 +12,7 @@ import { DragDropPlayer } from "@/components/players/DragDropPlayer";
 import { FillBlanksPlayer } from "@/components/players/FillBlanksPlayer";
 import { MemoryGamePlayer } from "@/components/players/MemoryGamePlayer";
 import { InteractiveBookPlayer } from "@/components/players/InteractiveBookPlayer";
+import { VideoFinderPlayer } from "@/components/players/VideoFinderPlayer";
 
 export default function PublicPreviewPage() {
   const params = useParams();
@@ -85,6 +86,7 @@ export default function PublicPreviewPage() {
         {content.type === "fill-blanks" && <FillBlanksPlayer data={content.data as FillInBlanksData} contentId={content.id} />}
         {content.type === "memory-game" && <MemoryGamePlayer data={content.data as MemoryGameData} contentId={content.id} />}
         {content.type === "interactive-book" && <InteractiveBookPlayer data={content.data as InteractiveBookData} contentId={content.id} />}
+        {content.type === "video-finder" && <VideoFinderPlayer data={content.data as VideoFinderData} />}
       </main>
 
       {/* Footer */}
