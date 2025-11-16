@@ -444,9 +444,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/content/public", requireAuth, async (req, res) => {
     try {
       const { search, type, tags } = req.query;
-      let contents = await storage.getPublicContent();
+      console.log(`[DEBUG] Query params:`, { search, type, tags });
       
+      let contents = await storage.getPublicContent();
       console.log(`[DEBUG] Public content query returned ${contents.length} items`);
+      console.log(`[DEBUG] First item:`, contents[0] ? JSON.stringify(contents[0]) : 'none');
       
       // Apply search filter (title or description)
       if (search && typeof search === 'string') {
@@ -455,11 +457,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           c.title.toLowerCase().includes(searchLower) || 
           (c.description && c.description.toLowerCase().includes(searchLower))
         );
+        console.log(`[DEBUG] After search filter: ${contents.length} items`);
       }
       
       // Apply content type filter
       if (type && typeof type === 'string') {
         contents = contents.filter(c => c.type === type);
+        console.log(`[DEBUG] After type filter: ${contents.length} items`);
       }
       
       // Apply tags filter (comma-separated)
@@ -468,7 +472,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         contents = contents.filter(c => 
           c.tags && c.tags.some(tag => tagList.includes(tag.toLowerCase()))
         );
+        console.log(`[DEBUG] After tags filter: ${contents.length} items`);
       }
+      
+      console.log(`[DEBUG] Final response: ${contents.length} items`);
+      console.log(`[DEBUG] Response data:`, JSON.stringify(contents));
       
       // Prevent caching so updates are immediately visible
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
