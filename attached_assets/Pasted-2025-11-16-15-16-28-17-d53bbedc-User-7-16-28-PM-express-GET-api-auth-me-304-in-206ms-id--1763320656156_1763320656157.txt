@@ -1,0 +1,105 @@
+2025-11-16 15:16:28.17
+d53bbedc
+User
+7:16:28 PM [express] GET /api/auth/me 304 in 206ms :: {"id":"112d809b-95df-4152-9929-39b09a66f47e","…
+2025-11-16 15:16:28.47
+d53bbedc
+User
+7:16:28 PM [express] GET /api/content 304 in 137ms :: [{"id":"5c117215-13b1-4786-980c-74ea61297f65",…
+2025-11-16 15:16:30.00
+d53bbedc
+User
+[DEBUG] Query params: { search: '', type: 'undefined', tags: 'undefined' }
+2025-11-16 15:16:30.00
+d53bbedc
+User
+[DEBUG] getPublicContent called
+2025-11-16 15:16:30.04
+d53bbedc
+User
+[DEBUG] Response data: []
+2025-11-16 15:16:30.04
+d53bbedc
+User
+[DEBUG] First item: {"id":"315a4c35-5e3f-48d1-afa0-aa1686d2531e","title":"Push and Pull Forces","description":"","type":"google-slides","data":{"topic":"Push and Pull","slides":[{"id":"slide-1-title","type":"title","notes":"Hook: Gently push the classroom door and then pull a drawer (or backpack zipper). Ask: “What did I just do to make these move?” Invite students to gesture ‘push’ (hands forward) and ‘pull’ (hands toward body). UDL tips: Allow students to share in pairs or with quick sketches; provide visuals of the words ‘push’ and ‘pull’; offer sentence frames for multilingual learners (e.g., “A push is when you ____ an object away.”).","title":"Push and Pull: Forces All Around Us","content":"Grade 5 Science • How forces start, stop, and change motion"},{"id":"slide-2-outcomes","type":"content","notes":"Clarify the goal in student-friendly language: “By the end, you can tell what a push is, what a pull is, and spot them in real life.” Co-create a quick success checklist on chart paper (e.g., I can define, I can identify, I can explain effects). Allow students to restate the outcome in their own words or home language to ensure access.","title":"Learning Outcome","bulletPoints":["Describe push and pull forces using everyday examples."]},{"id":"slide-3-content-basics","type":"content","notes":"Model with quick demos: push a book across a desk, pull it back with two fingers. Emphasize direction with arrows on the board. Optional tool: spring scale to show that stronger pulls/pushes read more newtons. Address common misconception: pushing is not only ‘forward’; it depends on reference. UDL: Provide vocabulary cards with images (push, pull, force); allow students to act out examples; invite examples from varied contexts (home, sports, markets, community tasks).","title":"What Are Push and Pull Forces?","content":"Caption: Examples of push (door, wheelchair wheels) and pull (zipper, rope).","imageAlt":"Four-panel collage: 1) A student with hands on a door, leaning forward to push it open. 2) Close-up of hands pulling a backpack zipper toward the body. 3) A child using a wheelchair, hands on the push rims, applying a forward push to roll. 4) A diverse group of children in a tug-of-war, leaning back as they pull the rope toward themselves.","imageUrl":"Collage of everyday push and pull: student pushing a door open; person pulling a backpack zipper; child using a wheelchair pushing the rims; group playing tug-of-war","bulletPoints":["A force is a push (moves something away from you) or a pull (moves something toward you).","Forces can start or stop motion, make objects speed up/slow down, change direction, or change shape.","Direction matters: the same object can be pushed or pulled depending on how and where you apply the force.","The strength of a force (measured in newtons, N) affects how much the motion changes.","Everyday examples: push a door open, pull a backpack zipper, push wheelchair wheels to roll, pull during tug-of-war."]},{"id":"slide-4-guiding-questions","type":"guiding-questions","notes":"Use think–pair–share; allow students to point, act, or sketch instead of only speaking. Encourage multiple valid answers if reasoning is clear. Provide sentence frames: “This is a push because…”, “When the force increases, the cart…”. Circulate and note misconceptions for quick feedback.","title":"Check Your Understanding","questions":["In your own words, define a push and a pull.","Classify each as push or pull: opening a door with your shoulder; drawing a curtain closed; pedaling a bicycle; lifting a backpack by the strap.","If you push a shopping cart harder, what changes about its motion, and why?","Describe a situation where both push and pull act on the same object (e.g., during a game or household task).","Why do some doors have signs that say PULL instead of PUSH? How does direction matter?"]},{"id":"slide-5-reflection","type":"reflection","notes":"Offer choice of response: written paragraph, labeled sketch, voice note, or quick video. Encourage culturally relevant examples (markets, sports, music stands, carts/trolleys). Highlight accessibility: how push/pull designs support people with different abilities (e.g., lever handles vs. round knobs). Invite students to share and celebrate diverse ideas.","title":"Reflect and Connect","questions":["Where in your home or community do push and pull forces help people get things done (e.g., opening gates, using tools, moving on wheels)?","Design challenge: Sketch or describe a simple device that uses push or pull to make a daily task easier or more accessible for someone (e.g., door handle extender, bag clip).","What is one question you still have about how forces change motion?"]}],"ageRange":"11-13","gradeLevel":"Grade 5","colorScheme":"blue","generatedDate":"2025-11-16T14:16:39.985Z","learningOutcomes":["Describe push and pull forces."]},"userId":"44298513-5b4c-4064-a128-c4df4529f849","isPublished":true,"isPublic":true,"tags":null,"createdAt":"2025-11-16T14:16:56.285Z","updatedAt":"2025-11-16T18:57:59.998Z"}
+2025-11-16 15:16:30.04
+d53bbedc
+User
+[DEBUG] Public content query returned 2 items
+2025-11-16 15:16:30.04
+d53bbedc
+User
+[DEBUG] getPublicContent returned 2 results
+2025-11-16 15:16:30.04
+d53bbedc
+User
+[DEBUG] After tags filter: 0 items
+2025-11-16 15:16:30.04
+d53bbedc
+User
+[DEBUG] After type filter: 0 items
+2025-11-16 15:16:30.04
+d53bbedc
+User
+[DEBUG] Final response: 0 items
+2025-11-16 15:16:30.07
+d53bbedc
+User
+7:16:30 PM [express] GET /api/content/public 200 in 143ms :: []
+2025-11-16 15:16:37.52
+d53bbedc
+User
+7:16:37 PM [express] GET /api/auth/me 304 in 191ms :: {"id":"112d809b-95df-4152-9929-39b09a66f47e","…
+2025-11-16 15:16:37.79
+d53bbedc
+User
+7:16:37 PM [express] GET /api/content 304 in 132ms :: [{"id":"5c117215-13b1-4786-980c-74ea61297f65",…
+2025-11-16 15:16:39.09
+d53bbedc
+User
+[DEBUG] getPublicContent called
+2025-11-16 15:16:39.09
+d53bbedc
+User
+[DEBUG] Query params: { search: '', type: 'undefined', tags: 'undefined' }
+2025-11-16 15:16:39.13
+d53bbedc
+User
+[DEBUG] Final response: 0 items
+2025-11-16 15:16:39.13
+d53bbedc
+User
+[DEBUG] getPublicContent returned 2 results
+2025-11-16 15:16:39.13
+d53bbedc
+User
+[DEBUG] Response data: []
+
+2025-11-16 15:16:39.13
+d53bbedc
+User
+[DEBUG] Public content query returned 2 items
+2025-11-16 15:16:39.13
+d53bbedc
+User
+[DEBUG] After type filter: 0 items
+2025-11-16 15:16:39.13
+d53bbedc
+User
+[DEBUG] After tags filter: 0 items
+2025-11-16 15:16:39.13
+d53bbedc
+User
+[DEBUG] First item: {"id":"315a4c35-5e3f-48d1-afa0-aa1686d2531e","title":"Push and Pull Forces","description":"","type":"google-slides","data":{"topic":"Push and Pull","slides":[{"id":"slide-1-title","type":"title","notes":"Hook: Gently push the classroom door and then pull a drawer (or backpack zipper). Ask: “What did I just do to make these move?” Invite students to gesture ‘push’ (hands forward) and ‘pull’ (hands toward body). UDL tips: Allow students to share in pairs or with quick sketches; provide visuals of the words ‘push’ and ‘pull’; offer sentence frames for multilingual learners (e.g., “A push is when you ____ an object away.”).","title":"Push and Pull: Forces All Around Us","content":"Grade 5 Science • How forces start, stop, and change motion"},{"id":"slide-2-outcomes","type":"content","notes":"Clarify the goal in student-friendly language: “By the end, you can tell what a push is, what a pull is, and spot them in real life.” Co-create a quick success checklist on chart paper (e.g., I can define, I can identify, I can explain effects). Allow students to restate the outcome in their own words or home language to ensure access.","title":"Learning Outcome","bulletPoints":["Describe push and pull forces using everyday examples."]},{"id":"slide-3-content-basics","type":"content","notes":"Model with quick demos: push a book across a desk, pull it back with two fingers. Emphasize direction with arrows on the board. Optional tool: spring scale to show that stronger pulls/pushes read more newtons. Address common misconception: pushing is not only ‘forward’; it depends on reference. UDL: Provide vocabulary cards with images (push, pull, force); allow students to act out examples; invite examples from varied contexts (home, sports, markets, community tasks).","title":"What Are Push and Pull Forces?","content":"Caption: Examples of push (door, wheelchair wheels) and pull (zipper, rope).","imageAlt":"Four-panel collage: 1) A student with hands on a door, leaning forward to push it open. 2) Close-up of hands pulling a backpack zipper toward the body. 3) A child using a wheelchair, hands on the push rims, applying a forward push to roll. 4) A diverse group of children in a tug-of-war, leaning back as they pull the rope toward themselves.","imageUrl":"Collage of everyday push and pull: student pushing a door open; person pulling a backpack zipper; child using a wheelchair pushing the rims; group playing tug-of-war","bulletPoints":["A force is a push (moves something away from you) or a pull (moves something toward you).","Forces can start or stop motion, make objects speed up/slow down, change direction, or change shape.","Direction matters: the same object can be pushed or pulled depending on how and where you apply the force.","The strength of a force (measured in newtons, N) affects how much the motion changes.","Everyday examples: push a door open, pull a backpack zipper, push wheelchair wheels to roll, pull during tug-of-war."]},{"id":"slide-4-guiding-questions","type":"guiding-questions","notes":"Use think–pair–share; allow students to point, act, or sketch instead of only speaking. Encourage multiple valid answers if reasoning is clear. Provide sentence frames: “This is a push because…”, “When the force increases, the cart…”. Circulate and note misconceptions for quick feedback.","title":"Check Your Understanding","questions":["In your own words, define a push and a pull.","Classify each as push or pull: opening a door with your shoulder; drawing a curtain closed; pedaling a bicycle; lifting a backpack by the strap.","If you push a shopping cart harder, what changes about its motion, and why?","Describe a situation where both push and pull act on the same object (e.g., during a game or household task).","Why do some doors have signs that say PULL instead of PUSH? How does direction matter?"]},{"id":"slide-5-reflection","type":"reflection","notes":"Offer choice of response: written paragraph, labeled sketch, voice note, or quick video. Encourage culturally relevant examples (markets, sports, music stands, carts/trolleys). Highlight accessibility: how push/pull designs support people with different abilities (e.g., lever handles vs. round knobs). Invite students to share and celebrate diverse ideas.","title":"Reflect and Connect","questions":["Where in your home or community do push and pull forces help people get things done (e.g., opening gates, using tools, moving on wheels)?","Design challenge: Sketch or describe a simple device that uses push or pull to make a daily task easier or more accessible for someone (e.g., door handle extender, bag clip).","What is one question you still have about how forces change motion?"]}],"ageRange":"11-13","gradeLevel":"Grade 5","colorScheme":"blue","generatedDate":"2025-11-16T14:16:39.985Z","learningOutcomes":["Describe push and pull forces."]},"userId":"44298513-5b4c-4064-a128-c4df4529f849","isPublished":true,"isPublic":true,"tags":null,"createdAt":"2025-11-16T14:16:56.285Z","updatedAt":"2025-11-16T18:57:59.998Z"}
+2025-11-16 15:16:39.16
+d53bbedc
+User
+7:16:39 PM [express] GET /api/content/public 200 in 129ms :: []
+2025-11-16 15:16:39.16
+d53bbedc
+User
+7:16:39 PM [express] GET /api/content/public 200 in 129ms :: []
+2025-11-16 15:17:03.67
+d2d4d8ab
+System
+system: received signal terminated

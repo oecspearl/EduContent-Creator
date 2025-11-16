@@ -62,7 +62,14 @@ export default function SharedResourcesPage() {
   const [tagFilter, setTagFilter] = useState("all");
 
   const { data: contents = [], isLoading } = useQuery<H5pContent[]>({
-    queryKey: ["/api/content/public", { search: searchQuery, type: typeFilter === "all" ? undefined : typeFilter, tags: tagFilter === "all" ? undefined : tagFilter }],
+    queryKey: [
+      "/api/content/public", 
+      {
+        ...(searchQuery && { search: searchQuery }),
+        ...(typeFilter !== "all" && { type: typeFilter }),
+        ...(tagFilter !== "all" && { tags: tagFilter })
+      }
+    ],
   });
 
   // Get unique tags from all content
