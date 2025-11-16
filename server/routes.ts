@@ -25,6 +25,7 @@ import {
 } from "./openai";
 import { searchEducationalVideos } from "./youtube";
 import passportConfig from "./passport-config";
+import { getMsalClient, getRedirectUri } from "./msal-config";
 
 // Type augmentation for session
 declare module "express-session" {
@@ -252,28 +253,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Microsoft OAuth routes (using Passport.js)
-  app.get("/api/auth/microsoft", (req, res, next) => {
+  // Microsoft OAuth routes (using MSAL)
+  app.get("/api/auth/microsoft", async (req, res) => {
     if (!isMicrosoftOAuthAvailable) {
       return res.status(503).json({ 
         message: "Microsoft authentication is not configured. Please set MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, and MICROSOFT_TENANT_ID." 
       });
     }
-    passportConfig.authenticate("azuread-openidconnect", { failureRedirect: "/login" })(req, res, next);
+
+    try {
+      const msalClient = getMsalClient();
+      if (!msalClient) {
+        return res.status(503).json({ message: "Microsoft OAuth client not configured" });
+      }
+
+      const redirectUri = getRedirectUri(req);
+      const authCodeUrlParameters = {
+        scopes: ["user.read"],
+        redirectUri,
+      };
+
+      const authUrl = await msalClient.getAuthCodeUrl(authCodeUrlParameters);
+      res.redirect(authUrl);
+    } catch (error) {
+      console.error("Microsoft OAuth initiation error:", error);
+      res.status(500).json({ message: "Failed to initiate Microsoft authentication" });
+    }
   });
 
-  // Microsoft callback uses POST because responseMode is 'form_post'
-  app.post("/api/auth/microsoft/callback", (req, res, next) => {
+  app.get("/api/auth/microsoft/callback", async (req, res) => {
     if (!isMicrosoftOAuthAvailable) {
       return res.redirect("/login?error=microsoft_not_configured");
     }
-    passportConfig.authenticate("azuread-openidconnect", { failureRedirect: "/login?error=microsoft_auth_failed" })(req, res, next);
-  }, (req: any, res) => {
-    // Set session userId
-    req.session.userId = req.user.id;
-    req.session.save(() => {
-      res.redirect("/dashboard");
-    });
+
+    try {
+      const msalClient = getMsalClient();
+      if (!msalClient) {
+        return res.redirect("/login?error=microsoft_not_configured");
+      }
+
+      const redirectUri = getRedirectUri(req);
+      const tokenRequest = {
+        code: req.query.code as string,
+        scopes: ["user.read"],
+        redirectUri,
+      };
+
+      const response = await msalClient.acquireTokenByCode(tokenRequest);
+      
+      if (!response || !response.account) {
+        return res.redirect("/login?error=microsoft_no_account");
+      }
+
+      const { username: email, name } = response.account;
+      const microsoftId = response.account.homeAccountId;
+
+      if (!email) {
+        return res.redirect("/login?error=microsoft_no_email");
+      }
+
+      let user = await storage.getProfileByEmail(email);
+
+      if (!user) {
+        const sentinelPassword = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10);
+        
+        user = await storage.createProfile({
+          email,
+          password: sentinelPassword,
+          fullName: name || email,
+          role: 'teacher',
+          institution: null,
+          authProvider: 'microsoft',
+          googleId: null,
+          microsoftId,
+        });
+      } else if (!user.microsoftId) {
+        await storage.updateProfile(user.id, {
+          microsoftId,
+        });
+      }
+
+      req.session.userId = user.id;
+      req.session.save(() => {
+        res.redirect("/dashboard");
+      });
+    } catch (error) {
+      console.error("Microsoft OAuth callback error:", error);
+      res.redirect("/login?error=microsoft_auth_failed");
+    }
   });
 
   // Content routes
