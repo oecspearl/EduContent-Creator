@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle, Palette } from "lucide-react";
 import type { GoogleSlidesData, SlideContent, H5pContent } from "@shared/schema";
 
 export default function GoogleSlidesCreator() {
@@ -34,6 +35,7 @@ export default function GoogleSlidesCreator() {
   const [isSaving, setIsSaving] = useState(false);
   const [presentationId, setPresentationId] = useState<string>("");
   const [presentationUrl, setPresentationUrl] = useState<string>("");
+  const [colorScheme, setColorScheme] = useState<string>("blue");
 
   const { data: content, isLoading: isLoadingContent } = useQuery<H5pContent>({
     queryKey: [`/api/content/${contentId}`],
@@ -58,6 +60,7 @@ export default function GoogleSlidesCreator() {
       setIsPublished(content.isPublished);
       setPresentationId(data.presentationId || "");
       setPresentationUrl(data.presentationUrl || "");
+      setColorScheme(data.colorScheme || "blue");
     }
   }, [content]);
 
@@ -87,6 +90,7 @@ export default function GoogleSlidesCreator() {
         learningOutcomes: learningOutcomes.filter(o => o.trim()),
         slides,
         generatedDate: generatedDate || new Date().toISOString(),
+        colorScheme,
         ...(presentationId && { presentationId }),
         ...(presentationUrl && { presentationUrl }),
       };
@@ -171,6 +175,7 @@ export default function GoogleSlidesCreator() {
             learningOutcomes: learningOutcomes.filter(o => o.trim()),
             slides,
             generatedDate: generatedDate || new Date().toISOString(),
+            colorScheme,
             presentationId: data.presentationId,
             presentationUrl: data.url,
           };
@@ -419,6 +424,23 @@ export default function GoogleSlidesCreator() {
                   data-testid="input-slide-count"
                 />
                 <p className="text-xs text-muted-foreground mt-1">Between 5 and 30 slides</p>
+              </div>
+              <div>
+                <Label htmlFor="colorScheme">Color Theme</Label>
+                <Select value={colorScheme} onValueChange={setColorScheme}>
+                  <SelectTrigger id="colorScheme" data-testid="select-color-scheme">
+                    <SelectValue placeholder="Select color theme" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="blue">Professional Blue</SelectItem>
+                    <SelectItem value="green">Fresh Green</SelectItem>
+                    <SelectItem value="purple">Creative Purple</SelectItem>
+                    <SelectItem value="orange">Energetic Orange</SelectItem>
+                    <SelectItem value="teal">Modern Teal</SelectItem>
+                    <SelectItem value="red">Bold Red</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">Visual theme for your presentation</p>
               </div>
             </CardContent>
           </Card>
