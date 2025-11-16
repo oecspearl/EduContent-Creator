@@ -31,6 +31,8 @@ export async function searchEducationalVideos(params: YouTubeSearchParams) {
     // Build search query from educational criteria
     const query = `${params.subject} ${params.topic} ${params.learningOutcome} education tutorial grade ${params.gradeLevel}`;
     
+    console.log('[YouTube API] Requesting maxResults:', params.maxResults, 'Type:', typeof params.maxResults);
+    
     const searchResponse = await youtube.search.list({
       part: ['snippet'],
       q: query,
@@ -42,6 +44,8 @@ export async function searchEducationalVideos(params: YouTubeSearchParams) {
       videoSyndicated: 'true',
       relevanceLanguage: 'en',
     });
+    
+    console.log('[YouTube API] Search returned', searchResponse.data.items?.length || 0, 'items');
 
     if (!searchResponse.data.items || searchResponse.data.items.length === 0) {
       return [];

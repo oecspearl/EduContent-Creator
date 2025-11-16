@@ -873,6 +873,8 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     try {
       const { subject, topic, learningOutcome, gradeLevel, ageRange, videoCount } = req.body;
 
+      console.log('[YouTube Search] Received videoCount:', videoCount, 'Type:', typeof videoCount);
+
       if (!subject || !topic || !learningOutcome || !gradeLevel || !videoCount) {
         return res.status(400).json({ message: "Missing required search criteria" });
       }
@@ -880,6 +882,8 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       if (videoCount < 1 || videoCount > 50) {
         return res.status(400).json({ message: "Video count must be between 1 and 50" });
       }
+
+      console.log('[YouTube Search] Calling YouTube API with maxResults:', videoCount);
 
       const results = await searchEducationalVideos({
         subject,
@@ -889,6 +893,8 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
         ageRange: ageRange || '',
         maxResults: videoCount,
       });
+
+      console.log('[YouTube Search] Received', results.length, 'results from YouTube API');
 
       res.json({ results, searchDate: new Date().toISOString() });
     } catch (error: any) {
