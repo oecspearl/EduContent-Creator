@@ -30,6 +30,7 @@ export const h5pContent = pgTable("h5p_content", {
   data: jsonb("data").notNull(), // stores full content structure
   userId: varchar("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
   isPublished: boolean("is_published").default(false).notNull(),
+  isPublic: boolean("is_public").default(false).notNull(), // Share with other teachers
   tags: text("tags").array(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
