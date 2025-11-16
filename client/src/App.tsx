@@ -10,6 +10,7 @@ import ChatAssistant from "@/components/ChatAssistant";
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
 import Dashboard from "@/pages/Dashboard";
+import SharedResourcesPage from "@/pages/SharedResourcesPage";
 import QuizCreator from "@/pages/QuizCreator";
 import FlashcardCreator from "@/pages/FlashcardCreator";
 import InteractiveVideoCreator from "@/pages/InteractiveVideoCreator";
@@ -57,6 +58,9 @@ function Router() {
       <Route path="/public/:id" component={PublicPreviewPage} />
       <Route path="/dashboard">
         <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/shared-resources">
+        <ProtectedRoute component={SharedResourcesPage} />
       </Route>
       <Route path="/create/quiz">
         <ProtectedRoute component={QuizCreator} />
