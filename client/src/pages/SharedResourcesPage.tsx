@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuth } from "@/hooks/useAuth";
 import {
   BookOpen,
   Layers,
@@ -20,6 +23,8 @@ import {
   Eye,
   Filter,
   X,
+  ArrowLeft,
+  LogOut,
 } from "lucide-react";
 import type { H5pContent } from "@shared/schema";
 
@@ -50,6 +55,8 @@ const contentTypeLabels = {
 };
 
 export default function SharedResourcesPage() {
+  const { user, logout } = useAuth();
+  const [_, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState("all");
@@ -75,8 +82,79 @@ export default function SharedResourcesPage() {
 
   const hasActiveFilters = searchQuery || typeFilter !== "all" || tagFilter !== "all";
 
+  const getInitials = (name?: string) => {
+    if (!name) return "??";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="min-h-screen bg-background">
+      {/* Skip to main content */}
+      <a href="#main-content" className="skip-to-content">
+        Skip to main content
+      </a>
+      
+      {/* Header */}
+      <header className="border-b bg-card" role="banner">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/dashboard")}
+              data-testid="button-back-dashboard"
+              aria-label="Back to dashboard"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/favicon.png" 
+                alt="OECS Content Creator Logo" 
+                className="h-10 w-10 rounded-lg"
+              />
+              <div>
+                <h1 className="text-xl font-bold text-foreground">OECS Content Creator</h1>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {user ? getInitials(user.fullName) : "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="hidden md:block">
+                <p className="text-sm font-medium text-foreground">{user?.fullName}</p>
+                <p className="text-xs text-muted-foreground">{user?.role}</p>
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout} 
+              data-testid="button-logout"
+              aria-label="Log out"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main id="main-content" className="container mx-auto px-4 py-8 max-w-7xl" role="main">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Shared Resources</h1>
@@ -251,6 +329,7 @@ export default function SharedResourcesPage() {
           })}
         </div>
       )}
+      </main>
     </div>
   );
 }
