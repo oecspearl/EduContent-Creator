@@ -28,7 +28,7 @@ import {
   Heading3,
   Upload,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 type RichTextEditorProps = {
@@ -67,6 +67,13 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
       },
     },
   });
+
+  // Update editor content when content prop changes
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
 
   if (!editor) return null;
 
