@@ -29,6 +29,7 @@ export function ImageEditorDialog({
 }: ImageEditorDialogProps) {
   const { toast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [activeTab, setActiveTab] = useState("resize");
   
@@ -42,6 +43,7 @@ export function ImageEditorDialog({
   const [cropStart, setCropStart] = useState<{ x: number; y: number } | null>(null);
   const [cropEnd, setCropEnd] = useState<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const cropEndRef = useRef<{ x: number; y: number } | null>(null);
 
   // Load image when dialog opens
   useEffect(() => {
@@ -59,7 +61,7 @@ export function ImageEditorDialog({
     }
   }, [open, imageUrl]);
 
-  // Redraw canvas when crop selection changes
+  // Redraw canvas when switching to crop tab or changing crop start
   useEffect(() => {
     if (image && activeTab === "crop") {
       drawImageOnCanvas(image);
@@ -67,7 +69,16 @@ export function ImageEditorDialog({
         drawCropSelection();
       }
     }
-  }, [cropStart, cropEnd, activeTab]);
+  }, [cropStart, activeTab]);
+
+  // Clean up animation frame on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
 
   const drawImageOnCanvas = (img: HTMLImageElement) => {
     const canvas = canvasRef.current;
@@ -98,15 +109,18 @@ export function ImageEditorDialog({
 
   const drawCropSelection = () => {
     const canvas = canvasRef.current;
-    if (!canvas || !cropStart || !cropEnd) return;
+    if (!canvas || !cropStart) return;
+
+    const currentCropEnd = cropEndRef.current || cropEnd;
+    if (!currentCropEnd) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const x = Math.min(cropStart.x, cropEnd.x);
-    const y = Math.min(cropStart.y, cropEnd.y);
-    const w = Math.abs(cropEnd.x - cropStart.x);
-    const h = Math.abs(cropEnd.y - cropStart.y);
+    const x = Math.min(cropStart.x, currentCropEnd.x);
+    const y = Math.min(cropStart.y, currentCropEnd.y);
+    const w = Math.abs(currentCropEnd.x - cropStart.x);
+    const h = Math.abs(currentCropEnd.y - cropStart.y);
 
     // Draw semi-transparent overlay
     ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
@@ -136,6 +150,20 @@ export function ImageEditorDialog({
     ctx.strokeRect(x, y, w, h);
   };
 
+  const scheduleRedraw = () => {
+    if (animationFrameRef.current !== null) {
+      return; // Already scheduled
+    }
+
+    animationFrameRef.current = requestAnimationFrame(() => {
+      animationFrameRef.current = null;
+      if (image && activeTab === "crop" && cropStart) {
+        drawImageOnCanvas(image);
+        drawCropSelection();
+      }
+    });
+  };
+
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (activeTab !== "crop") return;
     
@@ -146,8 +174,10 @@ export function ImageEditorDialog({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    setCropStart({ x, y });
-    setCropEnd({ x, y });
+    const newPos = { x, y };
+    setCropStart(newPos);
+    setCropEnd(newPos);
+    cropEndRef.current = newPos;
     setIsDragging(true);
   };
 
@@ -161,10 +191,18 @@ export function ImageEditorDialog({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    setCropEnd({ x, y });
+    // Store in ref for smooth rendering
+    cropEndRef.current = { x, y };
+    
+    // Schedule a redraw (throttled to one per frame)
+    scheduleRedraw();
   };
 
   const handleCanvasMouseUp = () => {
+    if (cropEndRef.current) {
+      // Save final position to state
+      setCropEnd(cropEndRef.current);
+    }
     setIsDragging(false);
   };
 
