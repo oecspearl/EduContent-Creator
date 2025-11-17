@@ -136,13 +136,22 @@ export default function GoogleSlidesCreator() {
       }
     },
     onSuccess: (data) => {
+      setIsSaving(false);
+      setIsPublished(data.isPublished);
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
       queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
       if (!isEditing) {
         navigate(`/create/google-slides/${data.id}`);
       }
       toast({ title: "Saved!", description: "Google Slides content saved successfully." });
+    },
+    onError: (error: any) => {
       setIsSaving(false);
+      toast({
+        title: "Save failed",
+        description: error.message || "Failed to save Google Slides content",
+        variant: "destructive",
+      });
     },
   });
 
@@ -158,7 +167,9 @@ export default function GoogleSlidesCreator() {
       return await response.json();
     },
     onSuccess: async (data) => {
+      console.log("Generate mutation success, received data:", data);
       let slidesData = data.slides || [];
+      console.log("Slides data:", slidesData);
       
       // Track successful image generations and provider actually used
       let successCount = 0;
@@ -287,6 +298,7 @@ export default function GoogleSlidesCreator() {
           })
         );
         
+        console.log("Slides with images:", slidesWithImages);
         setSlides(slidesWithImages);
         
         // Provide accurate feedback based on what actually happened
@@ -443,7 +455,6 @@ export default function GoogleSlidesCreator() {
       return;
     }
     setIsSaving(true);
-    setIsPublished(true);
     saveMutation.mutate({ publish: true });
   };
 
@@ -865,11 +876,21 @@ export default function GoogleSlidesCreator() {
                           </div>
                         )}
                         {slide.imageUrl && (
-                          <div className="bg-muted rounded p-2 text-xs">
-                            <div className="font-medium mb-1">Suggested Image:</div>
-                            <div className="text-muted-foreground">{slide.imageUrl}</div>
+                          <div className="bg-muted rounded overflow-hidden">
+                            {slide.imageUrl.startsWith('http') || slide.imageUrl.startsWith('data:') ? (
+                              <img 
+                                src={slide.imageUrl} 
+                                alt={slide.imageAlt || "Slide image"}
+                                className="w-full h-auto max-h-48 object-contain"
+                              />
+                            ) : (
+                              <div className="p-2 text-xs">
+                                <div className="font-medium mb-1">Image Search Query:</div>
+                                <div className="text-muted-foreground">{slide.imageUrl}</div>
+                              </div>
+                            )}
                             {slide.imageAlt && (
-                              <div className="mt-1">
+                              <div className="p-2 text-xs border-t">
                                 <span className="font-medium">Alt text:</span> {slide.imageAlt}
                               </div>
                             )}
