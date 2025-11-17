@@ -376,10 +376,14 @@ Respond in JSON format:
 export async function generateGoogleSlides(request: GoogleSlidesGenerationRequest): Promise<SlideContent[]> {
   const learningOutcomesText = request.learningOutcomes.map((o, i) => `${i + 1}. ${o}`).join('\n');
   
+  const customInstructionsSection = request.customInstructions 
+    ? `\n\nAdditional Teacher Instructions:\n${request.customInstructions}\n\nPlease carefully follow these custom instructions from the teacher when creating the presentation.`
+    : '';
+  
   const prompt = `Create a pedagogically sound Google Slides presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
 
 Learning Outcomes:
-${learningOutcomesText}
+${learningOutcomesText}${customInstructionsSection}
 
 Create ${request.numberOfSlides} slides that follow best practices for educational presentations:
 

@@ -42,6 +42,7 @@ export default function GoogleSlidesCreator() {
   const [gradeLevel, setGradeLevel] = useState("");
   const [ageRange, setAgeRange] = useState("");
   const [learningOutcomes, setLearningOutcomes] = useState<string[]>([""]);
+  const [customInstructions, setCustomInstructions] = useState("");
   const [numberOfSlides, setNumberOfSlides] = useState(10);
   const [slides, setSlides] = useState<SlideContent[]>([]);
   const [generatedDate, setGeneratedDate] = useState("");
@@ -71,6 +72,7 @@ export default function GoogleSlidesCreator() {
       setGradeLevel(data.gradeLevel);
       setAgeRange(data.ageRange);
       setLearningOutcomes(data.learningOutcomes);
+      setCustomInstructions(data.customInstructions || "");
       setSlides(data.slides || []);
       setGeneratedDate(data.generatedDate);
       setIsPublished(content.isPublished);
@@ -106,6 +108,7 @@ export default function GoogleSlidesCreator() {
         gradeLevel,
         ageRange,
         learningOutcomes: learningOutcomes.filter(o => o.trim()),
+        ...(customInstructions && { customInstructions }),
         slides,
         generatedDate: generatedDate || new Date().toISOString(),
         colorScheme,
@@ -163,6 +166,7 @@ export default function GoogleSlidesCreator() {
         ageRange,
         learningOutcomes: learningOutcomes.filter(o => o.trim()),
         numberOfSlides,
+        ...(customInstructions && { customInstructions }),
       });
       return await response.json();
     },
@@ -760,6 +764,28 @@ export default function GoogleSlidesCreator() {
                 )}
                 Generate Slides with AI
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Custom Instructions (Optional)</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Provide additional guidance to help the AI understand exactly what you want in your presentation
+              </p>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={customInstructions}
+                onChange={(e) => setCustomInstructions(e.target.value)}
+                placeholder="Example: Focus on Caribbean examples and cultural context. Include interactive questions after each main concept. Use simple language appropriate for ESL learners."
+                rows={4}
+                data-testid="textarea-custom-instructions"
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                💡 Tip: Be specific about teaching approach, examples to include, cultural context, or any special requirements
+              </p>
             </CardContent>
           </Card>
         </div>
