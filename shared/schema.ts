@@ -358,6 +358,7 @@ export type GoogleSlidesData = {
   gradeLevel: string;
   ageRange: string;
   learningOutcomes: string[];
+  customInstructions?: string; // Optional custom instructions from teacher
   slides: SlideContent[];
   presentationId?: string; // Google Slides presentation ID if created
   presentationUrl?: string; // Public URL to the presentation
@@ -373,6 +374,7 @@ export const googleSlidesGenerationSchema = z.object({
   ageRange: z.string().min(1),
   learningOutcomes: z.array(z.string()).min(1).max(10),
   numberOfSlides: z.number().min(5).max(30).default(10),
+  customInstructions: z.string().optional(), // Optional custom instructions from teacher
 });
 
 export type GoogleSlidesGenerationRequest = z.infer<typeof googleSlidesGenerationSchema>;
