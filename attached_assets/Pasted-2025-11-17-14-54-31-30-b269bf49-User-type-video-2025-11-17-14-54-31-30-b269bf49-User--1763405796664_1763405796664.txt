@@ -1,0 +1,152 @@
+2025-11-17 14:54:31.30
+b269bf49
+User
+'type' => 'video',
+2025-11-17 14:54:31.30
+b269bf49
+User
+headers: Headers {
+2025-11-17 14:54:31.30
+b269bf49
+User
+at async file:///home/runner/workspace/dist/index.js:2395:23 {
+2025-11-17 14:54:31.30
+b269bf49
+User
+'user-agent': 'google-api-nodejs-client/8.0.1 (gzip)',
+2025-11-17 14:54:31.30
+b269bf49
+User
+'maxResults' => '5',
+2025-11-17 14:54:31.30
+b269bf49
+User
+'order' => 'relevance',
+2025-11-17 14:54:31.30
+b269bf49
+User
+'videoEmbeddable' => 'true',
+2025-11-17 14:54:31.30
+b269bf49
+User
+validateStatus: [Function (anonymous)],
+2025-11-17 14:54:31.30
+b269bf49
+User
+host: 'youtube.googleapis.com',
+2025-11-17 14:54:31.30
+b269bf49
+User
+size: 0,
+2025-11-17 14:54:31.30
+b269bf49
+User
+userAgentDirectives: [ [Object] ],
+2025-11-17 14:54:31.30
+b269bf49
+User
+}
+2025-11-17 14:54:31.30
+b269bf49
+User
+errorRedactor: [Function: defaultErrorRedactor],
+2025-11-17 14:54:31.30
+b269bf49
+User
+'relevanceLanguage' => 'en',
+2025-11-17 14:54:31.30
+b269bf49
+User
+search: '?part=snippet&q=Mathematics%20Fractions%20Students%20will%20understand%20how%20to%20add%20fractions%20with%20unlike%20denominators%20education%20tutorial%20grade%203-5&type=video&maxResults=5&order=relevance&safeSearch=strict&videoEmbeddable=true&videoSyndicated=true&relevanceLanguage=en&key=AIzaSyBw4kCu5K3p2GgbTZohhc6_u1YjodFEZ10',
+2025-11-17 14:54:31.30
+b269bf49
+User
+maxResults: 5,
+2025-11-17 14:54:31.30
+b269bf49
+User
+response: Response {
+2025-11-17 14:54:31.30
+b269bf49
+User
+key: 'AIzaSyBw4kCu5K3p2GgbTZohhc6_u1YjodFEZ10'
+2025-11-17 14:54:31.30
+b269bf49
+User
+maxRetryDelay: 9007199254740991,
+2025-11-17 14:54:31.30
+b269bf49
+User
+config: {
+2025-11-17 14:54:31.30
+b269bf49
+User
+'accept-encoding': 'gzip',
+2025-11-17 14:54:31.30
+b269bf49
+User
+timeOfFirstRequest: 1763405671304,
+2025-11-17 14:54:31.30
+b269bf49
+User
+httpMethodsToRetry: [Array],
+2025-11-17 14:54:31.30
+b269bf49
+User
+href: 'https://youtube.googleapis.com/youtube/v3/search?part=snippet&q=Mathematics%20Fractions%20Students%20will%20understand%20how%20to%20add%20fractions%20with%20unlike%20denominators%20education%20tutorial%20grade%203-5&type=video&maxResults=5&order=relevance&safeSearch=strict&videoEmbeddable=true&videoSyndicated=true&relevanceLanguage=en&key=AIzaSyBw4kCu5K3p2GgbTZohhc6_u1YjodFEZ10',
+2025-11-17 14:54:31.30
+b269bf49
+User
+apiVersion: '',
+2025-11-17 14:54:31.30
+b269bf49
+User
+username: '',
+2025-11-17 14:54:31.30
+b269bf49
+User
+type: [Array],
+2025-11-17 14:54:31.30
+b269bf49
+User
+port: '',
+2025-11-17 14:54:31.30
+b269bf49
+User
+q: 'Mathematics Fractions Students will understand how to add fractions with unlike denominators education tutorial grade 3-5',
+2025-11-17 14:54:31.30
+b269bf49
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-11-17 14:54:31.30
+b269bf49
+User
+'q' => 'Mathematics Fractions Students will understand how to add fractions with unlike denominators education tutorial grade 3-5',
+2025-11-17 14:54:31.30
+b269bf49
+User
+'x-goog-api-client': 'gdcl/8.0.1 gl-node/20.19.3'
+2025-11-17 14:54:31.30
+b269bf49
+User
+searchParams: URLSearchParams {
+2025-11-17 14:54:31.30
+b269bf49
+User
+},
+2025-11-17 14:54:31.30
+b269bf49
+User
+noResponseRetries: 2,
+2025-11-17 14:54:31.30
+b269bf49
+User
+hash: ''
+2025-11-17 14:54:31.30
+b269bf49
+User
+url: URL {
+2025-11-17 14:54:32.44
+527932b0
+System
+system: received signal terminated
