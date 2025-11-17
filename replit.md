@@ -41,13 +41,18 @@ The Google Slides content type enables teachers to create AI-generated education
 - **Title slides**: Engaging titles and subtitles
 - **Learning outcomes slides**: Clear presentation of objectives
 - **Content slides**: Structured information with 3-5 bullet points
-- **Image slides**: Real educational images fetched from Unsplash API with proper attribution
+- **Image slides**: Educational images via two providers:
+  - **Puter.js AI (Default)**: Free browser-based AI image generation, no API key required
+  - **Unsplash API**: Stock photos as fallback or alternative option
 - **Guiding questions**: 4-6 thought-provoking questions to check understanding (recall to analysis to application)
 - **Reflection questions**: 2-3 deeper thinking prompts for learner engagement
 - **Speaker notes**: Pedagogical guidance and teaching tips for educators
 
 **Google Slides Integration**:
-- **Automatic image sourcing**: Fetches relevant educational images from Unsplash based on slide content
+- **Flexible image sourcing**: 
+  - **Puter.js AI (Free, Default)**: Browser-based AI image generation with no API key required
+  - **Unsplash Stock Photos**: Alternative option for stock photography
+  - **Automatic fallback**: Falls back to Unsplash if Puter.js unavailable
 - **Real presentation creation**: Uses Google Slides API to create actual presentations in teacher's Google Drive
 - **Persistent links**: Stores presentation ID and URL for future access
 - **One-click access**: "Open in Google Slides" button in both creator and player views
@@ -132,7 +137,7 @@ Teachers can prompt the AI to generate complete books on any topic:
 *   **AI Integration**: 
     - OpenAI GPT-5 model for text content generation
     - OpenAI DALL-E 3 for premium AI image generation in Interactive Books
-    - Puter.js for free, browser-based AI image generation (no API key required)
+    - Puter.js for free, browser-based AI image generation in Interactive Books and Google Slides (no API key required)
 *   **OAuth Providers**: Google OAuth 2.0 (via Passport.js) and Microsoft OAuth 2.0 (via @azure/msal-node) for user authentication.
 *   **Google Slides API**: Google Slides API (via googleapis npm package) for creating actual presentations.
 *   **Google Classroom API**: Google Classroom API (via googleapis npm package) for sharing presentations to courses.
@@ -152,7 +157,7 @@ The application supports Google and Microsoft OAuth authentication. See `OAUTH_S
 - `OPENAI_API_KEY`: Required for AI text content generation. Optional for image generation (Puter.js provides free alternative)
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: Optional, for Google OAuth (required for Google Slides API access)
 - `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, and `MICROSOFT_TENANT_ID`: Optional, for Microsoft OAuth
-- `UNSPLASH_ACCESS_KEY`: Required for fetching educational images for Google Slides presentations
+- `UNSPLASH_ACCESS_KEY`: Optional for Google Slides presentations (Puter.js AI provides free alternative)
 - `DATABASE_URL`: Recommended for production (enables persistent session storage)
 
 ### OAuth Features
