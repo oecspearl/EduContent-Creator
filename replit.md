@@ -86,7 +86,12 @@ The Interactive Books content type enables teachers to create multi-page educati
 - Manual creation: Add pages one at a time with custom titles and content
 - **AI Generation**: One-click AI-powered book creation from natural language prompts
 - Rich text editor with formatting, images, and media support
+- **Image Options**: Three ways to add images to book pages:
+  - **Upload**: Local image files up to 2MB (JPG, PNG, GIF, WebP, SVG, BMP)
+  - **URL**: Embed images from external URLs
+  - **AI Generate**: Create custom images using OpenAI DALL-E 3 from text prompts
 - Embed other content types (quizzes, flashcards, videos, etc.) within pages
+- Manual save button (removed auto-save per user preference)
 
 **AI-Generated Books**:
 Teachers can prompt the AI to generate complete books on any topic:
@@ -104,7 +109,7 @@ Teachers can prompt the AI to generate complete books on any topic:
 - Embed quizzes, flashcards, or other activities within specific pages
 - Rich text formatting with images and media
 - Configurable settings (show navigation, show progress, require completion)
-- Autosave functionality
+- Manual save with visual feedback
 
 **AI Generation Safety**:
 - Robust validation of AI responses
@@ -122,7 +127,9 @@ Teachers can prompt the AI to generate complete books on any topic:
 
 ## External Dependencies
 
-*   **AI Integration**: OpenAI API (GPT-5 model) for content generation.
+*   **AI Integration**: 
+    - OpenAI GPT-5 model for text content generation
+    - OpenAI DALL-E 3 for AI image generation in Interactive Books
 *   **OAuth Providers**: Google OAuth 2.0 (via Passport.js) and Microsoft OAuth 2.0 (via @azure/msal-node) for user authentication.
 *   **Google Slides API**: Google Slides API (via googleapis npm package) for creating actual presentations.
 *   **Google Classroom API**: Google Classroom API (via googleapis npm package) for sharing presentations to courses.
@@ -139,6 +146,7 @@ The application supports Google and Microsoft OAuth authentication. See `OAUTH_S
 
 ### Required Secrets for Production
 - `SESSION_SECRET`: Required for secure session management
+- `OPENAI_API_KEY`: Required for AI content generation and DALL-E 3 image generation
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: Optional, for Google OAuth (required for Google Slides API access)
 - `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, and `MICROSOFT_TENANT_ID`: Optional, for Microsoft OAuth
 - `UNSPLASH_ACCESS_KEY`: Required for fetching educational images for Google Slides presentations
