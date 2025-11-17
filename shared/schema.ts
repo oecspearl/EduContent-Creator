@@ -363,6 +363,7 @@ export type GoogleSlidesData = {
   presentationUrl?: string; // Public URL to the presentation
   generatedDate: string;
   colorScheme?: string; // Color theme for presentation (e.g., "blue", "green", "purple", "orange")
+  imageProvider?: "puterjs" | "unsplash"; // Image source for slides (defaults to puterjs)
 };
 
 // Google Slides Generation request
