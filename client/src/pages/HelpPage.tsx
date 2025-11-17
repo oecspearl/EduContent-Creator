@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
 import { 
   BookOpen, 
   LogOut, 
@@ -38,6 +40,7 @@ function getInitials(name: string): string {
 export default function HelpPage() {
   const { user, logout } = useAuth();
   const [_, navigate] = useLocation();
+  const breadcrumbs = useBreadcrumbs();
 
   const handleLogout = async () => {
     await logout();
@@ -93,6 +96,13 @@ export default function HelpPage() {
           </div>
         </div>
       </header>
+
+      {/* Breadcrumbs */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <Breadcrumbs items={breadcrumbs} />
+        </div>
+      </div>
 
       {/* Main Content */}
       <main id="main-content" className="max-w-4xl mx-auto px-6 py-12" role="main">

@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
 import {
   BookOpen,
   Layers,
@@ -65,6 +67,7 @@ export default function SharedResourcesPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const breadcrumbs = useBreadcrumbs();
 
   const { data: contents = [], isLoading } = useQuery<H5pContent[]>({
     queryKey: [
@@ -164,6 +167,13 @@ export default function SharedResourcesPage() {
           </div>
         </div>
       </header>
+
+      {/* Breadcrumbs */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <Breadcrumbs items={breadcrumbs} />
+        </div>
+      </div>
 
       {/* Main Content */}
       <main id="main-content" className="container mx-auto px-4 py-8 max-w-7xl" role="main">

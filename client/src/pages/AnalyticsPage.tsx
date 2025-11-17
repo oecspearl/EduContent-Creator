@@ -6,6 +6,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +74,7 @@ export default function AnalyticsPage() {
   const { user, logout } = useAuth();
   const [_, navigate] = useLocation();
   const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
+  const breadcrumbs = useBreadcrumbs();
 
   const { data: analytics, isLoading } = useQuery<any[]>({
     queryKey: ["/api/analytics/overview"],
@@ -173,6 +176,13 @@ export default function AnalyticsPage() {
           </div>
         </div>
       </header>
+
+      {/* Breadcrumbs */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <Breadcrumbs items={breadcrumbs} />
+        </div>
+      </div>
 
       {/* Main Content */}
       <main id="main-content" className="max-w-7xl mx-auto px-6 py-8" role="main">

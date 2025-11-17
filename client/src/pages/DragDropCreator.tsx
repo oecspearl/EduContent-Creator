@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +20,7 @@ export default function DragDropCreator() {
   const [_, navigate] = useLocation();
   const { toast } = useToast();
   const contentId = params.id;
+  const breadcrumbs = useBreadcrumbs(contentId);
   const isEditing = !!contentId;
 
   const [title, setTitle] = useState("");

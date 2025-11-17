@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
 import { 
   ArrowLeft, 
   Save, 
@@ -59,7 +61,12 @@ export default function QuizCreator() {
       setDescription(content.description || "");
       const quizData = content.data as QuizData;
       setQuestions(quizData.questions || []);
-      setSettings(quizData.settings || settings);
+      setSettings({
+        shuffleQuestions: quizData.settings?.shuffleQuestions ?? false,
+        showCorrectAnswers: quizData.settings?.showCorrectAnswers ?? true,
+        allowRetry: quizData.settings?.allowRetry ?? true,
+        timeLimit: quizData.settings?.timeLimit,
+      });
       setIsPublished(content.isPublished);
       setIsPublic(content.isPublic || false);
     }
@@ -151,6 +158,8 @@ export default function QuizCreator() {
     });
   };
 
+  const breadcrumbs = useBreadcrumbs(contentId);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Toolbar */}
@@ -192,6 +201,13 @@ export default function QuizCreator() {
               {isPublished ? "Unpublish" : "Publish"}
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Breadcrumbs */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <Breadcrumbs items={breadcrumbs} />
         </div>
       </div>
 

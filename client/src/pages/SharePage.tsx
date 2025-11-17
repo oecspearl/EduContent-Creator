@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
 import { ArrowLeft, Copy, Check, Share2, Globe } from "lucide-react";
 import type { H5pContent } from "@shared/schema";
 
@@ -19,6 +21,8 @@ export default function SharePage() {
   const { data: content } = useQuery<H5pContent>({
     queryKey: ["/api/content", contentId],
   });
+
+  const breadcrumbs = useBreadcrumbs(contentId);
 
   const shareMutation = useMutation({
     mutationFn: async () => {
@@ -62,6 +66,13 @@ export default function SharePage() {
           <div>
             <h1 className="text-xl font-bold text-foreground">Share Content</h1>
           </div>
+        </div>
+      </div>
+
+      {/* Breadcrumbs */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <Breadcrumbs items={breadcrumbs} />
         </div>
       </div>
 

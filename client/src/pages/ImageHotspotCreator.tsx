@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +29,7 @@ export default function ImageHotspotCreator() {
   const [_, navigate] = useLocation();
   const { toast } = useToast();
   const contentId = params.id;
+  const breadcrumbs = useBreadcrumbs(contentId);
   const isEditing = !!contentId;
 
   const [title, setTitle] = useState("");
@@ -154,6 +157,13 @@ export default function ImageHotspotCreator() {
               {isSaving && <Badge variant="outline">Saving...</Badge>}
             </div>
           </div>
+
+      {/* Breadcrumbs */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <Breadcrumbs items={breadcrumbs} />
+        </div>
+      </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate">
               <Sparkles className="h-4 w-4 mr-1" />

@@ -1,6 +1,8 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
 import { ArrowLeft, Share2 } from "lucide-react";
 import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, VideoFinderData, GoogleSlidesData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
@@ -24,6 +26,8 @@ export default function PreviewPage() {
   const { data: content, isLoading } = useQuery<H5pContent>({
     queryKey: ["/api/content", contentId],
   });
+
+  const breadcrumbs = useBreadcrumbs(contentId);
 
   if (isLoading) {
     return (
@@ -82,6 +86,13 @@ export default function PreviewPage() {
               Share
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Breadcrumbs */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <Breadcrumbs items={breadcrumbs} />
         </div>
       </div>
 
