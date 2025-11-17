@@ -470,7 +470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (tags && typeof tags === 'string') {
         const tagList = tags.split(',').map(t => t.trim().toLowerCase());
         contents = contents.filter(c => 
-          c.tags && c.tags.some(tag => tagList.includes(tag.toLowerCase()))
+          c.tags && c.tags.some((tag: string) => tagList.includes(tag.toLowerCase()))
         );
         console.log(`[DEBUG] After tags filter: ${contents.length} items`);
       }
@@ -1096,6 +1096,10 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
         size: "1024x1024",
         quality: "standard",
       });
+
+      if (!response.data || response.data.length === 0) {
+        throw new Error('No image data returned from OpenAI');
+      }
 
       const imageUrl = response.data[0]?.url;
       
