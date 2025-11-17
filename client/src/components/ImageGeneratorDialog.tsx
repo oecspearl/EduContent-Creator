@@ -42,7 +42,7 @@ export function ImageGeneratorDialog({
     setGeneratedImage(null);
 
     try {
-      const response = await fetch("/api/deepai/generate-image", {
+      const response = await fetch("/api/ai/generate-image", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -50,11 +50,12 @@ export function ImageGeneratorDialog({
         body: JSON.stringify({ prompt }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to generate image");
+        throw new Error(data.message || "Failed to generate image");
       }
 
-      const data = await response.json();
       setGeneratedImage(data.imageUrl);
       
       toast({
@@ -141,7 +142,7 @@ export function ImageGeneratorDialog({
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Powered by DeepAI • Free AI Image Generation
+                Powered by OpenAI DALL-E 3 • High-quality AI Image Generation
               </p>
             </div>
           )}

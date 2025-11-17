@@ -1063,8 +1063,8 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   });
 
-  // DeepAI image generation endpoint
-  app.post("/api/deepai/generate-image", requireAuth, async (req, res) => {
+  // AI image generation endpoint using OpenAI DALL-E
+  app.post("/api/ai/generate-image", requireAuth, async (req, res) => {
     try {
       const { prompt } = req.body;
       
@@ -1072,38 +1072,46 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
         return res.status(400).json({ message: "Prompt is required" });
       }
 
-      // Call DeepAI text2img API (free, no API key required for basic use)
-      const FormData = (await import('form-data')).default;
-      const fetch = (await import('node-fetch')).default;
-      
-      const formData = new FormData();
-      formData.append('text', prompt);
-
-      const response = await fetch('https://api.deepai.org/api/text2img', {
-        method: 'POST',
-        body: formData,
-        headers: formData.getHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`DeepAI API returned status ${response.status}`);
+      // Check if OpenAI API key is configured before calling getOpenAIClient
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ 
+          message: "OpenAI API key is not configured. Please add OPENAI_API_KEY to your environment variables to use AI image generation." 
+        });
       }
 
-      const data = await response.json() as { output_url?: string; id?: string };
+      // Use OpenAI DALL-E for image generation (safe to call now that key is verified)
+      let openai;
+      try {
+        openai = getOpenAIClient();
+      } catch (configError: any) {
+        return res.status(400).json({ 
+          message: configError.message || "OpenAI configuration error. Please check your API key." 
+        });
+      }
       
-      if (!data.output_url) {
-        throw new Error('No image URL returned from DeepAI');
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "standard",
+      });
+
+      const imageUrl = response.data[0]?.url;
+      
+      if (!imageUrl) {
+        throw new Error('No image URL returned from OpenAI');
       }
 
       res.json({ 
-        imageUrl: data.output_url,
-        id: data.id,
-        prompt 
+        imageUrl,
+        prompt,
+        revisedPrompt: response.data[0]?.revised_prompt,
       });
     } catch (error: any) {
-      console.error("DeepAI image generation error:", error);
+      console.error("OpenAI image generation error:", error);
       res.status(500).json({ 
-        message: error.message || "Failed to generate image with DeepAI" 
+        message: error.message || "Failed to generate image with AI. Please try again." 
       });
     }
   });
