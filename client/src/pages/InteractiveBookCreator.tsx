@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
-import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight, Layers, X, Sparkles, Save, Video, Image, FileQuestion } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight, Layers, X, Sparkles, Save, Video, Image, FileQuestion, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
 import type { H5pContent, InteractiveBookData, ContentType, BookPageType, VideoPageData, QuizPageData, ImagePageData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { VideoPageEditor } from "@/components/book-pages/VideoPageEditor";
@@ -152,6 +152,28 @@ export default function InteractiveBookCreator() {
     };
     setPages(updated);
     toast({ title: "Removed", description: "Embedded content has been removed from this page." });
+  };
+
+  const movePage = (index: number, direction: "up" | "down") => {
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === pages.length - 1) return;
+
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    const updated = [...pages];
+    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
+    setPages(updated);
+
+    // Update currentPageIndex if we moved the current page
+    if (currentPageIndex === index) {
+      setCurrentPageIndex(newIndex);
+    } else if (currentPageIndex === newIndex) {
+      setCurrentPageIndex(index);
+    }
+
+    toast({
+      title: "Page moved",
+      description: `Page moved ${direction === "up" ? "up" : "down"}`,
+    });
   };
 
   const getContentTypeLabel = (type: ContentType) => {
@@ -425,6 +447,56 @@ export default function InteractiveBookCreator() {
             <CardContent className="space-y-4">
               {pages.length > 0 && (
                 <>
+                  {/* Page List with Reordering */}
+                  <div className="space-y-2 mb-4">
+                    <Label>Page Order</Label>
+                    <div className="border rounded-lg divide-y max-h-64 overflow-y-auto">
+                      {pages.map((page, index) => (
+                        <div
+                          key={page.id}
+                          className={`flex items-center gap-2 p-3 hover:bg-muted/50 ${
+                            index === currentPageIndex ? "bg-primary/10" : ""
+                          }`}
+                        >
+                          <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <button
+                            onClick={() => setCurrentPageIndex(index)}
+                            className="flex-1 text-left text-sm font-medium hover:text-primary"
+                          >
+                            {page.title || `Page ${index + 1}`}
+                            {page.pageType && page.pageType !== "content" && (
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                ({page.pageType})
+                              </span>
+                            )}
+                          </button>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => movePage(index, "up")}
+                              disabled={index === 0}
+                              data-testid={`button-move-up-${index}`}
+                            >
+                              <ArrowUp className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => movePage(index, "down")}
+                              disabled={index === pages.length - 1}
+                              data-testid={`button-move-down-${index}`}
+                            >
+                              <ArrowDown className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <Button
                       variant="outline"
