@@ -1,4 +1,3 @@
-import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -49,6 +48,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Load dotenv only in development (Heroku sets env vars automatically)
+  if (process.env.NODE_ENV !== "production") {
+    try {
+      await import("dotenv/config");
+    } catch {
+      // dotenv not available, that's okay - Heroku provides env vars directly
+    }
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
