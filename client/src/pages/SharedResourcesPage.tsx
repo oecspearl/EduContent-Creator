@@ -65,37 +65,102 @@ export default function SharedResourcesPage() {
   const [_, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [tagFilter, setTagFilter] = useState("all");
+  const [subjectFilter, setSubjectFilter] = useState<string>("all");
+  const [gradeFilter, setGradeFilter] = useState<string>("all");
+  const [tagFilter, setTagFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const breadcrumbs = useBreadcrumbs();
 
+  // Build query key with filters
+  const filters: Record<string, string> = {};
+  if (searchQuery) filters.search = searchQuery;
+  if (typeFilter !== "all") filters.type = typeFilter;
+  if (subjectFilter !== "all") filters.subject = subjectFilter;
+  if (gradeFilter !== "all") filters.grade = gradeFilter;
+  if (tagFilter) filters.tags = tagFilter;
+  if (startDate) filters.startDate = startDate;
+  if (endDate) filters.endDate = endDate;
+
+  const hasFilters = Object.keys(filters).length > 0;
+
   const { data: contents = [], isLoading } = useQuery<H5pContent[]>({
-    queryKey: [
-      "/api/content/public", 
-      {
-        ...(searchQuery && { search: searchQuery }),
-        ...(typeFilter !== "all" && { type: typeFilter }),
-        ...(tagFilter !== "all" && { tags: tagFilter })
-      }
-    ],
+    queryKey: hasFilters ? ["/api/content/public", filters] : ["/api/content/public"],
   });
 
-  // Get unique tags from all content
-  const allTags = Array.from(
+  // Extract unique subjects and grades from content data
+  const extractSubjectAndGrade = (content: H5pContent): { subject: string | null; grade: string | null } => {
+    try {
+      const data = content.data as any;
+      
+      // Video Finder: data.searchCriteria.subject and data.searchCriteria.gradeLevel
+      if (content.type === "video-finder" && data?.searchCriteria) {
+        return {
+          subject: data.searchCriteria.subject || null,
+          grade: data.searchCriteria.gradeLevel || null,
+        };
+      }
+      
+      // Presentation: data.gradeLevel (no subject)
+      if (content.type === "presentation" && data) {
+        return {
+          subject: null,
+          grade: data.gradeLevel || null,
+        };
+      }
+      
+      // Interactive Book: data.subject and data.gradeLevel
+      if (content.type === "interactive-book" && data) {
+        return {
+          subject: data.subject || null,
+          grade: data.gradeLevel || null,
+        };
+      }
+      
+      // Other content types might have these in metadata
+      if (data?.metadata) {
+        return {
+          subject: data.metadata.subject || null,
+          grade: data.metadata.gradeLevel || data.metadata.grade || null,
+        };
+      }
+      
+      return { subject: null, grade: null };
+    } catch {
+      return { subject: null, grade: null };
+    }
+  };
+
+  // Get unique subjects and grades from all content
+  const allSubjects = Array.from(
     new Set(
       contents
-        .flatMap(c => c.tags || [])
-        .filter(Boolean)
+        ?.map(c => extractSubjectAndGrade(c).subject)
+        .filter((s): s is string => s !== null && s !== undefined)
+    )
+  ).sort();
+
+  const allGrades = Array.from(
+    new Set(
+      contents
+        ?.map(c => extractSubjectAndGrade(c).grade)
+        .filter((g): g is string => g !== null && g !== undefined)
     )
   ).sort();
 
   const clearFilters = () => {
     setSearchQuery("");
     setTypeFilter("all");
-    setTagFilter("all");
+    setSubjectFilter("all");
+    setGradeFilter("all");
+    setTagFilter("");
+    setStartDate("");
+    setEndDate("");
   };
 
-  const hasActiveFilters = searchQuery || typeFilter !== "all" || tagFilter !== "all";
+  const hasActiveFilters = searchQuery || typeFilter !== "all" || subjectFilter !== "all" || gradeFilter !== "all" || tagFilter || startDate || endDate;
 
   const getInitials = (name?: string) => {
     if (!name) return "??";
@@ -185,82 +250,133 @@ export default function SharedResourcesPage() {
         </p>
       </div>
 
-      {/* Filters */}
-      <Card className="mb-8">
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Search</label>
-              <div className="relative">
-                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by title or description..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                  data-testid="input-search"
-                />
-              </div>
-            </div>
-
-            {/* Content Type Filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Content Type</label>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger data-testid="select-type-filter">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="quiz">Quiz</SelectItem>
-                  <SelectItem value="flashcard">Flashcard</SelectItem>
-                  <SelectItem value="interactive-video">Interactive Video</SelectItem>
-                  <SelectItem value="image-hotspot">Image Hotspot</SelectItem>
-                  <SelectItem value="drag-drop">Drag & Drop</SelectItem>
-                  <SelectItem value="fill-blanks">Fill in Blanks</SelectItem>
-                  <SelectItem value="memory-game">Memory Game</SelectItem>
-                  <SelectItem value="interactive-book">Interactive Book</SelectItem>
-                  <SelectItem value="video-finder">Video Finder</SelectItem>
-                  <SelectItem value="presentation">Presentation</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Tag Filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tags</label>
-              <Select value={tagFilter} onValueChange={setTagFilter}>
-                <SelectTrigger data-testid="select-tag-filter">
-                  <SelectValue placeholder="All Tags" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Tags</SelectItem>
-                  {allTags.map((tag) => (
-                    <SelectItem key={tag} value={tag}>
-                      {tag}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Search and Filters */}
+      <div className="mb-6 space-y-4">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Search by title or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+              data-testid="input-search"
+            />
           </div>
-
+          <Button
+            variant={showFilters ? "secondary" : "outline"}
+            onClick={() => setShowFilters(!showFilters)}
+            data-testid="button-toggle-filters"
+          >
+            <Filter className="h-5 w-5 mr-2" />
+            Filters
+          </Button>
           {hasActiveFilters && (
-            <div className="mt-4 flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                data-testid="button-clear-filters"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Clear Filters
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              onClick={clearFilters}
+              data-testid="button-clear-filters"
+            >
+              <X className="h-5 w-5 mr-2" />
+              Clear
+            </Button>
           )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {showFilters && (
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Content Type</label>
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger data-testid="select-type-filter">
+                      <SelectValue placeholder="All types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All types</SelectItem>
+                      <SelectItem value="quiz">Quiz</SelectItem>
+                      <SelectItem value="flashcard">Flashcard</SelectItem>
+                      <SelectItem value="interactive-video">Interactive Video</SelectItem>
+                      <SelectItem value="image-hotspot">Image Hotspot</SelectItem>
+                      <SelectItem value="drag-drop">Drag & Drop</SelectItem>
+                      <SelectItem value="fill-blanks">Fill in the Blanks</SelectItem>
+                      <SelectItem value="memory-game">Memory Game</SelectItem>
+                      <SelectItem value="interactive-book">Interactive Book</SelectItem>
+                      <SelectItem value="video-finder">Video Finder</SelectItem>
+                      <SelectItem value="presentation">Presentation</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Subject</label>
+                  <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+                    <SelectTrigger data-testid="select-subject-filter">
+                      <SelectValue placeholder="All subjects" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All subjects</SelectItem>
+                      {allSubjects.map((subject) => (
+                        <SelectItem key={subject} value={subject}>
+                          {subject}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Grade</label>
+                  <Select value={gradeFilter} onValueChange={setGradeFilter}>
+                    <SelectTrigger data-testid="select-grade-filter">
+                      <SelectValue placeholder="All grades" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All grades</SelectItem>
+                      {allGrades.map((grade) => (
+                        <SelectItem key={grade} value={grade}>
+                          {grade}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Tags</label>
+                  <Input
+                    placeholder="e.g., science, math"
+                    value={tagFilter}
+                    onChange={(e) => setTagFilter(e.target.value)}
+                    data-testid="input-tag-filter"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Start Date</label>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    data-testid="input-start-date"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">End Date</label>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    data-testid="input-end-date"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Results Count & View Toggle */}
       <div className="mb-4 flex items-center justify-between gap-4">

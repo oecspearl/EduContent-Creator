@@ -689,8 +689,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public content route
   app.get("/api/content/public", requireAuth, async (req, res) => {
     try {
-      const { search, type, tags } = req.query;
-      console.log(`[DEBUG] Query params:`, { search, type, tags });
+      const { search, type, subject, grade, tags, startDate, endDate } = req.query;
+      console.log(`[DEBUG] Query params:`, { search, type, subject, grade, tags, startDate, endDate });
       
       let contents = await storage.getPublicContent();
       console.log(`[DEBUG] Public content query returned ${contents.length} items`);
@@ -712,6 +712,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[DEBUG] After type filter: ${contents.length} items`);
       }
       
+      // Apply subject filter
+      if (subject && typeof subject === 'string') {
+        contents = contents.filter(c => {
+          const { subject: contentSubject } = extractSubjectAndGrade(c);
+          return contentSubject && contentSubject.toLowerCase() === subject.toLowerCase();
+        });
+        console.log(`[DEBUG] After subject filter: ${contents.length} items`);
+      }
+      
+      // Apply grade filter
+      if (grade && typeof grade === 'string') {
+        contents = contents.filter(c => {
+          const { grade: contentGrade } = extractSubjectAndGrade(c);
+          return contentGrade && contentGrade.toLowerCase() === grade.toLowerCase();
+        });
+        console.log(`[DEBUG] After grade filter: ${contents.length} items`);
+      }
+      
       // Apply tags filter (comma-separated)
       if (tags && typeof tags === 'string') {
         const tagList = tags.split(',').map(t => t.trim().toLowerCase());
@@ -719,6 +737,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           c.tags && c.tags.some((tag: string) => tagList.includes(tag.toLowerCase()))
         );
         console.log(`[DEBUG] After tags filter: ${contents.length} items`);
+      }
+      
+      // Apply date range filter
+      if (startDate && typeof startDate === 'string') {
+        const start = new Date(startDate);
+        if (!isNaN(start.getTime())) {
+          contents = contents.filter(c => {
+            if (!c.updatedAt) return false;
+            const updated = new Date(c.updatedAt);
+            return !isNaN(updated.getTime()) && updated >= start;
+          });
+          console.log(`[DEBUG] After startDate filter: ${contents.length} items`);
+        }
+      }
+      if (endDate && typeof endDate === 'string') {
+        const end = new Date(endDate);
+        if (!isNaN(end.getTime())) {
+          end.setHours(23, 59, 59, 999); // Include the entire end date
+          contents = contents.filter(c => {
+            if (!c.updatedAt) return false;
+            const updated = new Date(c.updatedAt);
+            return !isNaN(updated.getTime()) && updated <= end;
+          });
+          console.log(`[DEBUG] After endDate filter: ${contents.length} items`);
+        }
       }
       
       console.log(`[DEBUG] Final response: ${contents.length} items`);
