@@ -232,15 +232,21 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
         data-testid="flashcard"
       >
         <div
-          className={`absolute inset-0 transition-all duration-500 transform preserve-3d ${
-            isFlipped ? "rotate-y-180" : ""
-          }`}
+          className="absolute inset-0 transition-transform duration-500"
+          style={{
+            transformStyle: "preserve-3d",
+            transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+          }}
         >
           {/* Front */}
           <Card
-            className={`absolute inset-0 backface-hidden ${
+            className={`absolute inset-0 ${
               isFlipped ? "invisible" : "visible"
             } flex items-center justify-center hover-elevate overflow-hidden`}
+            style={{
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+            }}
           >
             <CardContent className="p-8 text-center w-full">
               <div className="space-y-4">
@@ -277,10 +283,14 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
 
           {/* Back */}
           <Card
-            className={`absolute inset-0 backface-hidden ${
+            className={`absolute inset-0 ${
               !isFlipped ? "invisible" : "visible"
             } flex items-center justify-center bg-primary/5 hover-elevate overflow-hidden`}
-            style={{ transform: "rotateY(180deg)" }}
+            style={{
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+              transform: "rotateY(180deg)",
+            }}
           >
             <CardContent className="p-8 text-center w-full">
               <div className="space-y-4">
