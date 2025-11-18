@@ -20,8 +20,9 @@ export function log(message: string, source = "express") {
 export async function setupVite(app: Express, server: Server) {
   // Dynamically import vite only in development (not available in production)
   const { createServer: createViteServer, createLogger } = await import("vite");
-  const viteConfig = await import("../vite.config.js");
   
+  // Import vite config dynamically - but we'll create a minimal config instead
+  // to avoid importing vite.config.ts which has vite dependencies
   viteLogger = createLogger();
   
   const serverOptions = {
@@ -30,9 +31,23 @@ export async function setupVite(app: Express, server: Server) {
     allowedHosts: true as const,
   };
 
+  // Create vite server with inline config (avoid importing vite.config.ts)
   const vite = await createViteServer({
-    ...viteConfig.default,
+    root: path.resolve(import.meta.dirname, "..", "client"),
     configFile: false,
+    server: serverOptions,
+    appType: "custom",
+    plugins: [
+      // Only include react plugin - avoid Replit plugins
+      (await import("@vitejs/plugin-react")).default(),
+    ],
+    resolve: {
+      alias: {
+        "@": path.resolve(import.meta.dirname, "..", "client", "src"),
+        "@shared": path.resolve(import.meta.dirname, "..", "shared"),
+        "@assets": path.resolve(import.meta.dirname, "..", "attached_assets"),
+      },
+    },
     customLogger: {
       ...viteLogger,
       error: (msg, options) => {
@@ -40,8 +55,6 @@ export async function setupVite(app: Express, server: Server) {
         process.exit(1);
       },
     },
-    server: serverOptions,
-    appType: "custom",
   });
 
   app.use(vite.middlewares);
