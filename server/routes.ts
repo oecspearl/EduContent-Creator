@@ -144,7 +144,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth middleware
   const requireAuth = (req: any, res: any, next: any) => {
+    console.log("requireAuth check:", {
+      hasSession: !!req.session,
+      userId: req.session?.userId,
+      sessionId: req.sessionID,
+      cookies: req.headers.cookie
+    });
+    
     if (!req.session.userId) {
+      console.log("requireAuth: No userId in session, returning 401");
       return res.status(401).json({ message: "Unauthorized" });
     }
     next();
@@ -449,11 +457,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log("Microsoft OAuth: Setting session userId:", user.id);
+      console.log("Microsoft OAuth: Current session ID:", req.sessionID);
+      console.log("Microsoft OAuth: Session before setting userId:", {
+        userId: req.session.userId,
+        cookie: req.session.cookie
+      });
+      
       req.session.userId = user.id;
       
       // Get return URL from session (validate it's a safe relative path)
       const returnTo = req.session.oauthReturnTo;
       delete req.session.oauthReturnTo;
+      
+      // Force cookie to be set
+      req.session.cookie.secure = true;
+      req.session.cookie.sameSite = 'lax';
+      req.session.cookie.httpOnly = true;
+      
+      console.log("Microsoft OAuth: Session cookie config:", req.session.cookie);
       
       // Save session before redirecting
       req.session.save((err) => {
@@ -462,7 +483,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.redirect("/login?error=session_failed");
         }
         
-        console.log("Microsoft OAuth: Session saved successfully, userId:", req.session.userId);
+        console.log("Microsoft OAuth: Session saved successfully");
+        console.log("Microsoft OAuth: Session ID after save:", req.sessionID);
+        console.log("Microsoft OAuth: userId in session:", req.session.userId);
+        console.log("Microsoft OAuth: Cookie will be sent:", res.getHeader('Set-Cookie'));
         console.log("Microsoft OAuth: Redirecting to dashboard");
         
         // Redirect to stored return URL or dashboard
