@@ -44,7 +44,7 @@ const contentTypeIcons = {
   "memory-game": Brain,
   "interactive-book": BookText,
   "video-finder": SearchIcon,
-  "google-slides": Presentation,
+  "presentation": Presentation,
 };
 
 const contentTypeLabels = {
@@ -57,7 +57,7 @@ const contentTypeLabels = {
   "memory-game": "Memory Game",
   "interactive-book": "Interactive Book",
   "video-finder": "Video Finder",
-  "google-slides": "Google Slides",
+  "presentation": "Presentation",
 };
 
 export default function SharedResourcesPage() {
@@ -222,7 +222,7 @@ export default function SharedResourcesPage() {
                   <SelectItem value="memory-game">Memory Game</SelectItem>
                   <SelectItem value="interactive-book">Interactive Book</SelectItem>
                   <SelectItem value="video-finder">Video Finder</SelectItem>
-                  <SelectItem value="google-slides">Google Slides</SelectItem>
+                  <SelectItem value="presentation">Presentation</SelectItem>
                 </SelectContent>
               </Select>
             </div>

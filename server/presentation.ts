@@ -1,5 +1,5 @@
 /**
- * Google Slides API service for creating presentations
+ * Presentation API service for creating Google Slides presentations
  */
 
 import { google } from 'googleapis';

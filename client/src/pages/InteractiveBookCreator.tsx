@@ -139,7 +139,7 @@ export default function InteractiveBookCreator() {
       "memory-game": "Memory Game",
       "interactive-book": "Interactive Book",
       "video-finder": "Video Finder",
-      "google-slides": "Google Slides",
+      "presentation": "Presentation",
     };
     return labels[type] || type;
   };

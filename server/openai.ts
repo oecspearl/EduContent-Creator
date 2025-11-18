@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { AIGenerationRequest, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, H5pContent, GoogleSlidesGenerationRequest, SlideContent } from "@shared/schema";
+import type { AIGenerationRequest, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, H5pContent, PresentationGenerationRequest, SlideContent } from "@shared/schema";
 
 // This is using OpenAI's API, which points to OpenAI's API servers and requires your own API key.
 // Using gpt-4o as the default model (latest and most capable model as of 2024)
@@ -446,14 +446,14 @@ Respond in JSON format:
   }
 }
 
-export async function generateGoogleSlides(request: GoogleSlidesGenerationRequest): Promise<SlideContent[]> {
+export async function generatePresentation(request: PresentationGenerationRequest): Promise<SlideContent[]> {
   const learningOutcomesText = request.learningOutcomes.map((o, i) => `${i + 1}. ${o}`).join('\n');
   
   const customInstructionsSection = request.customInstructions 
     ? `\n\nAdditional Teacher Instructions:\n${request.customInstructions}\n\nPlease carefully follow these custom instructions from the teacher when creating the presentation.`
     : '';
   
-  const prompt = `Create a pedagogically sound Google Slides presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
+  const prompt = `Create a pedagogically sound presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
 
 Learning Outcomes:
 ${learningOutcomesText}${customInstructionsSection}

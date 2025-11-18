@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle, Palette, Zap, Image as ImageIcon, Edit2, Save, X, GripVertical } from "lucide-react";
-import type { GoogleSlidesData, SlideContent, H5pContent } from "@shared/schema";
+import type { PresentationData, SlideContent, H5pContent } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
 declare global {
@@ -28,7 +28,7 @@ declare global {
 
 type ImageProvider = "puterjs" | "unsplash";
 
-export default function GoogleSlidesCreator() {
+export default function PresentationCreator() {
   const { id: contentId } = useParams();
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -66,10 +66,10 @@ export default function GoogleSlidesCreator() {
   });
 
   useEffect(() => {
-    if (content && content.type === "google-slides") {
+    if (content && content.type === "presentation") {
       setTitle(content.title);
       setDescription(content.description || "");
-      const data = content.data as GoogleSlidesData;
+      const data = content.data as PresentationData;
       setTopic(data.topic);
       setGradeLevel(data.gradeLevel);
       setAgeRange(data.ageRange);
@@ -93,7 +93,7 @@ export default function GoogleSlidesCreator() {
       // User just authenticated with Google, show success message
       toast({
         title: "Google Account Connected!",
-        description: "You can now create Google Slides presentations.",
+        description: "You can now create presentations.",
       });
       
       // Clean up URL
@@ -105,7 +105,7 @@ export default function GoogleSlidesCreator() {
 
   const saveMutation = useMutation({
     mutationFn: async (params: { publish: boolean }) => {
-      const data: GoogleSlidesData = {
+      const data: PresentationData = {
         topic,
         gradeLevel,
         ageRange,
@@ -132,7 +132,7 @@ export default function GoogleSlidesCreator() {
         const response = await apiRequest("POST", "/api/content", {
           title,
           description,
-          type: "google-slides",
+          type: "presentation",
           data,
           isPublished: params.publish,
           isPublic,
@@ -146,15 +146,15 @@ export default function GoogleSlidesCreator() {
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
       queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
       if (!isEditing) {
-        navigate(`/create/google-slides/${data.id}`);
+        navigate(`/create/presentation/${data.id}`);
       }
-      toast({ title: "Saved!", description: "Google Slides content saved successfully." });
+      toast({ title: "Saved!", description: "Presentation content saved successfully." });
     },
     onError: (error: any) => {
       setIsSaving(false);
       toast({
         title: "Save failed",
-        description: error.message || "Failed to save Google Slides content",
+        description: error.message || "Failed to save presentation content",
         variant: "destructive",
       });
     },
@@ -162,7 +162,7 @@ export default function GoogleSlidesCreator() {
 
   const generateMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/google-slides/generate", {
+      const response = await apiRequest("POST", "/api/presentation/generate", {
         topic,
         gradeLevel,
         ageRange,
@@ -350,7 +350,7 @@ export default function GoogleSlidesCreator() {
 
   const createPresentationMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/google-slides/create-presentation", {
+      const response = await apiRequest("POST", "/api/presentation/create-presentation", {
         title,
         slides,
       });
@@ -367,7 +367,7 @@ export default function GoogleSlidesCreator() {
       // Save the presentation URL to content
       if (isEditing && contentId) {
         try {
-          const updatedData: GoogleSlidesData = {
+          const updatedData: PresentationData = {
             topic,
             gradeLevel,
             ageRange,
@@ -576,7 +576,7 @@ export default function GoogleSlidesCreator() {
             </Button>
           </Link>
           <h1 className="text-3xl font-bold">
-            {isEditing ? "Edit Google Slides" : "Create Google Slides"}
+            {isEditing ? "Edit Presentation" : "Create Presentation"}
           </h1>
         </div>
         <div className="flex gap-2">
@@ -640,7 +640,7 @@ export default function GoogleSlidesCreator() {
                 <div className="space-y-0.5">
                   <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>
                   <p className="text-sm text-muted-foreground">
-                    Allow other teachers to discover and use this Google Slides presentation on the Shared Resources page. Content will be automatically published when shared.
+                    Allow other teachers to discover and use this presentation on the Shared Resources page. Content will be automatically published when shared.
                   </p>
                 </div>
                 <Switch
@@ -907,7 +907,7 @@ export default function GoogleSlidesCreator() {
                 <Alert className="mb-4" variant="destructive" data-testid="alert-google-not-configured">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    Google Slides integration is not configured. To use this feature, the administrator needs to set up Google OAuth credentials (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET).
+                    Google integration is not configured. To use this feature, the administrator needs to set up Google OAuth credentials (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET).
                   </AlertDescription>
                 </Alert>
               )}
@@ -915,7 +915,7 @@ export default function GoogleSlidesCreator() {
                 <Alert className="mb-4" data-testid="alert-google-required">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    To create actual Google Slides presentations, you need to connect your Google account. 
+                    To create actual presentations in Google Slides, you need to connect your Google account. 
                     This allows the app to create presentations in your Google Drive with real images.
                     Click "Connect Google Account" above to get started.
                   </AlertDescription>

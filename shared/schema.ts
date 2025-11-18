@@ -164,7 +164,7 @@ export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 
 // Content type definitions
-export type ContentType = "quiz" | "flashcard" | "interactive-video" | "image-hotspot" | "drag-drop" | "fill-blanks" | "memory-game" | "interactive-book" | "video-finder" | "google-slides";
+export type ContentType = "quiz" | "flashcard" | "interactive-video" | "image-hotspot" | "drag-drop" | "fill-blanks" | "memory-game" | "interactive-book" | "video-finder" | "presentation";
 
 export type QuizQuestion = {
   id: string;
@@ -340,7 +340,7 @@ export type VideoFinderData = {
   guidingQuestions?: string[]; // Questions to focus learning
 };
 
-// Google Slides types
+// Presentation types
 export type SlideContent = {
   id: string;
   type: "title" | "content" | "guiding-questions" | "reflection" | "image";
@@ -353,7 +353,7 @@ export type SlideContent = {
   notes?: string; // Speaker notes with pedagogical guidance
 };
 
-export type GoogleSlidesData = {
+export type PresentationData = {
   topic: string;
   gradeLevel: string;
   ageRange: string;
@@ -367,8 +367,8 @@ export type GoogleSlidesData = {
   imageProvider?: "puterjs" | "unsplash"; // Image source for slides (defaults to puterjs)
 };
 
-// Google Slides Generation request
-export const googleSlidesGenerationSchema = z.object({
+// Presentation Generation request
+export const presentationGenerationSchema = z.object({
   topic: z.string().min(1),
   gradeLevel: z.string().min(1),
   ageRange: z.string().min(1),
@@ -377,7 +377,7 @@ export const googleSlidesGenerationSchema = z.object({
   customInstructions: z.string().optional(), // Optional custom instructions from teacher
 });
 
-export type GoogleSlidesGenerationRequest = z.infer<typeof googleSlidesGenerationSchema>;
+export type PresentationGenerationRequest = z.infer<typeof presentationGenerationSchema>;
 
 // AI Generation request
 export const aiGenerationSchema = z.object({

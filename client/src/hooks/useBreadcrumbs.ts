@@ -30,7 +30,7 @@ const contentTypeConfig = {
   "memory-game": { icon: Brain, label: "Memory Game" },
   "interactive-book": { icon: BookOpenCheck, label: "Interactive Book" },
   "video-finder": { icon: Search, label: "Video Finder" },
-  "google-slides": { icon: Presentation, label: "Google Slides" },
+  "presentation": { icon: Presentation, label: "Presentation" },
 };
 
 export function useBreadcrumbs(contentId?: string): BreadcrumbItem[] {

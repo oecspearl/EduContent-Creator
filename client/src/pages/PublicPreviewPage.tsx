@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, VideoFinderData, GoogleSlidesData } from "@shared/schema";
+import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, VideoFinderData, PresentationData } from "@shared/schema";
 import { QuizPlayer } from "@/components/players/QuizPlayer";
 import { FlashcardPlayer } from "@/components/players/FlashcardPlayer";
 import { VideoPlayer } from "@/components/players/VideoPlayer";
@@ -16,7 +16,7 @@ import { FillBlanksPlayer } from "@/components/players/FillBlanksPlayer";
 import { MemoryGamePlayer } from "@/components/players/MemoryGamePlayer";
 import { InteractiveBookPlayer } from "@/components/players/InteractiveBookPlayer";
 import { VideoFinderPlayer } from "@/components/players/VideoFinderPlayer";
-import GoogleSlidesPlayer from "@/components/players/GoogleSlidesPlayer";
+import PresentationPlayer from "@/components/players/PresentationPlayer";
 
 export default function PublicPreviewPage() {
   const params = useParams();
@@ -131,7 +131,7 @@ export default function PublicPreviewPage() {
         {content.type === "memory-game" && <MemoryGamePlayer data={content.data as MemoryGameData} contentId={content.id} />}
         {content.type === "interactive-book" && <InteractiveBookPlayer data={content.data as InteractiveBookData} contentId={content.id} />}
         {content.type === "video-finder" && <VideoFinderPlayer data={content.data as VideoFinderData} />}
-        {content.type === "google-slides" && <GoogleSlidesPlayer data={content.data as GoogleSlidesData} />}
+        {content.type === "presentation" && <PresentationPlayer data={content.data as PresentationData} />}
       </main>
 
       {/* Footer */}

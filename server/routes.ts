@@ -8,7 +8,7 @@ import { storage } from "./storage";
 import { 
   aiGenerationSchema, 
   videoFinderPedagogySchema,
-  googleSlidesGenerationSchema,
+  presentationGenerationSchema,
   insertLearnerProgressSchema, 
   insertQuizAttemptSchema, 
   insertInteractionEventSchema 
@@ -24,7 +24,7 @@ import {
   generateMemoryGameCards,
   generateInteractiveBookPages,
   generateVideoFinderPedagogy,
-  generateGoogleSlides,
+  generatePresentation,
   getOpenAIClient
 } from "./openai";
 import { searchEducationalVideos } from "./youtube";
@@ -573,8 +573,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
           }
           
-          // Google Slides: data.gradeLevel (no subject)
-          if (content.type === "google-slides" && data) {
+          // Presentation: data.gradeLevel (no subject)
+          if (content.type === "presentation" && data) {
             return {
               subject: null,
               grade: data.gradeLevel || null,
@@ -1314,8 +1314,8 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   });
 
-  // Google Slides AI generation route
-  app.post("/api/google-slides/generate", requireAuth, async (req, res) => {
+  // Presentation AI generation route
+  app.post("/api/presentation/generate", requireAuth, async (req, res) => {
     // Set a timeout to prevent Heroku's 30-second limit from causing issues
     const timeout = setTimeout(() => {
       if (!res.headersSent) {
@@ -1326,26 +1326,26 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }, 25000); // 25 seconds to give us buffer before Heroku's 30s limit
 
     try {
-      const parsed = googleSlidesGenerationSchema.parse(req.body);
-      
-      console.log("Google Slides generation started:", {
+      const parsed = presentationGenerationSchema.parse(req.body);
+
+      console.log("Presentation generation started:", {
         topic: parsed.topic,
         numberOfSlides: parsed.numberOfSlides,
         gradeLevel: parsed.gradeLevel
       });
 
-      const slides = await generateGoogleSlides(parsed);
+      const slides = await generatePresentation(parsed);
 
       clearTimeout(timeout);
       
       if (!res.headersSent) {
-        console.log("Google Slides generation completed:", slides.length, "slides");
+        console.log("Presentation generation completed:", slides.length, "slides");
         res.json({ slides, generatedDate: new Date().toISOString() });
       }
     } catch (error: any) {
       clearTimeout(timeout);
       
-      console.error("Google Slides generation error:", error);
+      console.error("Presentation generation error:", error);
       
       if (res.headersSent) {
         return; // Response already sent
@@ -1447,7 +1447,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
   });
 
   // Create actual Google Slides presentation from generated content
-  app.post("/api/google-slides/create-presentation", requireAuth, async (req, res) => {
+  app.post("/api/presentation/create-presentation", requireAuth, async (req, res) => {
     try {
       const { title, slides } = req.body;
 
@@ -1468,7 +1468,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       }
 
       // Import services (dynamic to avoid loading if not needed)
-      const { createPresentation, addSlidesToPresentation } = await import('./google-slides');
+      const { createPresentation, addSlidesToPresentation } = await import('./presentation');
       const { searchPhotos, getAltText, generateAttribution } = await import('./unsplash');
 
       // Fetch real images for slides that need them
@@ -1498,10 +1498,10 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       res.json({ 
         presentationId, 
         url,
-        message: "Google Slides presentation created successfully!" 
+        message: "Presentation created successfully in Google Slides!" 
       });
     } catch (error: any) {
-      console.error("Create Google Slides presentation error:", error);
+      console.error("Create presentation error:", error);
       
       if (error.message?.includes('not connected their Google account')) {
         return res.status(403).json({ 
@@ -1510,7 +1510,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       }
       
       res.status(500).json({ 
-        message: error.message || "Failed to create Google Slides presentation. Please try again." 
+        message: error.message || "Failed to create presentation. Please try again." 
       });
     }
   });

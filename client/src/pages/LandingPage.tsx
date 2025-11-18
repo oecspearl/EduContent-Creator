@@ -43,7 +43,7 @@ export default function LandingPage() {
     { icon: Brain, name: "Memory Game", description: "Flip cards to find matching pairs", color: "bg-yellow-100 dark:bg-yellow-950 text-yellow-600 dark:text-yellow-400" },
     { icon: BookText, name: "Interactive Book", description: "Rich multimedia books", color: "bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400" },
     { icon: Search, name: "Video Finder", description: "Find educational videos from YouTube", color: "bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400" },
-    { icon: Presentation, name: "Google Slides", description: "AI-generated presentations with real images", color: "bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400" },
+    { icon: Presentation, name: "Presentation", description: "AI-generated presentations with real images", color: "bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400" },
   ];
 
   const features = [

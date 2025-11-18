@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, LayoutGrid, Presentation, ExternalLink } from "lucide-react";
-import type { GoogleSlidesData, SlideContent } from "@shared/schema";
+import type { PresentationData, SlideContent } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
-interface GoogleSlidesPlayerProps {
-  data: GoogleSlidesData;
+interface PresentationPlayerProps {
+  data: PresentationData;
 }
 
 // Color scheme definitions
@@ -49,7 +49,7 @@ const colorSchemes = {
   },
 };
 
-export default function GoogleSlidesPlayer({ data }: GoogleSlidesPlayerProps) {
+export default function PresentationPlayer({ data }: PresentationPlayerProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [viewMode, setViewMode] = useState<"presentation" | "grid">("presentation");
   

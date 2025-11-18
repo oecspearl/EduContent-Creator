@@ -20,7 +20,7 @@ import FillBlanksCreator from "@/pages/FillBlanksCreator";
 import MemoryGameCreator from "@/pages/MemoryGameCreator";
 import InteractiveBookCreator from "@/pages/InteractiveBookCreator";
 import VideoFinderCreator from "@/pages/VideoFinderCreator";
-import GoogleSlidesCreator from "@/pages/GoogleSlidesCreator";
+import PresentationCreator from "@/pages/PresentationCreator";
 import PreviewPage from "@/pages/PreviewPage";
 import SharePage from "@/pages/SharePage";
 import PublicPreviewPage from "@/pages/PublicPreviewPage";
@@ -116,11 +116,11 @@ function Router() {
       <Route path="/create/video-finder/:id">
         <ProtectedRoute component={VideoFinderCreator} />
       </Route>
-      <Route path="/create/google-slides">
-        <ProtectedRoute component={GoogleSlidesCreator} />
+      <Route path="/create/presentation">
+        <ProtectedRoute component={PresentationCreator} />
       </Route>
-      <Route path="/create/google-slides/:id">
-        <ProtectedRoute component={GoogleSlidesCreator} />
+      <Route path="/create/presentation/:id">
+        <ProtectedRoute component={PresentationCreator} />
       </Route>
       <Route path="/preview/:id">
         <ProtectedRoute component={PreviewPage} />

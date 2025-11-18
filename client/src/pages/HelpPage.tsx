@@ -127,7 +127,7 @@ export default function HelpPage() {
               <div>
                 <h4 className="font-semibold text-foreground mb-1">Choose a Content Type</h4>
                 <p className="text-sm text-muted-foreground">
-                  Select from ten interactive content types on your dashboard: Quiz, Flashcard, Interactive Video, Image Hotspot, Drag & Drop, Fill in the Blanks, Memory Game, Interactive Book, Video Finder, or Google Slides.
+                  Select from ten interactive content types on your dashboard: Quiz, Flashcard, Interactive Video, Image Hotspot, Drag & Drop, Fill in the Blanks, Memory Game, Interactive Book, Video Finder, or Presentation.
                 </p>
               </div>
             </div>
@@ -403,24 +403,24 @@ export default function HelpPage() {
                     <Presentation className="h-6 w-6" />
                   </div>
                   <div>
-                    <CardTitle>Google Slides</CardTitle>
+                    <CardTitle>Presentation</CardTitle>
                     <CardDescription>AI-generated educational presentations</CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Create professional educational presentations powered by AI. Specify your topic, grade level, and learning outcomes, and the AI generates a complete slide deck with real educational images from Unsplash. Export directly to Google Slides for editing and presenting.
+                  Create professional educational presentations powered by AI. Specify your topic, grade level, and learning outcomes, and the AI generates a complete slide deck with real educational images. Export directly to Google Slides for editing and presenting.
                 </p>
                 <p className="text-sm font-semibold text-foreground mb-2">Features:</p>
                 <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                   <li>AI-generated pedagogically sound content following Universal Design for Learning (UDL)</li>
-                  <li>Real educational images automatically sourced from Unsplash</li>
+                  <li>Real educational images automatically sourced from Unsplash or AI-generated</li>
                   <li>Speaker notes with teaching tips and pedagogical guidance</li>
                   <li>Guiding questions (recall to analysis to application levels)</li>
                   <li>Reflection questions for deeper thinking</li>
                   <li>One-click export to create actual Google Slides presentations</li>
-                  <li>Full editing capability in Google Slides</li>
+                  <li>Full editing capability - edit slides directly in the creator or in Google Slides</li>
                 </ul>
                 <p className="text-sm font-semibold text-foreground mt-3 mb-2">Best Practices:</p>
                 <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
@@ -428,7 +428,7 @@ export default function HelpPage() {
                   <li>Specify accurate grade level and age range</li>
                   <li>Review and customize AI-generated content before sharing</li>
                   <li>Use speaker notes as a teaching guide</li>
-                  <li>Edit in Google Slides for advanced customization</li>
+                  <li>Edit slides directly in the creator or export to Google Slides for advanced customization</li>
                 </ul>
               </CardContent>
             </Card>
@@ -577,7 +577,7 @@ export default function HelpPage() {
                       <li>✓ Memory Games</li>
                       <li>✓ Interactive Books</li>
                       <li>✓ Video Finder Collections</li>
-                      <li>✓ Google Slides Presentations</li>
+                      <li>✓ Presentations</li>
                     </ul>
                   </div>
                   <div>

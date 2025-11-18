@@ -39,7 +39,7 @@ export function AIGenerationModal({ open, onOpenChange, contentType, onGenerated
     "memory-game": "memory cards",
     "interactive-book": "book pages",
     "video-finder": "video lessons",
-    "google-slides": "presentation slides",
+    "presentation": "presentation slides",
   };
 
   const handleGenerate = async () => {
