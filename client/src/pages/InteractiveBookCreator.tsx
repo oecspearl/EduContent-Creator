@@ -27,6 +27,8 @@ export default function InteractiveBookCreator() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [subject, setSubject] = useState("");
+  const [gradeLevel, setGradeLevel] = useState("");
   const [pages, setPages] = useState<InteractiveBookData["pages"]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [settings, setSettings] = useState({
@@ -55,6 +57,8 @@ export default function InteractiveBookCreator() {
       const data = content.data as InteractiveBookData;
       const loadedPages = data.pages || [];
       setPages(loadedPages);
+      setSubject(data.subject || "");
+      setGradeLevel(data.gradeLevel || "");
       setSettings(data.settings || settings);
       setIsPublished(content.isPublished);
       setIsPublic(content.isPublic || false);
@@ -72,7 +76,12 @@ export default function InteractiveBookCreator() {
 
   const saveMutation = useMutation({
     mutationFn: async (publish: boolean = false) => {
-      const data: InteractiveBookData = { pages, settings };
+      const data: InteractiveBookData = { 
+        pages, 
+        settings,
+        ...(subject && { subject }),
+        ...(gradeLevel && { gradeLevel }),
+      };
       
       if (isEditing) {
         const response = await apiRequest("PUT", `/api/content/${contentId}`, {
@@ -285,6 +294,28 @@ export default function InteractiveBookCreator() {
                   placeholder="Enter book description"
                   data-testid="input-description"
                 />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="subject">Subject</Label>
+                  <Input
+                    id="subject"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="e.g., Mathematics, Science, Language Arts"
+                    data-testid="input-subject"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="gradeLevel">Grade Level</Label>
+                  <Input
+                    id="gradeLevel"
+                    value={gradeLevel}
+                    onChange={(e) => setGradeLevel(e.target.value)}
+                    placeholder="e.g., Grade 5, Grade 6-8"
+                    data-testid="input-grade-level"
+                  />
+                </div>
               </div>
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div className="space-y-0.5">

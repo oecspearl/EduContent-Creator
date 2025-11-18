@@ -306,6 +306,8 @@ export type BookPage = {
 
 export type InteractiveBookData = {
   pages: BookPage[];
+  subject?: string; // Subject area (e.g., "Mathematics", "Science", "Language Arts")
+  gradeLevel?: string; // Grade level (e.g., "Grade 5", "Grade 6-8")
   settings: {
     showNavigation: boolean;
     showProgress: boolean;

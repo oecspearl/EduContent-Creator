@@ -581,6 +581,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
           }
           
+          // Interactive Book: data.subject and data.gradeLevel
+          if (content.type === "interactive-book" && data) {
+            return {
+              subject: data.subject || null,
+              grade: data.gradeLevel || null,
+            };
+          }
+          
           // Other content types might have these in metadata
           if (data?.metadata) {
             return {
