@@ -25,11 +25,50 @@ export function InteractiveBookPlayer({ data, contentId }: InteractiveBookPlayer
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [viewedPages, setViewedPages] = useState<Set<number>>(new Set([0]));
 
-  const currentPage = data.pages[currentPageIndex];
+  // Ensure currentPageIndex is within bounds
+  const safePageIndex = Math.max(0, Math.min(currentPageIndex, data.pages.length - 1));
+  const currentPage = data.pages[safePageIndex];
+  
+  // Update currentPageIndex if it was out of bounds
+  useEffect(() => {
+    if (currentPageIndex !== safePageIndex) {
+      setCurrentPageIndex(safePageIndex);
+    }
+  }, [currentPageIndex, safePageIndex]);
+
+  // If no pages exist, show error message
+  if (!data.pages || data.pages.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Pages Available</h3>
+          <p className="text-muted-foreground">
+            This interactive book doesn't have any pages yet.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // If currentPage is still undefined, show error
+  if (!currentPage) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Page Not Found</h3>
+          <p className="text-muted-foreground">
+            The requested page could not be found.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
   
   const { data: embeddedContent, isLoading: isLoadingEmbedded, error: embeddedError } = useQuery<H5pContent>({
     queryKey: ["/api/content", currentPage.embeddedContentId],
-    enabled: !!currentPage.embeddedContentId,
+    enabled: !!currentPage?.embeddedContentId,
   });
 
   const hasLegacySnapshot = !!currentPage.embeddedContent;
