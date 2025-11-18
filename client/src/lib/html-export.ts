@@ -20,7 +20,9 @@ function ensureDataUri(data: string): string {
 // Generate HTML for a single image
 function generateImageHtml(imageUrl: string, alt: string = ""): string {
   const dataUri = ensureDataUri(imageUrl);
-  return `<img src="${dataUri}" alt="${alt}" style="max-width: 100%; height: auto; margin: 1rem 0;" />`;
+  return `<div style="text-align: center; margin: 1.5rem 0;">
+    <img src="${dataUri}" alt="${alt}" style="max-width: 100%; max-height: 500px; height: auto; width: auto; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+  </div>`;
 }
 
 // Generate HTML for audio player
@@ -41,10 +43,10 @@ function generateAudioHtml(audioUrl: string): string {
 // Generate HTML for YouTube video
 function generateVideoHtml(videoId: string, title: string = ""): string {
   return `
-    <div style="margin: 1rem 0; position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%;">
+    <div style="margin: 1.5rem 0; position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
       <iframe 
         src="https://www.youtube.com/embed/${videoId}" 
-        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 8px;"
         frameborder="0" 
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
         allowfullscreen
@@ -98,36 +100,52 @@ export function generateHTMLExport(
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
+      line-height: 1.8;
       color: #333;
       background: #fff;
-      padding: 2rem;
-      max-width: 1200px;
+      padding: 1rem;
+      max-width: 900px;
       margin: 0 auto;
+      font-size: 16px;
     }
     h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
       color: #1a1a1a;
+      line-height: 1.2;
     }
     h2 {
-      font-size: 1.5rem;
-      margin-top: 2rem;
+      font-size: 2rem;
+      margin-top: 1.5rem;
       margin-bottom: 1rem;
       color: #2a2a2a;
       border-bottom: 2px solid #e0e0e0;
       padding-bottom: 0.5rem;
+      line-height: 1.3;
     }
     h3 {
-      font-size: 1.25rem;
+      font-size: 1.5rem;
       margin-top: 1.5rem;
-      margin-bottom: 0.75rem;
+      margin-bottom: 1rem;
       color: #3a3a3a;
+      line-height: 1.4;
+    }
+    h4 {
+      font-size: 1.25rem;
+      margin-top: 1rem;
+      margin-bottom: 0.75rem;
+      color: #4a4a4a;
+    }
+    p {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      line-height: 1.8;
     }
     .description {
       color: #666;
       margin-bottom: 2rem;
       font-style: italic;
+      font-size: 1.1rem;
     }
     .page {
       margin-bottom: 3rem;
@@ -146,10 +164,15 @@ export function generateHTMLExport(
     }
     .question {
       margin-bottom: 1.5rem;
-      padding: 1rem;
+      padding: 1.5rem;
       background: #f9f9f9;
       border-left: 4px solid #4a90e2;
       border-radius: 4px;
+      font-size: 1.1rem;
+    }
+    .question p {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
     }
     .options {
       margin-left: 1.5rem;
@@ -186,8 +209,13 @@ export function generateHTMLExport(
       background: #fff3cd;
       border: 1px solid #ffc107;
       border-radius: 4px;
-      padding: 1rem;
-      margin: 1rem 0;
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+      font-size: 1.1rem;
+      line-height: 1.8;
+    }
+    .instructions strong {
+      font-size: 1.15rem;
     }
     .book-navigation {
       display: flex;
@@ -227,6 +255,37 @@ export function generateHTMLExport(
     }
     .book-page {
       animation: fadeIn 0.3s;
+      padding: 2rem 1rem;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    .page-content {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      max-width: 100%;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+    }
+    .page-content p {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      line-height: 1.8;
+    }
+    .page-content img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 1.5rem auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .page-content iframe {
+      max-width: 100%;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      margin: 1.5rem 0;
+      border-radius: 8px;
     }
     @keyframes fadeIn {
       from { opacity: 0; }
@@ -235,9 +294,22 @@ export function generateHTMLExport(
     .interactive-quiz {
       border: 2px solid #4a90e2;
       border-radius: 8px;
-      padding: 1.5rem;
-      margin: 1rem 0;
+      padding: 2rem;
+      margin: 1.5rem 0;
       background: #f9f9f9;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    .interactive-quiz h3 {
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+    }
+    .interactive-question {
+      font-size: 1.1rem;
+    }
+    .interactive-question p {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
     }
     .quiz-header {
       display: flex;
@@ -347,6 +419,15 @@ export function generateHTMLExport(
       color: #4a90e2;
     }
     .audio-narration {
+      margin: 1.5rem 0;
+      font-size: 1.1rem;
+    }
+    .audio-narration strong {
+      font-size: 1.15rem;
+    }
+    audio {
+      width: 100%;
+      max-width: 600px;
       margin: 1rem 0;
     }
     @media print {
