@@ -18,6 +18,210 @@ import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Image as ImageIcon, Upload, X
 import type { H5pContent, MemoryGameData, MemoryCard } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 
+type CardPairEditorProps = {
+  card1: MemoryCard;
+  card2: MemoryCard;
+  pairIndex: number;
+  onCard1Update: (updates: Partial<MemoryCard>) => void;
+  onCard2Update: (updates: Partial<MemoryCard>) => void;
+  onRemove: () => void;
+  onImageUpload: (cardId: string, file: File) => void;
+  onImageUrl: (cardId: string, url: string) => void;
+  onImageGenerated: (cardId: string, imageUrl: string) => void;
+  onRemoveImage: (cardId: string) => void;
+};
+
+function CardPairEditor({
+  card1,
+  card2,
+  pairIndex,
+  onCard1Update,
+  onCard2Update,
+  onRemove,
+  onImageUpload,
+  onImageUrl,
+  onImageGenerated,
+  onRemoveImage,
+}: CardPairEditorProps) {
+  const [showImageDialog1, setShowImageDialog1] = useState(false);
+  const [showImageDialog2, setShowImageDialog2] = useState(false);
+  const [imageUrlInput1, setImageUrlInput1] = useState("");
+  const [imageUrlInput2, setImageUrlInput2] = useState("");
+  const fileInputRef1 = useRef<HTMLInputElement>(null);
+  const fileInputRef2 = useRef<HTMLInputElement>(null);
+
+  const renderCardEditor = (
+    card: MemoryCard,
+    cardNumber: 1 | 2,
+    showImageDialog: boolean,
+    setShowImageDialog: (show: boolean) => void,
+    imageUrlInput: string,
+    setImageUrlInput: (url: string) => void,
+    fileInputRef: React.RefObject<HTMLInputElement>,
+    onUpdate: (updates: Partial<MemoryCard>) => void
+  ) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        if (file.size > 2 * 1024 * 1024) {
+          alert("File size must be less than 2MB");
+          return;
+        }
+        onImageUpload(card.id, file);
+      }
+    };
+
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label>Card {cardNumber}</Label>
+          <div className="flex gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onUpdate({ type: card.type === "text" ? "image" : "text" });
+                if (card.type === "text") {
+                  setShowImageDialog(true);
+                }
+              }}
+              data-testid={`button-toggle-type-${cardNumber}-${pairIndex}`}
+            >
+              <ImageIcon className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
+        {card.type === "text" ? (
+          <Input
+            value={card.content}
+            onChange={(e) => onUpdate({ content: e.target.value })}
+            placeholder="Card content"
+            data-testid={`input-card${cardNumber}-${pairIndex}`}
+          />
+        ) : (
+          <div className="space-y-2">
+            {card.imageUrl ? (
+              <div className="relative border rounded-lg p-2">
+                <img
+                  src={card.imageUrl}
+                  alt="Card image"
+                  className="w-full h-32 object-contain rounded"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-1 right-1"
+                  onClick={() => onRemoveImage(card.id)}
+                  data-testid={`button-remove-image-${cardNumber}-${pairIndex}`}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+                <DialogTrigger asChild>
+                  <Button type="button" variant="outline" className="w-full" data-testid={`button-add-image-${cardNumber}-${pairIndex}`}>
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    Add Image
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Image to Card {cardNumber}</DialogTitle>
+                  </DialogHeader>
+                  <Tabs defaultValue="upload" className="py-4">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="upload">Upload</TabsTrigger>
+                      <TabsTrigger value="url">URL</TabsTrigger>
+                      <TabsTrigger value="ai">AI Generate</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="upload" className="space-y-4 pt-4">
+                      <div>
+                        <Label htmlFor={`image-file-${card.id}`}>Choose an image file</Label>
+                        <Input
+                          ref={fileInputRef}
+                          id={`image-file-${card.id}`}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="mt-2"
+                          data-testid={`input-image-file-${cardNumber}-${pairIndex}`}
+                        />
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Maximum file size: 2MB. Supported formats: JPG, PNG, GIF, WebP
+                        </p>
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="url" className="space-y-4 pt-4">
+                      <div>
+                        <Label htmlFor={`image-url-${card.id}`}>Image URL</Label>
+                        <Input
+                          id={`image-url-${card.id}`}
+                          value={imageUrlInput}
+                          onChange={(e) => setImageUrlInput(e.target.value)}
+                          placeholder="https://example.com/image.jpg"
+                          className="mt-2"
+                          data-testid={`input-image-url-${cardNumber}-${pairIndex}`}
+                        />
+                      </div>
+                      <Button
+                        onClick={() => {
+                          if (imageUrlInput.trim()) {
+                            onImageUrl(card.id, imageUrlInput.trim());
+                            setImageUrlInput("");
+                            setShowImageDialog(false);
+                          }
+                        }}
+                        className="w-full"
+                        data-testid={`button-use-url-${cardNumber}-${pairIndex}`}
+                      >
+                        Use URL
+                      </Button>
+                    </TabsContent>
+                    <TabsContent value="ai" className="space-y-4 pt-4">
+                      <ImageGeneratorDialog
+                        open={showImageDialog}
+                        onOpenChange={setShowImageDialog}
+                        onImageGenerated={(imageUrl) => {
+                          onImageGenerated(card.id, imageUrl);
+                          setShowImageDialog(false);
+                        }}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="border rounded-lg p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <Label>Pair {pairIndex + 1}</Label>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRemove}
+          data-testid={`button-remove-pair-${pairIndex}`}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        {renderCardEditor(card1, 1, showImageDialog1, setShowImageDialog1, imageUrlInput1, setImageUrlInput1, fileInputRef1, onCard1Update)}
+        {renderCardEditor(card2, 2, showImageDialog2, setShowImageDialog2, imageUrlInput2, setImageUrlInput2, fileInputRef2, onCard2Update)}
+      </div>
+    </div>
+  );
+}
+
 export default function MemoryGameCreator() {
   const params = useParams();
   const [_, navigate] = useLocation();
