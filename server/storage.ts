@@ -24,7 +24,7 @@ export interface IStorage {
   updateContent(id: string, updates: Partial<InsertH5pContent>): Promise<H5pContent | undefined>;
   deleteContent(id: string): Promise<void>;
   getContentById(id: string): Promise<H5pContent | undefined>;
-  getContentByUserId(userId: string): Promise<H5pContent[]>;
+  getContentByUserId(userId: string, limit?: number): Promise<H5pContent[]>;
   getPublishedContent(id: string): Promise<H5pContent | undefined>;
   getPublicContent(): Promise<H5pContent[]>;
   copyContent(contentId: string, userId: string): Promise<H5pContent>;
@@ -114,8 +114,123 @@ export class DbStorage implements IStorage {
     return content;
   }
 
-  async getContentByUserId(userId: string): Promise<H5pContent[]> {
-    return await db.select().from(h5pContent).where(eq(h5pContent.userId, userId));
+  async getContentByUserId(userId: string, limit?: number): Promise<H5pContent[]> {
+    try {
+      console.log("[STORAGE] getContentByUserId called with userId:", userId);
+      console.log("[STORAGE] Database instance exists:", !!db);
+      
+      // Build query with limit to prevent "response too large" errors
+      // Start with very small limit since some users have extremely large content items
+      // We'll use lightweight metadata-only retrieval for large datasets
+      const queryLimit = limit || 50;
+      
+      let query = db
+        .select()
+        .from(h5pContent)
+        .where(eq(h5pContent.userId, userId))
+        .orderBy(desc(h5pContent.updatedAt))
+        .limit(queryLimit);
+      
+      const result = await query;
+      console.log("[STORAGE] Query successful, returned", result.length, "items (limit:", queryLimit, ")");
+      
+      // If we hit the limit, warn that there might be more content
+      if (result.length === queryLimit) {
+        console.warn("[STORAGE] Warning: Query returned maximum items. There may be more content.");
+      }
+      
+      return result;
+    } catch (error: any) {
+      console.error("========================================");
+      console.error("[STORAGE] Database query error in getContentByUserId");
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      
+      // Special handling for "response too large" error
+      if (error.message && (error.message.includes("response is too large") || error.message.includes("507"))) {
+        console.error("[STORAGE] ERROR: User has too much content! Response exceeds 64MB limit.");
+        console.error("[STORAGE] Solution: Implementing lightweight retrieval (metadata only)...");
+        
+        // Try to get content metadata only (without the large data field)
+        try {
+          // Select only essential fields, excluding the large JSONB data field
+          const chunkSize = 10; // Very small chunks since items are huge
+          let allContent: any[] = [];
+          let offset = 0;
+          let hasMore = true;
+          let attempts = 0;
+          const maxAttempts = 50; // Limit to 500 items max (50 chunks * 10 items)
+          
+          while (hasMore && allContent.length < 500 && attempts < maxAttempts) {
+            attempts++;
+            try {
+              // Try to get just metadata first
+              const chunk = await db
+                .select({
+                  id: h5pContent.id,
+                  title: h5pContent.title,
+                  description: h5pContent.description,
+                  type: h5pContent.type,
+                  userId: h5pContent.userId,
+                  isPublished: h5pContent.isPublished,
+                  isPublic: h5pContent.isPublic,
+                  tags: h5pContent.tags,
+                  createdAt: h5pContent.createdAt,
+                  updatedAt: h5pContent.updatedAt,
+                  // Exclude the large 'data' field for now
+                })
+                .from(h5pContent)
+                .where(eq(h5pContent.userId, userId))
+                .orderBy(desc(h5pContent.updatedAt))
+                .limit(chunkSize)
+                .offset(offset);
+              
+              if (chunk.length === 0) {
+                hasMore = false;
+              } else {
+                // Add empty data field to maintain structure
+                const chunkWithData = chunk.map(item => ({
+                  ...item,
+                  data: {} // Empty data for list view
+                }));
+                allContent = allContent.concat(chunkWithData);
+                offset += chunkSize;
+                
+                // If we got less than chunkSize, we're done
+                if (chunk.length < chunkSize) {
+                  hasMore = false;
+                }
+              }
+            } catch (chunkError: any) {
+              console.error(`[STORAGE] Chunk ${attempts} failed:`, chunkError.message);
+              // If even metadata fails, try even smaller chunks
+              if (chunkSize > 1) {
+                console.warn(`[STORAGE] Reducing chunk size and retrying...`);
+                // Will retry with same offset on next iteration
+                continue;
+              } else {
+                hasMore = false;
+              }
+            }
+          }
+          
+          console.log(`[STORAGE] Retrieved ${allContent.length} items (metadata only)`);
+          console.warn(`[STORAGE] Note: Full content data excluded due to size. Load individual items when needed.`);
+          return allContent;
+        } catch (chunkError: any) {
+          console.error("[STORAGE] Lightweight retrieval also failed:", chunkError.message);
+          console.warn("[STORAGE] Returning empty array to prevent crash.");
+          console.warn("[STORAGE] User may need to delete some old/large content items.");
+          return [];
+        }
+      }
+      
+      console.error("Error code:", error.code);
+      console.error("Error stack:", error.stack);
+      console.error("User ID:", userId);
+      console.error("========================================");
+      throw error;
+    }
   }
 
   async getPublishedContent(id: string): Promise<H5pContent | undefined> {

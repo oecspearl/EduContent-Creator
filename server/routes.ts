@@ -382,11 +382,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint to check database (no auth required for debugging)
+  app.get("/api/test-db", async (req, res) => {
+    try {
+      const userId = req.session.userId || "test-user";
+      console.log("[TEST] User ID:", userId);
+      console.log("[TEST] Testing database query...");
+      
+      // Test basic query - use a test user ID if not logged in
+      const testResult = await storage.getContentByUserId(userId);
+      console.log("[TEST] Query successful, found", testResult.length, "items");
+      
+      res.json({ 
+        success: true, 
+        userId,
+        count: testResult.length,
+        message: "Database query works!",
+        authenticated: !!req.session.userId
+      });
+    } catch (error: any) {
+      console.error("[TEST] Database test failed:", error);
+      console.error("[TEST] Error name:", error.name);
+      console.error("[TEST] Error message:", error.message);
+      console.error("[TEST] Error stack:", error.stack);
+      res.status(500).json({ 
+        success: false,
+        error: error.message,
+        stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+        name: error.name,
+        code: error.code
+      });
+    }
+  });
+
   // Content routes
   app.get("/api/content", requireAuth, async (req, res) => {
     try {
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized - no user ID in session" });
+      }
+      
+      // Get user profile to check email
+      const userProfile = await storage.getProfileById(userId);
+      const userEmail = userProfile?.email || "unknown";
+      
+      console.log(`[DEBUG] Getting content for user: ${userId}`);
+      console.log(`[DEBUG] User email: ${userEmail}`);
+      
+      // Special debugging for the problematic user
+      if (userEmail === "royston.emmanuel@oecs.int") {
+        console.log(`[DEBUG] Special handling for royston.emmanuel@oecs.int`);
+        console.log(`[DEBUG] User ID type: ${typeof userId}, value: ${userId}`);
+        console.log(`[DEBUG] User profile:`, JSON.stringify(userProfile, null, 2));
+      }
+      
       const { search, type, tags, startDate, endDate } = req.query;
-      let contents = await storage.getContentByUserId(req.session.userId!);
+      let contents = await storage.getContentByUserId(userId);
       
       // Apply search filter (title or description)
       if (search && typeof search === 'string') {
@@ -435,8 +487,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(contents);
     } catch (error: any) {
+      console.error("========================================");
       console.error("Get content error:", error);
-      res.status(500).json({ message: "Failed to fetch content" });
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Error code:", error.code);
+      console.error("Error stack:", error.stack);
+//   console.error("User ID:", userId); // userId is not defined; commented out to fix error
+      console.error("========================================");
+      res.status(500).json({ 
+        message: "Failed to fetch content",
+        error: process.env.NODE_ENV === "development" ? error.message : undefined,
+        details: process.env.NODE_ENV === "development" ? {
+          name: error.name,
+          code: error.code,
+          message: error.message
+        } : undefined
+      });
     }
   });
 
