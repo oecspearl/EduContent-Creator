@@ -2,10 +2,16 @@ import OpenAI from "openai";
 import type { AIGenerationRequest, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, H5pContent, GoogleSlidesGenerationRequest, SlideContent } from "@shared/schema";
 
 // This is using OpenAI's API, which points to OpenAI's API servers and requires your own API key.
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Using gpt-4o as the default model (latest and most capable model as of 2024)
+const openai = new OpenAI({ 
+  apiKey: process.env.OPENAI_API_KEY,
+  timeout: 30000, // 30 second timeout for all requests
+});
 
 export function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is not set. Please configure it in your environment variables.");
+  }
   return openai;
 }
 
@@ -33,17 +39,25 @@ Respond in JSON format with an array of questions following this structure:
 }`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating quiz questions. Always respond with valid JSON." },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
     max_completion_tokens: 4096,
+    temperature: 0.7,
+  }, {
+    timeout: 30000, // 30 second timeout
   });
 
-  const result = JSON.parse(response.choices[0].message.content || "{}");
-  return result.questions || [];
+  try {
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    return result.questions || [];
+  } catch (parseError) {
+    console.error("Failed to parse OpenAI response for quiz questions:", parseError);
+    throw new Error("Received invalid response from AI. Please try again.");
+  }
 }
 
 export async function generateFlashcards(request: AIGenerationRequest): Promise<FlashcardData["cards"]> {
@@ -69,13 +83,16 @@ Respond in JSON format:
 }`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating flashcards. Always respond with valid JSON." },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
     max_completion_tokens: 4096,
+    temperature: 0.7,
+  }, {
+    timeout: 30000, // 30 second timeout
   });
 
   const result = JSON.parse(response.choices[0].message.content || "{}");
@@ -108,13 +125,16 @@ Respond in JSON format:
 }`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating interactive video content. Always respond with valid JSON." },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
     max_completion_tokens: 4096,
+    temperature: 0.7,
+  }, {
+    timeout: 30000, // 30 second timeout
   });
 
   const result = JSON.parse(response.choices[0].message.content || "{}");
@@ -145,17 +165,25 @@ Respond in JSON format:
 }`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating interactive image content. Always respond with valid JSON." },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
     max_completion_tokens: 4096,
+    temperature: 0.7,
+  }, {
+    timeout: 30000, // 30 second timeout
   });
 
-  const result = JSON.parse(response.choices[0].message.content || "{}");
-  return result.hotspots || [];
+  try {
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    return result.hotspots || [];
+  } catch (parseError) {
+    console.error("Failed to parse OpenAI response for image hotspots:", parseError);
+    throw new Error("Received invalid response from AI. Please try again.");
+  }
 }
 
 export async function generateDragDropItems(request: AIGenerationRequest): Promise<{ zones: DragAndDropData["zones"], items: DragAndDropData["items"] }> {
@@ -186,17 +214,25 @@ Respond in JSON format:
 }`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating interactive drag-and-drop activities. Always respond with valid JSON." },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
     max_completion_tokens: 4096,
+    temperature: 0.7,
+  }, {
+    timeout: 30000, // 30 second timeout
   });
 
-  const result = JSON.parse(response.choices[0].message.content || "{}");
-  return { zones: result.zones || [], items: result.items || [] };
+  try {
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    return { zones: result.zones || [], items: result.items || [] };
+  } catch (parseError) {
+    console.error("Failed to parse OpenAI response for drag-drop items:", parseError);
+    throw new Error("Received invalid response from AI. Please try again.");
+  }
 }
 
 export async function generateFillBlanksBlanks(request: AIGenerationRequest): Promise<{ text: string, blanks: FillInBlanksData["blanks"] }> {
@@ -223,17 +259,25 @@ Respond in JSON format:
 }`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating fill-in-the-blanks exercises. Always respond with valid JSON." },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
     max_completion_tokens: 4096,
+    temperature: 0.7,
+  }, {
+    timeout: 30000, // 30 second timeout
   });
 
-  const result = JSON.parse(response.choices[0].message.content || "{}");
-  return { text: result.text || "", blanks: result.blanks || [] };
+  try {
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    return { text: result.text || "", blanks: result.blanks || [] };
+  } catch (parseError) {
+    console.error("Failed to parse OpenAI response for fill-blanks:", parseError);
+    throw new Error("Received invalid response from AI. Please try again.");
+  }
 }
 
 export async function generateMemoryGameCards(request: AIGenerationRequest): Promise<MemoryGameData["cards"]> {
@@ -264,17 +308,25 @@ Respond in JSON format:
 }`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating memory game cards. Always respond with valid JSON." },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
     max_completion_tokens: 4096,
+    temperature: 0.7,
+  }, {
+    timeout: 30000, // 30 second timeout
   });
 
-  const result = JSON.parse(response.choices[0].message.content || "{}");
-  return result.cards || [];
+  try {
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    return result.cards || [];
+  } catch (parseError) {
+    console.error("Failed to parse OpenAI response for memory game cards:", parseError);
+    throw new Error("Received invalid response from AI. Please try again.");
+  }
 }
 
 export async function generateInteractiveBookPages(request: AIGenerationRequest): Promise<InteractiveBookData["pages"]> {
@@ -299,17 +351,25 @@ Respond in JSON format:
 }`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating interactive educational books. Always respond with valid JSON." },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
     max_completion_tokens: 4096,
+    temperature: 0.7,
+  }, {
+    timeout: 30000, // 30 second timeout
   });
 
-  const result = JSON.parse(response.choices[0].message.content || "{}");
-  return result.pages || [];
+  try {
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    return result.pages || [];
+  } catch (parseError) {
+    console.error("Failed to parse OpenAI response for interactive book pages:", parseError);
+    throw new Error("Received invalid response from AI. Please try again.");
+  }
 }
 
 export async function generateVideoFinderPedagogy(params: {
@@ -352,13 +412,16 @@ Respond in JSON format:
 }`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4o",
     messages: [
       { role: "system", content: "You are an expert educator creating video viewing guides. Always respond with valid JSON." },
       { role: "user", content: prompt },
     ],
     response_format: { type: "json_object" },
     max_completion_tokens: 2048,
+    temperature: 0.7,
+  }, {
+    timeout: 30000, // 30 second timeout
   });
 
   try {

@@ -1004,10 +1004,13 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
 
       const openai = getOpenAIClient();
       const stream = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-4o",
         messages,
         stream: true,
         max_completion_tokens: 2048,
+        temperature: 0.7,
+      }, {
+        timeout: 60000, // 60 second timeout for streaming (longer for chat)
       });
 
       let fullResponse = "";
