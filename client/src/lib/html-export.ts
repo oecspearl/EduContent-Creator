@@ -174,6 +174,36 @@ export function generateHTMLExport(
       background: #fff;
       page-break-after: always;
     }
+    .presentation-navigation {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: #f5f5f5;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .presentation-slides-container {
+      min-height: 400px;
+    }
+    .presentation-slide {
+      animation: fadeIn 0.3s;
+      padding: 2rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      margin-bottom: 2rem;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    .slide-indicator {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
     .slide-content {
       font-size: 1.1rem;
       line-height: 1.8;
@@ -500,10 +530,10 @@ export function generateHTMLExport(
       .slide {
         page-break-after: always;
       }
-      .book-navigation {
+      .book-navigation, .presentation-navigation {
         display: none;
       }
-      .book-page {
+      .book-page, .presentation-slide {
         display: block !important;
         page-break-after: always;
       }
@@ -515,6 +545,7 @@ export function generateHTMLExport(
   ${description ? `<div class="description">${escapeHtml(description)}</div>` : ""}
   ${bodyContent}
   ${content.type === "interactive-book" ? generateInteractiveBookScript(contentData) : ""}
+  ${content.type === "presentation" ? generatePresentationScript(contentData) : ""}
 </body>
 </html>`;
 }
@@ -554,14 +585,15 @@ function generatePresentationHTML(data: any): string {
     return "<p>No slides available.</p>";
   }
 
-  let html = "";
+  // Generate all slides as hidden divs (only first one visible)
+  let slidesHTML = "";
   data.slides.forEach((slide: any, index: number) => {
-    html += `<div class="slide">`;
-    html += `<h2>Slide ${index + 1}</h2>`;
+    slidesHTML += `<div class="presentation-slide" data-slide-index="${index}" ${index === 0 ? '' : 'style="display: none;"'}>`;
+    slidesHTML += `<h2>Slide ${index + 1}</h2>`;
     
     // Slide title
     if (slide.title) {
-      html += `<h3>${escapeHtml(slide.title)}</h3>`;
+      slidesHTML += `<h3>${escapeHtml(slide.title)}</h3>`;
     }
     
     // Slide content (can be HTML or plain text)
@@ -569,54 +601,68 @@ function generatePresentationHTML(data: any): string {
       // Check if content is HTML (contains tags)
       if (slide.content.includes('<') && slide.content.includes('>')) {
         // It's HTML, include it directly but sanitize
-        html += `<div class="slide-content">${slide.content}</div>`;
+        slidesHTML += `<div class="slide-content">${slide.content}</div>`;
       } else {
         // It's plain text, escape and format
-        html += `<div class="slide-content"><p>${escapeHtml(slide.content)}</p></div>`;
+        slidesHTML += `<div class="slide-content"><p>${escapeHtml(slide.content)}</p></div>`;
       }
     }
     
     // Bullet points
     if (slide.bulletPoints && Array.isArray(slide.bulletPoints) && slide.bulletPoints.length > 0) {
-      html += `<ul class="bullet-points">`;
+      slidesHTML += `<ul class="bullet-points">`;
       slide.bulletPoints.forEach((point: string) => {
         if (point && point.trim()) {
-          html += `<li>${escapeHtml(point)}</li>`;
+          slidesHTML += `<li>${escapeHtml(point)}</li>`;
         }
       });
-      html += `</ul>`;
+      slidesHTML += `</ul>`;
     }
     
     // Questions (for guiding-questions slide type)
     if (slide.questions && Array.isArray(slide.questions) && slide.questions.length > 0) {
-      html += `<div class="slide-questions">`;
-      html += `<h4>Questions:</h4>`;
-      html += `<ul class="question-list">`;
+      slidesHTML += `<div class="slide-questions">`;
+      slidesHTML += `<h4>Questions:</h4>`;
+      slidesHTML += `<ul class="question-list">`;
       slide.questions.forEach((question: string) => {
         if (question && question.trim()) {
-          html += `<li>${escapeHtml(question)}</li>`;
+          slidesHTML += `<li>${escapeHtml(question)}</li>`;
         }
       });
-      html += `</ul>`;
-      html += `</div>`;
+      slidesHTML += `</ul>`;
+      slidesHTML += `</div>`;
     }
     
     // Image (display after content)
     if (slide.imageUrl) {
-      html += generateImageHtml(slide.imageUrl, slide.imageAlt || slide.title || `Slide ${index + 1} image`);
+      slidesHTML += generateImageHtml(slide.imageUrl, slide.imageAlt || slide.title || `Slide ${index + 1} image`);
     }
     
     // Speaker notes (optional, shown in smaller text)
     if (slide.notes) {
-      html += `<div class="speaker-notes">`;
-      html += `<strong>Notes:</strong> ${escapeHtml(slide.notes)}`;
-      html += `</div>`;
+      slidesHTML += `<div class="speaker-notes">`;
+      slidesHTML += `<strong>Notes:</strong> ${escapeHtml(slide.notes)}`;
+      slidesHTML += `</div>`;
     }
     
-    html += `</div>`;
+    slidesHTML += `</div>`;
   });
 
-  return html;
+  // Navigation controls
+  const navHTML = `
+    <div class="presentation-navigation">
+      <button id="prev-slide-btn" class="nav-btn" onclick="goToSlide(currentSlideIndex - 1)" disabled>← Previous</button>
+      <span class="slide-indicator">
+        <span id="current-slide-num">1</span> / <span id="total-slides">${data.slides.length}</span>
+      </span>
+      <button id="next-slide-btn" class="nav-btn" onclick="goToSlide(currentSlideIndex + 1)" ${data.slides.length === 1 ? 'disabled' : ''}>Next →</button>
+    </div>
+    <div class="presentation-slides-container">
+      ${slidesHTML}
+    </div>
+  `;
+
+  return navHTML;
 }
 
 function generateInteractiveBookHTML(data: InteractiveBookData): string {
@@ -853,6 +899,61 @@ function generateFlashcardHTML(data: FlashcardData): string {
   });
 
   return html;
+}
+
+// Generate JavaScript for presentation functionality
+function generatePresentationScript(data: any): string {
+  const totalSlides = data.slides?.length || 0;
+  
+  return `
+  <script>
+    let currentSlideIndex = 0;
+    const totalSlides = ${totalSlides};
+    
+    function goToSlide(index) {
+      if (index < 0 || index >= totalSlides) return;
+      
+      // Hide current slide
+      const currentSlide = document.querySelector(\`.presentation-slide[data-slide-index="\${currentSlideIndex}"]\`);
+      if (currentSlide) {
+        currentSlide.style.display = 'none';
+      }
+      
+      // Show new slide
+      currentSlideIndex = index;
+      const newSlide = document.querySelector(\`.presentation-slide[data-slide-index="\${currentSlideIndex}"]\`);
+      if (newSlide) {
+        newSlide.style.display = 'block';
+        newSlide.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      
+      // Update navigation buttons
+      updateSlideNavigation();
+    }
+    
+    function updateSlideNavigation() {
+      const prevBtn = document.getElementById('prev-slide-btn');
+      const nextBtn = document.getElementById('next-slide-btn');
+      const currentSlideNum = document.getElementById('current-slide-num');
+      
+      if (prevBtn) prevBtn.disabled = currentSlideIndex === 0;
+      if (nextBtn) nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+      if (currentSlideNum) currentSlideNum.textContent = currentSlideIndex + 1;
+    }
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowLeft') {
+        goToSlide(currentSlideIndex - 1);
+      } else if (e.key === 'ArrowRight') {
+        goToSlide(currentSlideIndex + 1);
+      }
+    });
+    
+    // Initialize
+    updateSlideNavigation();
+  </script>
+  `;
 }
 
 // Generate JavaScript for interactive book functionality
