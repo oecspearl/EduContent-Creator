@@ -95,8 +95,13 @@ Respond in JSON format:
     timeout: 30000, // 30 second timeout
   });
 
-  const result = JSON.parse(response.choices[0].message.content || "{}");
-  return result.cards || [];
+  try {
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    return result.cards || [];
+  } catch (parseError) {
+    console.error("Failed to parse OpenAI response for flashcards:", parseError);
+    throw new Error("Received invalid response from AI. Please try again.");
+  }
 }
 
 export async function generateVideoHotspots(request: AIGenerationRequest): Promise<VideoHotspot[]> {
@@ -137,8 +142,13 @@ Respond in JSON format:
     timeout: 30000, // 30 second timeout
   });
 
-  const result = JSON.parse(response.choices[0].message.content || "{}");
-  return result.hotspots || [];
+  try {
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    return result.hotspots || [];
+  } catch (parseError) {
+    console.error("Failed to parse OpenAI response for video hotspots:", parseError);
+    throw new Error("Received invalid response from AI. Please try again.");
+  }
 }
 
 export async function generateImageHotspots(request: AIGenerationRequest): Promise<ImageHotspot[]> {

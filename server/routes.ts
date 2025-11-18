@@ -881,7 +881,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AI generation route
   app.post("/api/ai/generate", requireAuth, async (req, res) => {
+    // Set a timeout to prevent Heroku's 30-second limit from causing issues
+    const timeout = setTimeout(() => {
+      if (!res.headersSent) {
+        res.status(504).json({ 
+          message: "Request timeout - The AI generation is taking longer than expected. Please try again with fewer items or simpler content." 
+        });
+      }
+    }, 25000); // 25 seconds to give us buffer before Heroku's 30s limit
+
     try {
+      // Check if OpenAI API key is configured
+      if (!process.env.OPENAI_API_KEY) {
+        clearTimeout(timeout);
+        return res.status(500).json({ 
+          message: "OpenAI API key is not configured. Please set OPENAI_API_KEY in your environment variables." 
+        });
+      }
+
       const parsed = aiGenerationSchema.parse(req.body);
 
       let result: any;
@@ -912,13 +929,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
           result = { pages: await generateInteractiveBookPages(parsed) };
           break;
         default:
+          clearTimeout(timeout);
           return res.status(400).json({ message: "Invalid content type" });
       }
 
-      res.json(result);
+      clearTimeout(timeout);
+      
+      if (!res.headersSent) {
+        res.json(result);
+      }
     } catch (error: any) {
+      clearTimeout(timeout);
+      
       console.error("AI generation error:", error);
-      res.status(500).json({ message: error.message || "Failed to generate content" });
+      
+      if (res.headersSent) {
+        return; // Response already sent
+      }
+      
+      // Provide more specific error messages
+      if (error.message?.includes('API key') || error.message?.includes('authentication')) {
+        return res.status(401).json({ 
+          message: "OpenAI API authentication failed. Please check your OPENAI_API_KEY." 
+        });
+      }
+      
+      if (error.message?.includes('timeout') || error.code === 'ETIMEDOUT') {
+        return res.status(504).json({ 
+          message: "Request timeout - The AI generation took too long. Please try again with fewer items." 
+        });
+      }
+      
+      if (error.message?.includes('rate limit')) {
+        return res.status(429).json({ 
+          message: "Rate limit exceeded. Please wait a moment and try again." 
+        });
+      }
+      
+      res.status(500).json({ 
+        message: error.message || "Failed to generate content. Please try again." 
+      });
     }
   });
 
