@@ -2,7 +2,6 @@ import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
 import { type Server } from "http";
-import { nanoid } from "nanoid";
 
 // Vite logger - only created when vite is imported
 let viteLogger: ReturnType<typeof import("vite").createLogger> | null = null;
@@ -59,6 +58,8 @@ export async function setupVite(app: Express, server: Server) {
 
       // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      // Dynamically import nanoid only when needed (development only)
+      const { nanoid } = await import("nanoid");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
