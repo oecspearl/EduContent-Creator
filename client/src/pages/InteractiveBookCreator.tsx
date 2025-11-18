@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -308,13 +309,20 @@ export default function InteractiveBookCreator() {
                 </div>
                 <div>
                   <Label htmlFor="gradeLevel">Grade Level</Label>
-                  <Input
-                    id="gradeLevel"
-                    value={gradeLevel}
-                    onChange={(e) => setGradeLevel(e.target.value)}
-                    placeholder="e.g., Grade 5, Grade 6-8"
-                    data-testid="input-grade-level"
-                  />
+                  <Select value={gradeLevel} onValueChange={setGradeLevel}>
+                    <SelectTrigger id="gradeLevel" data-testid="select-grade-level">
+                      <SelectValue placeholder="Select grade level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pre-K">Pre-K</SelectItem>
+                      <SelectItem value="Kindergarten">Kindergarten</SelectItem>
+                      <SelectItem value="K-2">K-2 (Grades K-2)</SelectItem>
+                      <SelectItem value="3-5">3-5 (Grades 3-5)</SelectItem>
+                      <SelectItem value="6-8">6-8 (Grades 6-8)</SelectItem>
+                      <SelectItem value="9-12">9-12 (Grades 9-12)</SelectItem>
+                      <SelectItem value="Higher Education">Higher Education</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
