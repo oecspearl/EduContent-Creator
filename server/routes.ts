@@ -1315,6 +1315,38 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   });
 
+  // YouTube video search route (simple query-based for book pages)
+  app.post("/api/youtube/search-simple", requireAuth, async (req, res) => {
+    try {
+      const { query, maxResults = 10 } = req.body;
+
+      if (!query || typeof query !== 'string' || !query.trim()) {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+
+      if (maxResults < 1 || maxResults > 50) {
+        return res.status(400).json({ message: "Max results must be between 1 and 50" });
+      }
+
+      const { searchEducationalVideos } = await import('./youtube');
+      const results = await searchEducationalVideos({
+        subject: "",
+        topic: query.trim(),
+        learningOutcome: "",
+        gradeLevel: "",
+        ageRange: "",
+        maxResults,
+      });
+
+      res.json({ results, searchDate: new Date().toISOString() });
+    } catch (error: any) {
+      console.error("YouTube search error:", error);
+      res.status(500).json({ 
+        message: error.message || "Failed to search YouTube videos. Please try again." 
+      });
+    }
+  });
+
   // YouTube video search route
   app.post("/api/youtube/search", requireAuth, async (req, res) => {
     try {

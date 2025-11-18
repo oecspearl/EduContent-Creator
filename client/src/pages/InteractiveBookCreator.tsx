@@ -14,9 +14,12 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
-import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight, Layers, X, Sparkles, Save } from "lucide-react";
-import type { H5pContent, InteractiveBookData, ContentType } from "@shared/schema";
+import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight, Layers, X, Sparkles, Save, Video, Image, FileQuestion } from "lucide-react";
+import type { H5pContent, InteractiveBookData, ContentType, BookPageType, VideoPageData, QuizPageData, ImagePageData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
+import { VideoPageEditor } from "@/components/book-pages/VideoPageEditor";
+import { QuizPageEditor } from "@/components/book-pages/QuizPageEditor";
+import { ImagePageEditor } from "@/components/book-pages/ImagePageEditor";
 
 export default function InteractiveBookCreator() {
   const params = useParams();
@@ -41,6 +44,7 @@ export default function InteractiveBookCreator() {
   const [isPublic, setIsPublic] = useState(false);
   const [showEmbedDialog, setShowEmbedDialog] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
+  const [showPageTypeDialog, setShowPageTypeDialog] = useState(false);
 
   const { data: content } = useQuery<H5pContent>({
     queryKey: ["/api/content", contentId],
@@ -118,12 +122,14 @@ export default function InteractiveBookCreator() {
     },
   });
 
-  const addPage = () => {
+  const addPage = (pageType: BookPageType = "content") => {
     setPages([...pages, {
       id: Date.now().toString(),
       title: "",
+      pageType,
       content: "",
     }]);
+    setShowPageTypeDialog(false);
   };
 
   const embedContent = (selectedContent: H5pContent) => {
@@ -351,10 +357,69 @@ export default function InteractiveBookCreator() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Pages ({pages.length})</CardTitle>
-                <Button onClick={addPage} size="sm" data-testid="button-add-page">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Page
-                </Button>
+                <Dialog open={showPageTypeDialog} onOpenChange={setShowPageTypeDialog}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" data-testid="button-add-page">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Page
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Select Page Type</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid grid-cols-2 gap-4 py-4">
+                      <Card
+                        className="cursor-pointer hover-elevate"
+                        onClick={() => addPage("content")}
+                      >
+                        <CardContent className="p-6 text-center">
+                          <FileQuestion className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                          <h3 className="font-medium">Content Page</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Rich text content
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card
+                        className="cursor-pointer hover-elevate"
+                        onClick={() => addPage("video")}
+                      >
+                        <CardContent className="p-6 text-center">
+                          <Video className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                          <h3 className="font-medium">Video Page</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            YouTube videos
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card
+                        className="cursor-pointer hover-elevate"
+                        onClick={() => addPage("quiz")}
+                      >
+                        <CardContent className="p-6 text-center">
+                          <FileQuestion className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                          <h3 className="font-medium">Quiz Page</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Interactive quiz
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card
+                        className="cursor-pointer hover-elevate"
+                        onClick={() => addPage("image")}
+                      >
+                        <CardContent className="p-6 text-center">
+                          <Image className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                          <h3 className="font-medium">Image Page</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Images with instructions
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -413,19 +478,74 @@ export default function InteractiveBookCreator() {
                           data-testid={`input-page-title-${currentPageIndex}`}
                         />
                       </div>
-                      <div>
-                        <Label>Page Content</Label>
-                        <RichTextEditor
-                          key={`editor-${currentPageIndex}-${pages[currentPageIndex].id}`}
-                          content={pages[currentPageIndex].content}
-                          onChange={(html) => {
-                            const updated = [...pages];
-                            updated[currentPageIndex] = { ...updated[currentPageIndex], content: html };
-                            setPages(updated);
-                          }}
-                          placeholder="Write your page content here. Use the toolbar to format text and add images..."
-                        />
-                      </div>
+
+                      {/* Page Type Specific Editors */}
+                      {(!pages[currentPageIndex].pageType || pages[currentPageIndex].pageType === "content") && (
+                        <div>
+                          <Label>Page Content</Label>
+                          <RichTextEditor
+                            key={`editor-${currentPageIndex}-${pages[currentPageIndex].id}`}
+                            content={pages[currentPageIndex].content}
+                            onChange={(html) => {
+                              const updated = [...pages];
+                              updated[currentPageIndex] = { ...updated[currentPageIndex], content: html };
+                              setPages(updated);
+                            }}
+                            placeholder="Write your page content here. Use the toolbar to format text and add images..."
+                          />
+                        </div>
+                      )}
+
+                      {pages[currentPageIndex].pageType === "video" && (
+                        <div>
+                          <Label>Video Page</Label>
+                          <VideoPageEditor
+                            videoData={pages[currentPageIndex].videoData}
+                            onSave={(videoData: VideoPageData) => {
+                              const updated = [...pages];
+                              updated[currentPageIndex] = {
+                                ...updated[currentPageIndex],
+                                videoData,
+                              };
+                              setPages(updated);
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {pages[currentPageIndex].pageType === "quiz" && (
+                        <div>
+                          <Label>Quiz Page</Label>
+                          <QuizPageEditor
+                            quizData={pages[currentPageIndex].quizData}
+                            onSave={(quizData: QuizPageData) => {
+                              const updated = [...pages];
+                              updated[currentPageIndex] = {
+                                ...updated[currentPageIndex],
+                                quizData,
+                              };
+                              setPages(updated);
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {pages[currentPageIndex].pageType === "image" && (
+                        <div>
+                          <Label>Image Page</Label>
+                          <ImagePageEditor
+                            imageData={pages[currentPageIndex].imageData}
+                            onSave={(imageData: ImagePageData) => {
+                              const updated = [...pages];
+                              updated[currentPageIndex] = {
+                                ...updated[currentPageIndex],
+                                imageData,
+                              };
+                              setPages(updated);
+                            }}
+                          />
+                        </div>
+                      )}
 
                       <div>
                         <div className="flex items-center justify-between mb-2">

@@ -292,10 +292,43 @@ export type MemoryGameData = {
 };
 
 // Interactive Book types
+export type BookPageType = "content" | "video" | "quiz" | "image";
+
+export type VideoPageData = {
+  videoId: string; // YouTube video ID
+  videoUrl: string; // Full YouTube URL
+  title: string;
+  description?: string;
+  thumbnailUrl?: string;
+  instructions?: string; // Instructions for viewing the video
+};
+
+export type QuizPageData = {
+  questions: QuizQuestion[];
+  settings: {
+    shuffleQuestions: boolean;
+    showCorrectAnswers: boolean;
+    allowRetry: boolean;
+    timeLimit?: number; // in minutes
+  };
+};
+
+export type ImagePageData = {
+  imageUrl: string;
+  imageAlt?: string;
+  instructions?: string; // Instructions about the image
+  source?: "upload" | "url" | "puterjs" | "dalle"; // How the image was added
+};
+
 export type BookPage = {
   id: string;
   title: string;
-  content: string; // Rich text/HTML content
+  pageType?: BookPageType; // Defaults to "content" for backward compatibility
+  content: string; // Rich text/HTML content (for content pages)
+  // Page-specific data
+  videoData?: VideoPageData; // For video pages
+  quizData?: QuizPageData; // For quiz pages
+  imageData?: ImagePageData; // For image pages
   embeddedContentId?: string; // Reference to h5pContent.id (new format)
   // Legacy format (backward compatibility)
   embeddedContent?: {

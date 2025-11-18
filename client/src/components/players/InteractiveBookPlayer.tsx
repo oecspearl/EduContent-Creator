@@ -15,6 +15,7 @@ import { ImageHotspotPlayer } from "./ImageHotspotPlayer";
 import { DragDropPlayer } from "./DragDropPlayer";
 import { FillBlanksPlayer } from "./FillBlanksPlayer";
 import { MemoryGamePlayer } from "./MemoryGamePlayer";
+import { youtubeLoader } from "@/lib/youtube-loader";
 
 type InteractiveBookPlayerProps = {
   data: InteractiveBookData;
@@ -233,10 +234,26 @@ export function InteractiveBookPlayer({ data, contentId }: InteractiveBookPlayer
               <BookOpen className="h-6 w-6 text-primary" />
               <h2 className="text-2xl font-bold">{currentPage.title}</h2>
             </div>
-            <div 
-              className="prose prose-slate max-w-none dark:prose-invert"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentPage.content) }}
-            />
+            
+            {/* Render based on page type */}
+            {(!currentPage.pageType || currentPage.pageType === "content") && (
+              <div 
+                className="prose prose-slate max-w-none dark:prose-invert"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentPage.content) }}
+              />
+            )}
+
+            {currentPage.pageType === "video" && currentPage.videoData && (
+              <VideoPageContent videoData={currentPage.videoData} />
+            )}
+
+            {currentPage.pageType === "quiz" && currentPage.quizData && (
+              <QuizPageContent quizData={currentPage.quizData} contentId={contentId} />
+            )}
+
+            {currentPage.pageType === "image" && currentPage.imageData && (
+              <ImagePageContent imageData={currentPage.imageData} />
+            )}
           </CardContent>
         </Card>
 
@@ -319,6 +336,94 @@ export function InteractiveBookPlayer({ data, contentId }: InteractiveBookPlayer
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Video Page Component
+function VideoPageContent({ videoData }: { videoData: any }) {
+  const [playerReady, setPlayerReady] = useState(false);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!videoData.videoId || !playerContainerRef.current) return;
+
+    const initializePlayer = () => {
+      if (!playerContainerRef.current) return;
+
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+
+      playerRef.current = new window.YT.Player(playerContainerRef.current, {
+        videoId: videoData.videoId,
+        playerVars: {
+          controls: 1,
+          modestbranding: 1,
+          rel: 0,
+        },
+        events: {
+          onReady: () => {
+            setPlayerReady(true);
+          },
+        },
+      });
+    };
+
+    youtubeLoader.load(initializePlayer);
+
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+    };
+  }, [videoData.videoId]);
+
+  return (
+    <div className="space-y-4">
+      <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
+        <div ref={playerContainerRef} className="w-full h-full" />
+      </div>
+      {videoData.instructions && (
+        <div className="bg-muted/50 p-4 rounded-lg">
+          <p className="text-sm font-medium mb-1">Instructions:</p>
+          <p className="text-sm text-muted-foreground">{videoData.instructions}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Quiz Page Component
+function QuizPageContent({ quizData, contentId }: { quizData: any; contentId: string }) {
+  // Use the existing QuizPlayer component
+  return (
+    <div className="space-y-4">
+      <QuizPlayer data={quizData} contentId={contentId} />
+    </div>
+  );
+}
+
+// Image Page Component
+function ImagePageContent({ imageData }: { imageData: any }) {
+  return (
+    <div className="space-y-4">
+      <div className="w-full">
+        <img
+          src={imageData.imageUrl}
+          alt={imageData.imageAlt || "Page image"}
+          className="w-full max-h-96 object-contain rounded-lg"
+        />
+      </div>
+      {imageData.instructions && (
+        <div className="bg-muted/50 p-4 rounded-lg">
+          <p className="text-sm font-medium mb-1">Instructions:</p>
+          <p className="text-sm text-muted-foreground">{imageData.instructions}</p>
+        </div>
+      )}
     </div>
   );
 }
