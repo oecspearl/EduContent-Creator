@@ -355,13 +355,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const response = await msalClient.acquireTokenByCode(tokenRequest);
       
       if (!response || !response.account) {
+        console.error("Microsoft OAuth: No account in response");
         return res.redirect("/login?error=microsoft_no_account");
       }
 
-      const { username: email, name } = response.account;
-      const microsoftId = response.account.homeAccountId;
+      // MSAL account object structure:
+      // - username: email address
+      // - name: display name (may not always be present)
+      // - homeAccountId: unique identifier for the account
+      const account = response.account;
+      const email = account.username;
+      const name = account.name || account.username?.split('@')[0] || 'User';
+      const microsoftId = account.homeAccountId;
+
+      console.log("Microsoft OAuth callback - Account info:", {
+        email,
+        name,
+        microsoftId,
+        accountId: account.localAccountId,
+        tenantId: account.tenantId
+      });
 
       if (!email) {
+        console.error("Microsoft OAuth: No email in account", account);
         return res.redirect("/login?error=microsoft_no_email");
       }
 
@@ -386,24 +402,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      console.log("Microsoft OAuth: Setting session userId:", user.id);
       req.session.userId = user.id;
       
       // Get return URL from session (validate it's a safe relative path)
       const returnTo = req.session.oauthReturnTo;
       delete req.session.oauthReturnTo;
       
-      req.session.save((err) => {
-        if (err) {
-          console.error("Session save error:", err);
-          return res.redirect("/login?error=session_failed");
+      // Regenerate session ID to prevent session fixation attacks
+      req.session.regenerate((regenerateErr) => {
+        if (regenerateErr) {
+          console.error("Session regenerate error:", regenerateErr);
+          // Continue anyway - the session might still work
         }
         
-        // Redirect to stored return URL or dashboard
-        if (returnTo && returnTo.startsWith('/') && !returnTo.includes('//')) {
-          res.redirect(returnTo + '?microsoftAuthSuccess=true');
-        } else {
-          res.redirect("/dashboard?microsoftAuthSuccess=true");
-        }
+        // Set userId again after regeneration
+        req.session.userId = user.id;
+        
+        req.session.save((err) => {
+          if (err) {
+            console.error("Session save error:", err);
+            return res.redirect("/login?error=session_failed");
+          }
+          
+          console.log("Microsoft OAuth: Session saved successfully, redirecting to dashboard");
+          
+          // Redirect to stored return URL or dashboard
+          if (returnTo && returnTo.startsWith('/') && !returnTo.includes('//')) {
+            res.redirect(returnTo + '?microsoftAuthSuccess=true');
+          } else {
+            res.redirect("/dashboard?microsoftAuthSuccess=true");
+          }
+        });
       });
     } catch (error) {
       console.error("Microsoft OAuth callback error:", error);
