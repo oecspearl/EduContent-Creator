@@ -36,16 +36,23 @@ export function InteractiveBookPlayer({ data, contentId }: InteractiveBookPlayer
     }
   }, [currentPageIndex, safePageIndex]);
 
-  // If no pages exist, show error message
+  // If no pages exist, show helpful message with link to edit
   if (!data.pages || data.pages.length === 0) {
     return (
       <Card>
         <CardContent className="p-8 text-center">
           <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">No Pages Available</h3>
-          <p className="text-muted-foreground">
-            This interactive book doesn't have any pages yet.
+          <p className="text-muted-foreground mb-4">
+            This interactive book doesn't have any pages yet. Please add pages to view the book.
           </p>
+          <Button
+            onClick={() => window.location.href = `/create/interactive-book/${contentId}`}
+            variant="outline"
+            data-testid="button-edit-book"
+          >
+            Edit Book
+          </Button>
         </CardContent>
       </Card>
     );

@@ -53,10 +53,20 @@ export default function InteractiveBookCreator() {
       setTitle(content.title);
       setDescription(content.description || "");
       const data = content.data as InteractiveBookData;
-      setPages(data.pages || []);
+      const loadedPages = data.pages || [];
+      setPages(loadedPages);
       setSettings(data.settings || settings);
       setIsPublished(content.isPublished);
       setIsPublic(content.isPublic || false);
+      
+      // If no pages exist, automatically add one
+      if (loadedPages.length === 0) {
+        setPages([{
+          id: Date.now().toString(),
+          title: "Page 1",
+          content: "",
+        }]);
+      }
     }
   }, [content]);
 
