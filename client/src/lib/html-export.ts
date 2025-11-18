@@ -932,9 +932,142 @@ export function generateHTMLExport(
       font-size: 0.75rem;
       color: #666;
     }
+    .memory-game-container {
+      margin: 2rem 0;
+      max-width: 900px;
+    }
+    .memory-game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #ddd;
+    }
+    .memory-game-stats {
+      display: flex;
+      gap: 1rem;
+    }
+    .memory-game-stat {
+      padding: 0.5rem 1rem;
+      background: #f0f0f0;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .memory-game-reset-btn {
+      padding: 0.5rem 1.5rem;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+    .memory-game-reset-btn:hover {
+      background: #5a6268;
+    }
+    .memory-game-grid {
+      display: grid;
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    .memory-card {
+      aspect-ratio: 1;
+      cursor: pointer;
+      perspective: 1000px;
+    }
+    .memory-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+    .memory-card.flipped .memory-card-inner {
+      transform: rotateY(180deg);
+    }
+    .memory-card.matched {
+      opacity: 0.6;
+      cursor: default;
+    }
+    .memory-card.matched .memory-card-inner {
+      transform: rotateY(180deg);
+    }
+    .memory-card-front,
+    .memory-card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #ddd;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .memory-card-front {
+      background: #4a90e2;
+      color: white;
+    }
+    .memory-card-back {
+      background: #fff;
+      transform: rotateY(180deg);
+      padding: 1rem;
+    }
+    .memory-card-question {
+      font-size: 3rem;
+      font-weight: bold;
+    }
+    .memory-card-image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+    .memory-card-text {
+      font-size: 1.1rem;
+      font-weight: 500;
+      text-align: center;
+      word-wrap: break-word;
+      padding: 0.5rem;
+    }
+    .memory-game-completion {
+      margin: 2rem 0;
+      padding: 2rem;
+      background: #e7f3ff;
+      border: 2px solid #4a90e2;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .completion-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+    .completion-icon {
+      font-size: 4rem;
+    }
+    .completion-content h2 {
+      margin: 0;
+      color: #4a90e2;
+      font-size: 2rem;
+    }
+    .completion-content p {
+      font-size: 1.1rem;
+      color: #666;
+      margin: 0;
+    }
     @media (max-width: 768px) {
       .drag-drop-container {
         grid-template-columns: 1fr;
+      }
+      .memory-game-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
       }
     }
     .audio-narration {
@@ -974,6 +1107,7 @@ export function generateHTMLExport(
   ${content.type === "presentation" ? generatePresentationScript(contentData) : ""}
   ${content.type === "quiz" ? generateQuizScript(contentData) : ""}
   ${content.type === "drag-drop" ? generateDragDropScript(contentData) : ""}
+  ${content.type === "memory-game" ? generateMemoryGameScript(contentData) : ""}
 </body>
 </html>`;
 }
@@ -1287,42 +1421,65 @@ function generateInteractiveQuizHTML(data: QuizData, quizId: number): string {
   return html;
 }
 
-function generateMemoryGameHTML(data: MemoryGameData): string {
+function generateMemoryGameHTML(data: any): string {
   if (!data.cards || data.cards.length === 0) {
     return "<p>No cards available.</p>";
   }
 
-  // Group cards by matchId
-  const cardGroups = new Map<string, any[]>();
-  data.cards.forEach(card => {
-    if (card.matchId) {
-      if (!cardGroups.has(card.matchId)) {
-        cardGroups.set(card.matchId, []);
-      }
-      cardGroups.get(card.matchId)!.push(card);
-    }
+  const columns = data.settings?.columns || 4;
+  const showTimer = data.settings?.showTimer || false;
+  const showMoves = data.settings?.showMoves || false;
+
+  // Generate card HTML
+  let cardsHTML = "";
+  data.cards.forEach((card: any, index: number) => {
+    const cardId = `memory-card-${index}`;
+    cardsHTML += `
+      <div 
+        class="memory-card" 
+        id="${cardId}"
+        data-card-index="${index}"
+        data-match-id="${escapeHtml(card.matchId || '')}"
+        onclick="handleMemoryCardClick(${index})"
+      >
+        <div class="memory-card-inner">
+          <div class="memory-card-front">
+            <span class="memory-card-question">?</span>
+          </div>
+          <div class="memory-card-back">
+            ${card.type === "image" && card.imageUrl
+              ? `<img src="${escapeHtml(card.imageUrl)}" alt="${escapeHtml(card.content || 'Memory card')}" class="memory-card-image" />`
+              : `<div class="memory-card-text">${escapeHtml(card.content || "")}</div>`
+            }
+          </div>
+        </div>
+      </div>
+    `;
   });
 
-  let html = "<h2>Memory Game Cards</h2>";
-  let pairIndex = 1;
-
-  cardGroups.forEach((cards, matchId) => {
-    html += `<div class="card">`;
-    html += `<h3>Pair ${pairIndex}</h3>`;
-    
-    cards.forEach((card, index) => {
-      html += `<div class="card-${index === 0 ? "front" : "back"}">`;
-      if (card.type === "image" && card.imageUrl) {
-        html += generateImageHtml(card.imageUrl, card.content || `Card ${index + 1}`);
-      } else {
-        html += `<p>${escapeHtml(card.content || "")}</p>`;
-      }
-      html += `</div>`;
-    });
-    
-    html += `</div>`;
-    pairIndex++;
-  });
+  const html = `
+    <div class="memory-game-container">
+      <div class="memory-game-header">
+        <div class="memory-game-stats">
+          ${showTimer ? `<div class="memory-game-stat" id="memory-timer">Time: <span id="timer-value">0:00</span></div>` : ""}
+          ${showMoves ? `<div class="memory-game-stat" id="memory-moves">Moves: <span id="moves-value">0</span></div>` : ""}
+        </div>
+        <button class="memory-game-reset-btn" onclick="resetMemoryGame()">Reset</button>
+      </div>
+      
+      <div class="memory-game-completion" id="memory-completion" style="display: none;">
+        <div class="completion-content">
+          <div class="completion-icon">🏆</div>
+          <h2>Congratulations!</h2>
+          <p>You completed the game in <span id="completion-moves">0</span> moves and <span id="completion-time">0:00</span></p>
+        </div>
+      </div>
+      
+      <div class="memory-game-grid" id="memory-game-grid" style="grid-template-columns: repeat(${columns}, minmax(0, 1fr));">
+        ${cardsHTML}
+      </div>
+    </div>
+  `;
 
   return html;
 }
@@ -1748,6 +1905,233 @@ function generateDragDropScript(data: any): string {
           zoneElement.addEventListener('dragleave', handleDragLeave);
         }
       });
+    });
+  </script>
+  `;
+}
+
+// Generate JavaScript for memory game functionality
+function generateMemoryGameScript(data: any): string {
+  const cardsData = JSON.stringify(data.cards || []);
+  const settings = JSON.stringify(data.settings || {});
+  
+  return `
+  <script>
+    const memoryCards = ${cardsData};
+    const memorySettings = ${settings};
+    let shuffledCards = [];
+    let flippedIndices = [];
+    let matchedPairs = new Set();
+    let moves = 0;
+    let startTime = Date.now();
+    let elapsedTime = 0;
+    let timerInterval = null;
+    let isComplete = false;
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function shuffleArray(array) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+    
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return \`\${mins}:\${secs.toString().padStart(2, '0')}\`;
+    }
+    
+    function updateTimer() {
+      if (!memorySettings.showTimer || isComplete) return;
+      elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+      const timerEl = document.getElementById('timer-value');
+      if (timerEl) {
+        timerEl.textContent = formatTime(elapsedTime);
+      }
+    }
+    
+    function updateMoves() {
+      const movesEl = document.getElementById('moves-value');
+      if (movesEl) {
+        movesEl.textContent = moves;
+      }
+    }
+    
+    function handleMemoryCardClick(index) {
+      if (isComplete) return;
+      if (flippedIndices.length === 2) return;
+      if (flippedIndices.includes(index)) return;
+      if (matchedPairs.has(shuffledCards[index].matchId)) return;
+      
+      const card = document.getElementById(\`memory-card-\${index}\`);
+      if (!card) return;
+      
+      card.classList.add('flipped');
+      flippedIndices.push(index);
+      
+      if (flippedIndices.length === 2) {
+        moves++;
+        updateMoves();
+        
+        const [first, second] = flippedIndices;
+        const firstCard = shuffledCards[first];
+        const secondCard = shuffledCards[second];
+        
+        if (firstCard.matchId === secondCard.matchId) {
+          // Match found
+          matchedPairs.add(firstCard.matchId);
+          
+          // Mark cards as matched
+          const firstCardEl = document.getElementById(\`memory-card-\${first}\`);
+          const secondCardEl = document.getElementById(\`memory-card-\${second}\`);
+          if (firstCardEl) firstCardEl.classList.add('matched');
+          if (secondCardEl) secondCardEl.classList.add('matched');
+          
+          flippedIndices = [];
+          
+          // Check if game is complete
+          if (matchedPairs.size === shuffledCards.length / 2) {
+            isComplete = true;
+            if (timerInterval) {
+              clearInterval(timerInterval);
+            }
+            showCompletion();
+          }
+        } else {
+          // No match - flip back after delay
+          setTimeout(() => {
+            const firstCardEl = document.getElementById(\`memory-card-\${first}\`);
+            const secondCardEl = document.getElementById(\`memory-card-\${second}\`);
+            if (firstCardEl) firstCardEl.classList.remove('flipped');
+            if (secondCardEl) secondCardEl.classList.remove('flipped');
+            flippedIndices = [];
+          }, 1000);
+        }
+      }
+    }
+    
+    function showCompletion() {
+      const completionEl = document.getElementById('memory-completion');
+      const completionMovesEl = document.getElementById('completion-moves');
+      const completionTimeEl = document.getElementById('completion-time');
+      
+      if (completionEl) {
+        completionEl.style.display = 'block';
+        if (completionMovesEl) completionMovesEl.textContent = moves;
+        if (completionTimeEl) completionTimeEl.textContent = formatTime(elapsedTime);
+        completionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+    
+    function resetMemoryGame() {
+      // Shuffle cards
+      shuffledCards = shuffleArray(memoryCards);
+      
+      // Reset state
+      flippedIndices = [];
+      matchedPairs = new Set();
+      moves = 0;
+      startTime = Date.now();
+      elapsedTime = 0;
+      isComplete = false;
+      
+      // Reset UI
+      const completionEl = document.getElementById('memory-completion');
+      if (completionEl) {
+        completionEl.style.display = 'none';
+      }
+      
+      // Remove all card classes and re-render
+      const grid = document.getElementById('memory-game-grid');
+      if (grid) {
+        grid.innerHTML = '';
+        shuffledCards.forEach((card, index) => {
+          const cardId = \`memory-card-\${index}\`;
+          const cardEl = document.createElement('div');
+          cardEl.className = 'memory-card';
+          cardEl.id = cardId;
+          cardEl.setAttribute('data-card-index', index);
+          cardEl.setAttribute('data-match-id', card.matchId || '');
+          cardEl.onclick = () => handleMemoryCardClick(index);
+          
+          cardEl.innerHTML = \`
+            <div class="memory-card-inner">
+              <div class="memory-card-front">
+                <span class="memory-card-question">?</span>
+              </div>
+              <div class="memory-card-back">
+                \${card.type === "image" && card.imageUrl
+                  ? \`<img src="\${escapeHtml(card.imageUrl)}" alt="\${escapeHtml(card.content || 'Memory card')}" class="memory-card-image" />\`
+                  : \`<div class="memory-card-text">\${escapeHtml(card.content || "")}</div>\`
+                }
+              </div>
+            </div>
+          \`;
+          
+          grid.appendChild(cardEl);
+        });
+      }
+      
+      updateMoves();
+      
+      // Restart timer
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+      if (memorySettings.showTimer) {
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+    }
+    
+    // Initialize game on load
+    document.addEventListener('DOMContentLoaded', function() {
+      shuffledCards = shuffleArray(memoryCards);
+      
+      // Re-render cards in shuffled order
+      const grid = document.getElementById('memory-game-grid');
+      if (grid) {
+        grid.innerHTML = '';
+        shuffledCards.forEach((card, index) => {
+          const cardId = \`memory-card-\${index}\`;
+          const cardEl = document.createElement('div');
+          cardEl.className = 'memory-card';
+          cardEl.id = cardId;
+          cardEl.setAttribute('data-card-index', index);
+          cardEl.setAttribute('data-match-id', card.matchId || '');
+          cardEl.onclick = () => handleMemoryCardClick(index);
+          
+          cardEl.innerHTML = \`
+            <div class="memory-card-inner">
+              <div class="memory-card-front">
+                <span class="memory-card-question">?</span>
+              </div>
+              <div class="memory-card-back">
+                \${card.type === "image" && card.imageUrl
+                  ? \`<img src="\${escapeHtml(card.imageUrl)}" alt="\${escapeHtml(card.content || 'Memory card')}" class="memory-card-image" />\`
+                  : \`<div class="memory-card-text">\${escapeHtml(card.content || "")}</div>\`
+                }
+              </div>
+            </div>
+          \`;
+          
+          grid.appendChild(cardEl);
+        });
+      }
+      
+      // Start timer if enabled
+      if (memorySettings.showTimer) {
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+      
+      updateMoves();
     });
   </script>
   `;
