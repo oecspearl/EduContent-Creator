@@ -42,17 +42,29 @@ function generateAudioHtml(audioUrl: string): string {
 
 // Generate HTML for YouTube video
 function generateVideoHtml(videoId: string, title: string = ""): string {
+  // Extract video ID if full URL is provided
+  let cleanVideoId = videoId;
+  if (videoId.includes('youtube.com/watch?v=')) {
+    cleanVideoId = videoId.split('v=')[1]?.split('&')[0] || videoId;
+  } else if (videoId.includes('youtu.be/')) {
+    cleanVideoId = videoId.split('youtu.be/')[1]?.split('?')[0] || videoId;
+  }
+  
   return `
-    <div style="margin: 1.5rem 0; position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <div style="margin: 1.5rem 0; position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); background: #000;">
       <iframe 
-        src="https://www.youtube.com/embed/${videoId}" 
+        src="https://www.youtube.com/embed/${cleanVideoId}?enablejsapi=1&rel=0&modestbranding=1" 
         style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 8px;"
         frameborder="0" 
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
         allowfullscreen
-        title="${title}"
+        title="${escapeHtml(title)}"
+        loading="lazy"
       ></iframe>
     </div>
+    <p style="text-align: center; color: #666; font-size: 0.9rem; margin-top: 0.5rem;">
+      <em>Note: Video requires internet connection to play</em>
+    </p>
   `;
 }
 
@@ -462,6 +474,30 @@ function escapeHtml(text: string): string {
   return div.innerHTML;
 }
 
+// Extract YouTube video ID from various URL formats
+function extractVideoIdFromUrl(url: string): string {
+  if (!url) return "";
+  
+  // Handle direct video ID
+  if (!url.includes('http') && !url.includes('/')) {
+    return url;
+  }
+  
+  // Handle youtube.com/watch?v=VIDEO_ID
+  const watchMatch = url.match(/[?&]v=([^&]+)/);
+  if (watchMatch) return watchMatch[1];
+  
+  // Handle youtu.be/VIDEO_ID
+  const shortMatch = url.match(/youtu\.be\/([^?&]+)/);
+  if (shortMatch) return shortMatch[1];
+  
+  // Handle youtube.com/embed/VIDEO_ID
+  const embedMatch = url.match(/embed\/([^?&]+)/);
+  if (embedMatch) return embedMatch[1];
+  
+  return "";
+}
+
 function generatePresentationHTML(data: any): string {
   if (!data.slides || !Array.isArray(data.slides)) {
     return "<p>No slides available.</p>";
@@ -500,7 +536,13 @@ function generateInteractiveBookHTML(data: InteractiveBookData): string {
       }
     } else if (page.pageType === "video" && page.videoData) {
       pagesHTML += `<h3>Video: ${escapeHtml(page.videoData.title)}</h3>`;
-      pagesHTML += generateVideoHtml(page.videoData.videoId, page.videoData.title);
+      // Use videoId or extract from videoUrl
+      const videoId = page.videoData.videoId || extractVideoIdFromUrl(page.videoData.videoUrl || "");
+      if (videoId) {
+        pagesHTML += generateVideoHtml(videoId, page.videoData.title);
+      } else {
+        pagesHTML += `<p style="color: #dc3545; padding: 1rem; background: #f8d7da; border-radius: 4px;">Error: Invalid video ID. Please check the video URL.</p>`;
+      }
       if (page.videoData.instructions) {
         pagesHTML += `<div class="instructions"><strong>Instructions:</strong> ${escapeHtml(page.videoData.instructions)}</div>`;
       }
