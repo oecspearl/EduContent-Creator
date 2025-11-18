@@ -928,70 +928,248 @@ export default function GoogleSlidesCreator() {
                 </div>
               ) : (
                 <div className="space-y-4 max-h-[600px] overflow-y-auto">
-                  {slides.map((slide, index) => (
-                    <Card key={slide.id} className="overflow-hidden">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="text-xs text-muted-foreground mb-1">
-                              Slide {index + 1} • {slide.type}
+                  {slides.map((slide, index) => {
+                    const isEditing = editingSlideId === slide.id;
+                    const displaySlide = isEditing && editedSlide ? editedSlide : slide;
+                    
+                    return (
+                      <Card key={slide.id} className="overflow-hidden">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-2 flex-1">
+                              <div className="flex flex-col gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={() => handleMoveSlide(index, "up")}
+                                  disabled={index === 0}
+                                  data-testid={`button-move-up-${index}`}
+                                >
+                                  <GripVertical className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={() => handleMoveSlide(index, "down")}
+                                  disabled={index === slides.length - 1}
+                                  data-testid={`button-move-down-${index}`}
+                                >
+                                  <GripVertical className="h-4 w-4 rotate-90" />
+                                </Button>
+                              </div>
+                              <div className="flex-1">
+                                <div className="text-xs text-muted-foreground mb-1">
+                                  Slide {index + 1} • {displaySlide.type}
+                                </div>
+                                {isEditing ? (
+                                  <Input
+                                    value={displaySlide.title || ""}
+                                    onChange={(e) => setEditedSlide({ ...displaySlide, title: e.target.value })}
+                                    placeholder="Slide title"
+                                    className="font-medium text-sm"
+                                    data-testid={`input-slide-title-${index}`}
+                                  />
+                                ) : (
+                                  displaySlide.title && (
+                                    <h4 className="font-medium text-sm">{displaySlide.title}</h4>
+                                  )
+                                )}
+                              </div>
                             </div>
-                            {slide.title && (
-                              <h4 className="font-medium text-sm">{slide.title}</h4>
-                            )}
+                            <div className="flex gap-1">
+                              {isEditing ? (
+                                <>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={handleSaveSlide}
+                                    data-testid={`button-save-slide-${index}`}
+                                  >
+                                    <Save className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={handleCancelEdit}
+                                    data-testid={`button-cancel-slide-${index}`}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => handleEditSlide(slide)}
+                                    data-testid={`button-edit-slide-${index}`}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteSlide(slide.id)}
+                                    data-testid={`button-delete-slide-${index}`}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0 space-y-2 text-sm">
-                        {slide.content && (
-                          <p className="text-muted-foreground">{slide.content}</p>
-                        )}
-                        {slide.bulletPoints && slide.bulletPoints.length > 0 && (
-                          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                            {slide.bulletPoints.map((point, i) => (
-                              <li key={i}>{point}</li>
-                            ))}
-                          </ul>
-                        )}
-                        {slide.questions && slide.questions.length > 0 && (
-                          <div className="space-y-1">
-                            {slide.questions.map((question, i) => (
-                              <p key={i} className="text-muted-foreground">
-                                {i + 1}. {question}
-                              </p>
-                            ))}
-                          </div>
-                        )}
-                        {slide.imageUrl && (
-                          <div className="bg-muted rounded overflow-hidden">
-                            {slide.imageUrl.startsWith('http') || slide.imageUrl.startsWith('data:') ? (
-                              <img 
-                                src={slide.imageUrl} 
-                                alt={slide.imageAlt || "Slide image"}
-                                className="w-full h-auto max-h-48 object-contain"
-                              />
-                            ) : (
-                              <div className="p-2 text-xs">
-                                <div className="font-medium mb-1">Image Search Query:</div>
-                                <div className="text-muted-foreground">{slide.imageUrl}</div>
+                        </CardHeader>
+                        <CardContent className="pt-0 space-y-2 text-sm">
+                          {isEditing ? (
+                            <>
+                              <div>
+                                <Label className="text-xs">Content</Label>
+                                <Textarea
+                                  value={displaySlide.content || ""}
+                                  onChange={(e) => setEditedSlide({ ...displaySlide, content: e.target.value })}
+                                  placeholder="Slide content"
+                                  rows={3}
+                                  className="text-sm"
+                                  data-testid={`textarea-slide-content-${index}`}
+                                />
                               </div>
-                            )}
-                            {slide.imageAlt && (
-                              <div className="p-2 text-xs border-t">
-                                <span className="font-medium">Alt text:</span> {slide.imageAlt}
+                              <div>
+                                <Label className="text-xs">Bullet Points (one per line)</Label>
+                                <Textarea
+                                  value={(displaySlide.bulletPoints || []).join('\n')}
+                                  onChange={(e) => setEditedSlide({ 
+                                    ...displaySlide, 
+                                    bulletPoints: e.target.value.split('\n').filter(p => p.trim()) 
+                                  })}
+                                  placeholder="Bullet point 1&#10;Bullet point 2"
+                                  rows={4}
+                                  className="text-sm font-mono"
+                                  data-testid={`textarea-slide-bullets-${index}`}
+                                />
                               </div>
-                            )}
-                          </div>
-                        )}
-                        {slide.notes && (
-                          <div className="bg-muted rounded p-2 text-xs">
-                            <div className="font-medium mb-1">Speaker Notes:</div>
-                            <div className="text-muted-foreground">{slide.notes}</div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                              <div>
+                                <Label className="text-xs">Questions (one per line)</Label>
+                                <Textarea
+                                  value={(displaySlide.questions || []).join('\n')}
+                                  onChange={(e) => setEditedSlide({ 
+                                    ...displaySlide, 
+                                    questions: e.target.value.split('\n').filter(q => q.trim()) 
+                                  })}
+                                  placeholder="Question 1&#10;Question 2"
+                                  rows={3}
+                                  className="text-sm font-mono"
+                                  data-testid={`textarea-slide-questions-${index}`}
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Speaker Notes</Label>
+                                <Textarea
+                                  value={displaySlide.notes || ""}
+                                  onChange={(e) => setEditedSlide({ ...displaySlide, notes: e.target.value })}
+                                  placeholder="Speaker notes and teaching tips"
+                                  rows={3}
+                                  className="text-sm"
+                                  data-testid={`textarea-slide-notes-${index}`}
+                                />
+                              </div>
+                              {displaySlide.imageUrl && (
+                                <div className="bg-muted rounded overflow-hidden">
+                                  {displaySlide.imageUrl.startsWith('http') || displaySlide.imageUrl.startsWith('data:') ? (
+                                    <img 
+                                      src={displaySlide.imageUrl} 
+                                      alt={displaySlide.imageAlt || "Slide image"}
+                                      className="w-full h-auto max-h-48 object-contain"
+                                    />
+                                  ) : (
+                                    <div className="p-2 text-xs">
+                                      <div className="font-medium mb-1">Image Search Query:</div>
+                                      <Input
+                                        value={displaySlide.imageUrl}
+                                        onChange={(e) => setEditedSlide({ ...displaySlide, imageUrl: e.target.value })}
+                                        placeholder="Image search query"
+                                        className="text-xs"
+                                        data-testid={`input-slide-image-${index}`}
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="p-2 text-xs border-t">
+                                    <Label className="text-xs">Image Alt Text</Label>
+                                    <Input
+                                      value={displaySlide.imageAlt || ""}
+                                      onChange={(e) => setEditedSlide({ ...displaySlide, imageAlt: e.target.value })}
+                                      placeholder="Alt text for accessibility"
+                                      className="text-xs"
+                                      data-testid={`input-slide-image-alt-${index}`}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {displaySlide.content && (
+                                <p className="text-muted-foreground">{displaySlide.content}</p>
+                              )}
+                              {displaySlide.bulletPoints && displaySlide.bulletPoints.length > 0 && (
+                                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                                  {displaySlide.bulletPoints.map((point, i) => (
+                                    <li key={i}>{point}</li>
+                                  ))}
+                                </ul>
+                              )}
+                              {displaySlide.questions && displaySlide.questions.length > 0 && (
+                                <div className="space-y-1">
+                                  {displaySlide.questions.map((question, i) => (
+                                    <p key={i} className="text-muted-foreground">
+                                      {i + 1}. {question}
+                                    </p>
+                                  ))}
+                                </div>
+                              )}
+                              {displaySlide.imageUrl && (
+                                <div className="bg-muted rounded overflow-hidden">
+                                  {displaySlide.imageUrl.startsWith('http') || displaySlide.imageUrl.startsWith('data:') ? (
+                                    <img 
+                                      src={displaySlide.imageUrl} 
+                                      alt={displaySlide.imageAlt || "Slide image"}
+                                      className="w-full h-auto max-h-48 object-contain"
+                                    />
+                                  ) : (
+                                    <div className="p-2 text-xs">
+                                      <div className="font-medium mb-1">Image Search Query:</div>
+                                      <div className="text-muted-foreground">{displaySlide.imageUrl}</div>
+                                    </div>
+                                  )}
+                                  {displaySlide.imageAlt && (
+                                    <div className="p-2 text-xs border-t">
+                                      <span className="font-medium">Alt text:</span> {displaySlide.imageAlt}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              {displaySlide.notes && (
+                                <div className="bg-muted rounded p-2 text-xs">
+                                  <div className="font-medium mb-1">Speaker Notes:</div>
+                                  <div className="text-muted-foreground">{displaySlide.notes}</div>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                  <Button
+                    onClick={handleAddSlide}
+                    variant="outline"
+                    className="w-full"
+                    data-testid="button-add-slide"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add New Slide
+                  </Button>
                 </div>
               )}
             </CardContent>
