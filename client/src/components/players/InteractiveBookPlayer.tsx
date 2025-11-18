@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, BookOpen, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, Check, Volume2, Play, Pause } from "lucide-react";
 import type { InteractiveBookData, H5pContent } from "@shared/schema";
 import { useProgressTracker } from "@/hooks/use-progress-tracker";
 import { QuizPlayer } from "./QuizPlayer";
@@ -254,6 +254,11 @@ export function InteractiveBookPlayer({ data, contentId }: InteractiveBookPlayer
             {currentPage.pageType === "image" && currentPage.imageData && (
               <ImagePageContent imageData={currentPage.imageData} />
             )}
+
+            {/* Audio Narration Player */}
+            {currentPage.audioUrl && (
+              <AudioPlayer audioUrl={currentPage.audioUrl} />
+            )}
           </CardContent>
         </Card>
 
@@ -425,5 +430,95 @@ function ImagePageContent({ imageData }: { imageData: any }) {
         </div>
       )}
     </div>
+  );
+}
+
+// Audio Player Component
+function AudioPlayer({ audioUrl }: { audioUrl: string }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(audioUrl);
+      
+      audioRef.current.addEventListener('loadedmetadata', () => {
+        setDuration(audioRef.current?.duration || 0);
+      });
+
+      audioRef.current.addEventListener('timeupdate', () => {
+        setCurrentTime(audioRef.current?.currentTime || 0);
+      });
+
+      audioRef.current.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setCurrentTime(0);
+      });
+
+      audioRef.current.addEventListener('error', () => {
+        setIsPlaying(false);
+      });
+    }
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, [audioUrl]);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    if (isNaN(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  return (
+    <Card className="bg-accent/10 border-primary/20">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={togglePlay}
+            className="flex-shrink-0"
+            data-testid="button-play-narration"
+          >
+            {isPlaying ? (
+              <Pause className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+          </Button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Volume2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm font-medium">Listen to Narration</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>{formatTime(currentTime)}</span>
+              <span>/</span>
+              <span>{formatTime(duration)}</span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

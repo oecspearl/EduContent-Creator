@@ -20,6 +20,7 @@ import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { VideoPageEditor } from "@/components/book-pages/VideoPageEditor";
 import { QuizPageEditor } from "@/components/book-pages/QuizPageEditor";
 import { ImagePageEditor } from "@/components/book-pages/ImagePageEditor";
+import { AudioRecorder } from "@/components/book-pages/AudioRecorder";
 
 export default function InteractiveBookCreator() {
   const params = useParams();
@@ -618,6 +619,29 @@ export default function InteractiveBookCreator() {
                           />
                         </div>
                       )}
+
+                      {/* Audio Narration - Available for all page types */}
+                      <div className="border-t pt-4">
+                        <AudioRecorder
+                          audioUrl={pages[currentPageIndex].audioUrl}
+                          onRecordingComplete={(audioUrl) => {
+                            const updated = [...pages];
+                            updated[currentPageIndex] = {
+                              ...updated[currentPageIndex],
+                              audioUrl,
+                            };
+                            setPages(updated);
+                          }}
+                          onDelete={() => {
+                            const updated = [...pages];
+                            updated[currentPageIndex] = {
+                              ...updated[currentPageIndex],
+                              audioUrl: undefined,
+                            };
+                            setPages(updated);
+                          }}
+                        />
+                      </div>
 
                       <div>
                         <div className="flex items-center justify-between mb-2">

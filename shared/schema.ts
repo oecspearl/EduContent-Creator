@@ -329,6 +329,7 @@ export type BookPage = {
   videoData?: VideoPageData; // For video pages
   quizData?: QuizPageData; // For quiz pages
   imageData?: ImagePageData; // For image pages
+  audioUrl?: string; // Base64 encoded audio for voice narration
   embeddedContentId?: string; // Reference to h5pContent.id (new format)
   // Legacy format (backward compatibility)
   embeddedContent?: {
