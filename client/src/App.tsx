@@ -9,6 +9,8 @@ import { ChatContextProvider } from "@/hooks/useChatContext";
 import ChatAssistant from "@/components/ChatAssistant";
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
+import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
+import TermsOfServicePage from "@/pages/TermsOfServicePage";
 import Dashboard from "@/pages/Dashboard";
 import SharedResourcesPage from "@/pages/SharedResourcesPage";
 import QuizCreator from "@/pages/QuizCreator";
@@ -55,6 +57,8 @@ function Router() {
     <Switch>
       <Route path="/" component={LandingPage} />
       <Route path="/login" component={LoginPage} />
+      <Route path="/privacy-policy" component={PrivacyPolicyPage} />
+      <Route path="/terms-of-service" component={TermsOfServicePage} />
       <Route path="/public/:id" component={PublicPreviewPage} />
       <Route path="/dashboard">
         <ProtectedRoute component={Dashboard} />

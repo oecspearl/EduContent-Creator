@@ -20,18 +20,11 @@ import {
   GraduationCap
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
 import heroBackground from "@assets/lboard_1763248872214.png";
 
 export default function LandingPage() {
   const [_, navigate] = useLocation();
   const { user } = useAuth();
-
-  useEffect(() => {
-    if (user) {
-      navigate("/dashboard");
-    }
-  }, [user, navigate]);
 
   const contentTypes = [
     { icon: BookOpen, name: "Quiz", description: "Interactive quizzes with instant feedback", color: "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400" },
@@ -100,19 +93,30 @@ export default function LandingPage() {
 
             {/* CTA Buttons */}
             <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                onClick={() => navigate("/login")}
-                data-testid="button-login"
-              >
-                Log In
-              </Button>
-              <Button 
-                onClick={() => navigate("/login")}
-                data-testid="button-signup"
-              >
-                Sign Up
-              </Button>
+              {user ? (
+                <Button 
+                  onClick={() => navigate("/dashboard")}
+                  data-testid="button-dashboard"
+                >
+                  Go to Dashboard
+                </Button>
+              ) : (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => navigate("/login")}
+                    data-testid="button-login"
+                  >
+                    Log In
+                  </Button>
+                  <Button 
+                    onClick={() => navigate("/login")}
+                    data-testid="button-signup"
+                  >
+                    Sign Up
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -150,15 +154,27 @@ export default function LandingPage() {
               engaging quizzes, flashcards, interactive videos, and more. All in one platform.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button 
-                size="lg" 
-                onClick={() => navigate("/login")}
-                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground border-0"
-                data-testid="button-hero-get-started"
-              >
-                Get Started Free
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+              {user ? (
+                <Button 
+                  size="lg" 
+                  onClick={() => navigate("/dashboard")}
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground border-0"
+                  data-testid="button-hero-dashboard"
+                >
+                  Go to Dashboard
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              ) : (
+                <Button 
+                  size="lg" 
+                  onClick={() => navigate("/login")}
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground border-0"
+                  data-testid="button-hero-get-started"
+                >
+                  Get Started Free
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              )}
               <Button 
                 size="lg" 
                 variant="outline" 
@@ -255,16 +271,29 @@ export default function LandingPage() {
             Join educators across the Eastern Caribbean creating engaging content with OECS Content Creator
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button 
-              size="lg" 
-              variant="secondary"
-              onClick={() => navigate("/login")}
-              className="w-full sm:w-auto"
-              data-testid="button-cta-get-started"
-            >
-              Get Started Now
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            {user ? (
+              <Button 
+                size="lg" 
+                variant="secondary"
+                onClick={() => navigate("/dashboard")}
+                className="w-full sm:w-auto"
+                data-testid="button-cta-dashboard"
+              >
+                Go to Dashboard
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            ) : (
+              <Button 
+                size="lg" 
+                variant="secondary"
+                onClick={() => navigate("/login")}
+                className="w-full sm:w-auto"
+                data-testid="button-cta-get-started"
+              >
+                Get Started Now
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            )}
           </div>
         </div>
       </section>
@@ -315,33 +344,74 @@ export default function LandingPage() {
             <div>
               <h4 className="font-semibold text-foreground mb-4">Support</h4>
               <ul className="space-y-2">
-                <li>
-                  <button 
-                    onClick={() => navigate("/login")}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    data-testid="link-footer-login"
-                  >
-                    Log In
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => navigate("/login")}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    data-testid="link-footer-signup"
-                  >
-                    Sign Up
-                  </button>
-                </li>
+                {user ? (
+                  <li>
+                    <button 
+                      onClick={() => navigate("/dashboard")}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      data-testid="link-footer-dashboard"
+                    >
+                      Dashboard
+                    </button>
+                  </li>
+                ) : (
+                  <>
+                    <li>
+                      <button 
+                        onClick={() => navigate("/login")}
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        data-testid="link-footer-login"
+                      >
+                        Log In
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        onClick={() => navigate("/login")}
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        data-testid="link-footer-signup"
+                      >
+                        Sign Up
+                      </button>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
 
-          {/* Copyright */}
-          <div className="pt-8 border-t text-center">
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} OECS Content Creator. Built for educators across the Eastern Caribbean.
-            </p>
+          {/* Copyright and Legal Links */}
+          <div className="pt-8 border-t">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-muted-foreground text-center sm:text-left">
+                © {new Date().getFullYear()} OECS Content Creator. Built for educators across the Eastern Caribbean.
+              </p>
+              <div className="flex items-center gap-4">
+                <a 
+                  href="/privacy-policy"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate("/privacy-policy");
+                  }}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="link-footer-privacy"
+                >
+                  Privacy Policy
+                </a>
+                <span className="text-muted-foreground">•</span>
+                <a 
+                  href="/terms-of-service"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate("/terms-of-service");
+                  }}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="link-footer-terms"
+                >
+                  Terms of Service
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
