@@ -34,6 +34,9 @@ CREATE TABLE IF NOT EXISTS h5p_content (
     is_published BOOLEAN DEFAULT false NOT NULL,
     is_public BOOLEAN DEFAULT false NOT NULL, -- Share with other teachers
     tags TEXT[], -- Array of tags for filtering
+    subject TEXT, -- Subject area (e.g., English Language, Mathematics, Science)
+    grade_level TEXT, -- Grade level (e.g., Kindergarten, Grade 1, Grade 2)
+    age_range TEXT, -- Age range (e.g., 3-5 years, 5-7 years)
     created_at TIMESTAMP DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMP DEFAULT NOW() NOT NULL
 );

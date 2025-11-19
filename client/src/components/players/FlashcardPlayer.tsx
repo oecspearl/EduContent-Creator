@@ -226,16 +226,21 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
 
       {/* Flashcard */}
       <div
-        className="relative cursor-pointer"
-        style={{ aspectRatio: "3/2" }}
+        className="relative cursor-pointer w-full"
+        style={{ 
+          aspectRatio: "3/2",
+          minHeight: "300px",
+        }}
         onClick={() => setIsFlipped(!isFlipped)}
         data-testid="flashcard"
       >
         <div
-          className="absolute inset-0 transition-transform duration-500"
+          className="absolute inset-0 transition-transform duration-500 w-full h-full"
           style={{
             transformStyle: "preserve-3d",
             transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+            perspective: "1000px",
+            WebkitPerspective: "1000px",
           }}
         >
           {/* Front */}
@@ -246,6 +251,7 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
             style={{
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
+              transform: "rotateY(0deg)",
             }}
           >
             <CardContent className="p-8 text-center w-full">
@@ -290,6 +296,7 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
+              WebkitTransform: "rotateY(180deg)",
             }}
           >
             <CardContent className="p-8 text-center w-full">

@@ -405,6 +405,170 @@ export function generateHTMLExport(
       background: #f1f8e9;
       border-left: 3px solid #8bc34a;
     }
+    .flashcard-container {
+      max-width: 800px;
+      margin: 2rem auto;
+    }
+    .flashcard-progress {
+      margin-bottom: 2rem;
+    }
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+    }
+    .card-counter {
+      font-weight: 600;
+      color: #333;
+    }
+    .progress-percentage {
+      font-weight: 600;
+      color: #4a90e2;
+    }
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #4a90e2;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+    .flashcard-wrapper {
+      margin: 2rem 0;
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .flashcard {
+      width: 100%;
+      max-width: 600px;
+      aspect-ratio: 3/2;
+      min-height: 300px;
+      cursor: pointer;
+      perspective: 1000px;
+      -webkit-perspective: 1000px;
+    }
+    .flashcard-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.5s;
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+    }
+    .flashcard.flipped .flashcard-inner {
+      transform: rotateY(180deg);
+      -webkit-transform: rotateY(180deg);
+    }
+    .flashcard-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      overflow: hidden;
+    }
+    .flashcard-front {
+      background: #fff;
+      border: 2px solid #4a90e2;
+    }
+    .flashcard-back {
+      background: #f0f7ff;
+      border: 2px solid #8bc34a;
+      transform: rotateY(180deg);
+      -webkit-transform: rotateY(180deg);
+    }
+    .flashcard-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #666;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+    .flashcard-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+    }
+    .flashcard-content img {
+      max-width: 100%;
+      max-height: 200px;
+      margin: 1rem 0;
+      border-radius: 8px;
+      object-fit: contain;
+    }
+    .flashcard-content p {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 1rem 0;
+      line-height: 1.6;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    .flashcard-hint {
+      font-size: 0.875rem;
+      color: #999;
+      margin-top: 1rem;
+      font-style: italic;
+    }
+    .flashcard-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 2rem;
+      padding: 1rem;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+    .control-btn {
+      padding: 0.75rem 1.5rem;
+      background: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .control-btn:hover:not(:disabled) {
+      background: #357abd;
+    }
+    .control-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .control-btn.secondary {
+      background: #6c757d;
+    }
+    .control-btn.secondary:hover {
+      background: #5a6268;
+    }
+    .control-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
     .instructions {
       background: #fff3cd;
       border: 1px solid #ffc107;
@@ -1212,6 +1376,7 @@ export function generateHTMLExport(
   ${content.type === "quiz" ? generateQuizScript(contentData) : ""}
   ${content.type === "drag-drop" ? generateDragDropScript(contentData) : ""}
   ${content.type === "memory-game" ? generateMemoryGameScript(contentData) : ""}
+  ${content.type === "flashcard" ? generateFlashcardScript(contentData) : ""}
 </body>
 </html>`;
 }
@@ -1596,34 +1761,215 @@ function generateMemoryGameHTML(data: any): string {
   return html;
 }
 
+// Generate JavaScript for flashcard functionality
+function generateFlashcardScript(data: FlashcardData): string {
+  const cardsData = JSON.stringify(data.cards || []);
+  const settings = JSON.stringify(data.settings || {});
+  
+  return `
+  <script>
+    const flashcardData = ${cardsData};
+    const flashcardSettings = ${settings};
+    let currentCardIndex = 0;
+    let isFlipped = false;
+    let shuffledCards = [...flashcardData];
+    
+    function escapeHtml(text) {
+      if (!text) return "";
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function updateCard() {
+      const card = shuffledCards[currentCardIndex];
+      if (!card) return;
+      
+      const frontContent = document.getElementById('flashcard-front-content');
+      const backContent = document.getElementById('flashcard-back-content');
+      const cardNum = document.getElementById('current-card-num');
+      const progressBar = document.getElementById('progress-bar');
+      const progressPercentage = document.getElementById('progress-percentage');
+      const prevBtn = document.getElementById('prev-btn');
+      const nextBtn = document.getElementById('next-btn');
+      
+      if (!frontContent || !backContent) return;
+      
+      // Reset flip state
+      isFlipped = false;
+      document.getElementById('flashcard').classList.remove('flipped');
+      
+      // Update front
+      let frontHtml = "";
+      if (card.frontImageUrl) {
+        const imageSrc = card.frontImageUrl.startsWith('data:') 
+          ? card.frontImageUrl 
+          : (card.frontImageUrl.startsWith('http') ? card.frontImageUrl : 'data:image/png;base64,' + card.frontImageUrl);
+        frontHtml += \`<img src="\${imageSrc}" alt="\${escapeHtml(card.frontImageAlt || card.front || 'Front image')}" style="max-width: 100%; max-height: 200px; margin: 1rem 0; border-radius: 8px; object-fit: contain;" />\`;
+      }
+      if (card.front) {
+        frontHtml += \`<p>\${escapeHtml(card.front)}</p>\`;
+      }
+      frontContent.innerHTML = frontHtml;
+      
+      // Update back
+      let backHtml = "";
+      if (card.backImageUrl) {
+        const imageSrc = card.backImageUrl.startsWith('data:') 
+          ? card.backImageUrl 
+          : (card.backImageUrl.startsWith('http') ? card.backImageUrl : 'data:image/png;base64,' + card.backImageUrl);
+        backHtml += \`<img src="\${imageSrc}" alt="\${escapeHtml(card.backImageAlt || card.back || 'Back image')}" style="max-width: 100%; max-height: 200px; margin: 1rem 0; border-radius: 8px; object-fit: contain;" />\`;
+      }
+      if (card.back) {
+        backHtml += \`<p>\${escapeHtml(card.back)}</p>\`;
+      }
+      backContent.innerHTML = backHtml;
+      
+      // Update counter
+      if (cardNum) {
+        cardNum.textContent = (currentCardIndex + 1).toString();
+      }
+      
+      // Update progress
+      if (progressBar && progressPercentage) {
+        const progress = ((currentCardIndex + 1) / shuffledCards.length) * 100;
+        progressBar.style.width = progress + '%';
+        progressPercentage.textContent = Math.round(progress) + '%';
+      }
+      
+      // Update buttons
+      if (prevBtn) {
+        prevBtn.disabled = currentCardIndex === 0;
+      }
+      if (nextBtn) {
+        nextBtn.disabled = currentCardIndex === shuffledCards.length - 1;
+      }
+    }
+    
+    function toggleFlip() {
+      isFlipped = !isFlipped;
+      const flashcard = document.getElementById('flashcard');
+      if (flashcard) {
+        if (isFlipped) {
+          flashcard.classList.add('flipped');
+        } else {
+          flashcard.classList.remove('flipped');
+        }
+      }
+    }
+    
+    function nextCard() {
+      if (currentCardIndex < shuffledCards.length - 1) {
+        currentCardIndex++;
+        updateCard();
+      }
+    }
+    
+    function previousCard() {
+      if (currentCardIndex > 0) {
+        currentCardIndex--;
+        updateCard();
+      }
+    }
+    
+    function shuffleCards() {
+      // Fisher-Yates shuffle
+      shuffledCards = [...flashcardData];
+      for (let i = shuffledCards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledCards[i], shuffledCards[j]] = [shuffledCards[j], shuffledCards[i]];
+      }
+      currentCardIndex = 0;
+      updateCard();
+    }
+    
+    function restartCards() {
+      shuffledCards = [...flashcardData];
+      currentCardIndex = 0;
+      updateCard();
+    }
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowLeft') {
+        previousCard();
+      } else if (e.key === 'ArrowRight') {
+        nextCard();
+      } else if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        toggleFlip();
+      }
+    });
+    
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function() {
+      updateCard();
+    });
+  </script>
+  `;
+}
+
 function generateFlashcardHTML(data: FlashcardData): string {
   if (!data.cards || data.cards.length === 0) {
     return "<p>No flashcards available.</p>";
   }
 
-  let html = "";
-  data.cards.forEach((card, index) => {
-    html += `<div class="card">`;
-    html += `<h3>Card ${index + 1}${card.category ? ` - ${escapeHtml(card.category)}` : ""}</h3>`;
-    
-    html += `<div class="card-front">`;
-    html += `<strong>Front:</strong>`;
-    if (card.frontImageUrl) {
-      html += generateImageHtml(card.frontImageUrl, card.frontImageAlt || "Front image");
-    }
-    html += `<p>${escapeHtml(card.front)}</p>`;
-    html += `</div>`;
-    
-    html += `<div class="card-back">`;
-    html += `<strong>Back:</strong>`;
-    if (card.backImageUrl) {
-      html += generateImageHtml(card.backImageUrl, card.backImageAlt || "Back image");
-    }
-    html += `<p>${escapeHtml(card.back)}</p>`;
-    html += `</div>`;
-    
-    html += `</div>`;
-  });
+  const cardsData = JSON.stringify(data.cards);
+  const settings = JSON.stringify(data.settings || {});
+  
+  const html = `
+    <div class="flashcard-container">
+      ${data.settings?.showProgress !== false ? `
+        <div class="flashcard-progress">
+          <div class="progress-info">
+            <span class="card-counter">Card <span id="current-card-num">1</span> of ${data.cards.length}</span>
+            <span class="progress-percentage" id="progress-percentage">0%</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" id="progress-bar"></div>
+          </div>
+        </div>
+      ` : ""}
+      
+      <div class="flashcard-wrapper" id="flashcard-wrapper">
+        <div class="flashcard" id="flashcard" onclick="toggleFlip()">
+          <div class="flashcard-inner" id="flashcard-inner">
+            <!-- Front -->
+            <div class="flashcard-face flashcard-front" id="flashcard-front">
+              <div class="flashcard-label">Front</div>
+              <div class="flashcard-content" id="flashcard-front-content"></div>
+              <div class="flashcard-hint">Click to flip</div>
+            </div>
+            <!-- Back -->
+            <div class="flashcard-face flashcard-back" id="flashcard-back">
+              <div class="flashcard-label">Back</div>
+              <div class="flashcard-content" id="flashcard-back-content"></div>
+              <div class="flashcard-hint">Click to flip</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flashcard-controls">
+        <button class="control-btn" id="prev-btn" onclick="previousCard()" disabled>
+          ← Previous
+        </button>
+        <div class="control-actions">
+          ${data.settings?.shuffleCards ? `
+            <button class="control-btn secondary" onclick="shuffleCards()">
+              🔀 Shuffle
+            </button>
+          ` : ""}
+          <button class="control-btn secondary" onclick="restartCards()">
+            ↻ Restart
+          </button>
+        </div>
+        <button class="control-btn" id="next-btn" onclick="nextCard()">
+          Next →
+        </button>
+      </div>
+    </div>
+  `;
 
   return html;
 }
