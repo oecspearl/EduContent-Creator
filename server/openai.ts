@@ -220,28 +220,42 @@ ${request.additionalContext ? `\n- Additional Requirements: ${request.additional
 
 HOTSPOT REQUIREMENTS:
 1. **Type Distribution**: 
-   - ${Math.ceil(request.numberOfItems * 0.6)}-${Math.floor(request.numberOfItems * 0.7)} question hotspots (test understanding)
-   - ${Math.floor(request.numberOfItems * 0.2)}-${Math.ceil(request.numberOfItems * 0.3)} information hotspots (provide context)
-   - ${Math.max(1, Math.floor(request.numberOfItems * 0.1))} navigation hotspot (if applicable)
+   - ${Math.ceil(request.numberOfItems * 0.4)}-${Math.floor(request.numberOfItems * 0.5)} question hotspots (single question)
+   - ${Math.max(1, Math.floor(request.numberOfItems * 0.2))}-${Math.ceil(request.numberOfItems * 0.3)} quiz hotspots (multiple questions - 2-4 questions each)
+   - ${Math.floor(request.numberOfItems * 0.15)}-${Math.ceil(request.numberOfItems * 0.2)} information hotspots (provide context)
+   - ${Math.max(0, Math.floor(request.numberOfItems * 0.1))} navigation hotspot (if applicable)
 
-2. **Question Hotspots**:
+2. **Question Hotspots** (single question):
    - Must have 3-4 multiple-choice options
    - Correct answer should be clearly identifiable from the video content
    - Questions should test understanding of key concepts, not trivial details
    - Make questions age-appropriate for ${request.gradeLevel || "the specified grade level"}
 
-3. **Information Hotspots**:
+3. **Quiz Hotspots** (multiple questions):
+   - Each quiz hotspot should contain 2-4 related questions
+   - Mix of question types: multiple-choice, true/false, and fill-in-the-blank
+   - All questions in a quiz should test understanding of the same concept or related concepts
+   - Questions should be progressively challenging or cover different aspects of the topic
+   - Each question must have:
+     - A clear question text
+     - For multiple-choice: 3-4 options with one correct answer
+     - For true/false: correct answer ("true" or "false")
+     - For fill-blank: correct answer text
+     - Optional explanation for the answer
+   - Quiz title should describe the topic being tested
+
+4. **Information Hotspots**:
    - Provide relevant context, definitions, or additional information
    - Should enhance understanding of the video content
    - Keep concise but informative
 
-4. **Timestamp Placement**:
+5. **Timestamp Placement**:
    - Place hotspots at natural learning moments (introduction of concepts, examples, summaries)
    - Use the suggested timestamps as a guide, but adjust based on content flow
    - Ensure all timestamps are within 0 to ${totalSeconds} seconds
    - Space hotspots appropriately to avoid clustering
 
-5. **Content Quality**:
+6. **Content Quality**:
    - All content must be directly related to the video's topic and description
    - Questions should be answerable based on what the video likely covers
    - Use clear, age-appropriate language
@@ -253,11 +267,23 @@ Respond in JSON format:
     {
       "id": "unique-id-1",
       "timestamp": 60,
-      "type": "question" | "info" | "navigation",
+      "type": "question" | "quiz" | "info" | "navigation",
       "title": "Concise, descriptive title (max 50 chars)",
-      "content": "Question text or information description",
-      "options": ["option1", "option2", "option3", "option4"], // only for questions (3-4 options)
-      "correctAnswer": 0 // only for questions (0-based index)
+      "content": "Question text or information description (optional for quiz type)",
+      // For single question hotspots:
+      "options": ["option1", "option2", "option3", "option4"], // only for "question" type (3-4 options)
+      "correctAnswer": 0, // only for "question" type (0-based index)
+      // For quiz hotspots (multiple questions):
+      "questions": [ // only for "quiz" type
+        {
+          "id": "question-id-1",
+          "type": "multiple-choice" | "true-false" | "fill-blank",
+          "question": "Question text",
+          "options": ["option1", "option2", "option3", "option4"], // only for multiple-choice
+          "correctAnswer": 0 | "true" | "false" | "answer text", // index for multiple-choice, "true"/"false" for true-false, text for fill-blank
+          "explanation": "Optional explanation for the answer"
+        }
+      ]
     }
   ]
 }

@@ -247,6 +247,9 @@ export function InteractiveVideoAIGenerator({
                   onChange={(e) => setFormData({ ...formData, numberOfHotspots: parseInt(e.target.value) || 5 })}
                   data-testid="input-number-hotspots"
                 />
+                <p className="text-xs text-muted-foreground">
+                  AI will create a mix of single questions and quiz hotspots (with multiple questions)
+                </p>
               </div>
             </div>
 
