@@ -28,7 +28,7 @@ import {
   Save,
   Settings
 } from "lucide-react";
-import type { H5pContent, InteractiveVideoData, VideoHotspot } from "@shared/schema";
+import type { H5pContent, InteractiveVideoData, VideoHotspot, QuizQuestion } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { ContentMetadataFields } from "@/components/ContentMetadataFields";
 
@@ -544,7 +544,8 @@ export default function InteractiveVideoCreator() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="question">Question</SelectItem>
+                            <SelectItem value="question">Single Question</SelectItem>
+                            <SelectItem value="quiz">Quiz (Multiple Questions)</SelectItem>
                             <SelectItem value="info">Information</SelectItem>
                             <SelectItem value="navigation">Navigation</SelectItem>
                           </SelectContent>
@@ -596,6 +597,196 @@ export default function InteractiveVideoCreator() {
                             />
                           </div>
                         </>
+                      )}
+
+                      {hotspot.type === "quiz" && (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <Label>Questions ({hotspot.questions?.length || 0})</Label>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const newQuestion: QuizQuestion = {
+                                  id: Date.now().toString(),
+                                  type: "multiple-choice",
+                                  question: "",
+                                  options: ["", "", "", ""],
+                                  correctAnswer: 0,
+                                };
+                                updateHotspot(index, {
+                                  questions: [...(hotspot.questions || []), newQuestion],
+                                });
+                              }}
+                              data-testid={`button-add-question-${index}`}
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              Add Question
+                            </Button>
+                          </div>
+
+                          {hotspot.questions && hotspot.questions.length > 0 ? (
+                            <div className="space-y-4 border rounded-lg p-4">
+                              {hotspot.questions.map((question, qIndex) => (
+                                <Card key={question.id} className="p-4">
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <Label className="text-sm font-medium">Question {qIndex + 1}</Label>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => {
+                                          const updatedQuestions = hotspot.questions?.filter((_, i) => i !== qIndex) || [];
+                                          updateHotspot(index, { questions: updatedQuestions });
+                                        }}
+                                        data-testid={`button-remove-question-${index}-${qIndex}`}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                      <Label className="text-xs">Question Type</Label>
+                                      <Select
+                                        value={question.type}
+                                        onValueChange={(value: any) => {
+                                          const updated = [...(hotspot.questions || [])];
+                                          updated[qIndex] = {
+                                            ...question,
+                                            type: value,
+                                            options: value === "multiple-choice" ? question.options || ["", "", "", ""] : undefined,
+                                            correctAnswer: value === "true-false" ? "true" : value === "multiple-choice" ? 0 : "",
+                                          };
+                                          updateHotspot(index, { questions: updated });
+                                        }}
+                                      >
+                                        <SelectTrigger className="h-8">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+                                          <SelectItem value="true-false">True/False</SelectItem>
+                                          <SelectItem value="fill-blank">Fill in the Blank</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                      <Label className="text-xs">Question Text</Label>
+                                      <Textarea
+                                        placeholder="Enter the question..."
+                                        value={question.question}
+                                        onChange={(e) => {
+                                          const updated = [...(hotspot.questions || [])];
+                                          updated[qIndex] = { ...question, question: e.target.value };
+                                          updateHotspot(index, { questions: updated });
+                                        }}
+                                        className="h-20 resize-none"
+                                        data-testid={`textarea-question-${index}-${qIndex}`}
+                                      />
+                                    </div>
+
+                                    {question.type === "multiple-choice" && (
+                                      <>
+                                        <div className="space-y-2">
+                                          <Label className="text-xs">Options</Label>
+                                          {question.options?.map((option, optIndex) => (
+                                            <div key={optIndex} className="flex items-center gap-2">
+                                              <Input
+                                                placeholder={`Option ${optIndex + 1}`}
+                                                value={option}
+                                                onChange={(e) => {
+                                                  const updated = [...(hotspot.questions || [])];
+                                                  const newOptions = [...(question.options || [])];
+                                                  newOptions[optIndex] = e.target.value;
+                                                  updated[qIndex] = { ...question, options: newOptions };
+                                                  updateHotspot(index, { questions: updated });
+                                                }}
+                                                data-testid={`input-option-${index}-${qIndex}-${optIndex}`}
+                                              />
+                                              <Button
+                                                type="button"
+                                                size="sm"
+                                                variant={question.correctAnswer === optIndex ? "default" : "outline"}
+                                                onClick={() => {
+                                                  const updated = [...(hotspot.questions || [])];
+                                                  updated[qIndex] = { ...question, correctAnswer: optIndex };
+                                                  updateHotspot(index, { questions: updated });
+                                                }}
+                                                data-testid={`button-correct-${index}-${qIndex}-${optIndex}`}
+                                              >
+                                                Correct
+                                              </Button>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </>
+                                    )}
+
+                                    {question.type === "true-false" && (
+                                      <div className="space-y-2">
+                                        <Label className="text-xs">Correct Answer</Label>
+                                        <Select
+                                          value={String(question.correctAnswer)}
+                                          onValueChange={(value) => {
+                                            const updated = [...(hotspot.questions || [])];
+                                            updated[qIndex] = { ...question, correctAnswer: value };
+                                            updateHotspot(index, { questions: updated });
+                                          }}
+                                        >
+                                          <SelectTrigger className="h-8">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="true">True</SelectItem>
+                                            <SelectItem value="false">False</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    )}
+
+                                    {question.type === "fill-blank" && (
+                                      <div className="space-y-2">
+                                        <Label className="text-xs">Correct Answer</Label>
+                                        <Input
+                                          placeholder="Enter the correct answer..."
+                                          value={String(question.correctAnswer || "")}
+                                          onChange={(e) => {
+                                            const updated = [...(hotspot.questions || [])];
+                                            updated[qIndex] = { ...question, correctAnswer: e.target.value };
+                                            updateHotspot(index, { questions: updated });
+                                          }}
+                                          data-testid={`input-fill-blank-${index}-${qIndex}`}
+                                        />
+                                      </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                      <Label className="text-xs">Explanation (Optional)</Label>
+                                      <Textarea
+                                        placeholder="Explanation for the answer..."
+                                        value={question.explanation || ""}
+                                        onChange={(e) => {
+                                          const updated = [...(hotspot.questions || [])];
+                                          updated[qIndex] = { ...question, explanation: e.target.value };
+                                          updateHotspot(index, { questions: updated });
+                                        }}
+                                        className="h-16 resize-none"
+                                        data-testid={`textarea-explanation-${index}-${qIndex}`}
+                                      />
+                                    </div>
+                                  </div>
+                                </Card>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 border rounded-lg text-muted-foreground">
+                              <p>No questions yet. Click "Add Question" to get started.</p>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </CardContent>
                   </Card>

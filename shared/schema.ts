@@ -209,11 +209,14 @@ export type FlashcardData = {
 export type VideoHotspot = {
   id: string;
   timestamp: number; // in seconds
-  type: "question" | "info" | "navigation";
+  type: "question" | "quiz" | "info" | "navigation";
   title: string;
   content: string;
+  // For single question hotspots
   options?: string[]; // for question hotspots
   correctAnswer?: number; // for question hotspots
+  // For quiz hotspots (multiple questions)
+  questions?: QuizQuestion[]; // for quiz hotspots
 };
 
 export type InteractiveVideoData = {

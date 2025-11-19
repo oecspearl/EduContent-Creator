@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, Check, X } from "lucide-react";
 import { youtubeLoader } from "@/lib/youtube-loader";
-import type { InteractiveVideoData, VideoHotspot } from "@shared/schema";
+import type { InteractiveVideoData, VideoHotspot, QuizQuestion } from "@shared/schema";
 import { useProgressTracker } from "@/hooks/use-progress-tracker";
 
 type VideoPlayerProps = {
@@ -16,6 +17,9 @@ type VideoPlayerProps = {
 export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
   const [currentHotspot, setCurrentHotspot] = useState<VideoHotspot | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, string | number>>({});
+  const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
+  const [quizShowFeedback, setQuizShowFeedback] = useState(false);
   const [completedHotspots, setCompletedHotspots] = useState<Set<string>>(new Set());
   const [showFeedback, setShowFeedback] = useState(false);
   const playerRef = useRef<any>(null);
@@ -252,8 +256,36 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
   };
 
   const handleAnswerSubmit = () => {
-    if (!currentHotspot || currentHotspot.type !== "question") return;
-    setShowFeedback(true);
+    if (!currentHotspot) return;
+    if (currentHotspot.type === "question") {
+      setShowFeedback(true);
+    } else if (currentHotspot.type === "quiz") {
+      setQuizShowFeedback(true);
+    }
+  };
+
+  const handleQuizAnswer = (questionId: string, answer: string | number) => {
+    if (quizShowFeedback) return; // Don't allow changing answers after feedback
+    setQuizAnswers(prev => ({ ...prev, [questionId]: answer }));
+  };
+
+  const handleQuizNext = () => {
+    if (!currentHotspot || currentHotspot.type !== "quiz" || !currentHotspot.questions) return;
+    
+    if (currentQuizIndex < currentHotspot.questions.length - 1) {
+      setCurrentQuizIndex(currentQuizIndex + 1);
+      setQuizShowFeedback(false);
+    } else {
+      // Quiz complete, show results
+      setQuizShowFeedback(true);
+    }
+  };
+
+  const handleQuizPrevious = () => {
+    if (currentQuizIndex > 0) {
+      setCurrentQuizIndex(currentQuizIndex - 1);
+      setQuizShowFeedback(false);
+    }
   };
 
   const handleContinue = () => {
@@ -263,18 +295,46 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
     const hotspotId = currentHotspot.id;
     const hotspotTimestamp = currentHotspot.timestamp;
     const hotspotType = currentHotspot.type;
-    const hotspotCorrectAnswer = currentHotspot.correctAnswer;
     
     // Log hotspot interaction
-    logInteraction("hotspot_completed", {
-      hotspotId: hotspotId,
-      hotspotType: hotspotType,
-      timestamp: hotspotTimestamp,
-      ...(hotspotType === "question" && {
+    if (hotspotType === "question") {
+      logInteraction("hotspot_completed", {
+        hotspotId: hotspotId,
+        hotspotType: hotspotType,
+        timestamp: hotspotTimestamp,
         selectedAnswer,
-        isCorrect: hotspotCorrectAnswer === selectedAnswer,
-      }),
-    });
+        isCorrect: currentHotspot.correctAnswer === selectedAnswer,
+      });
+    } else if (hotspotType === "quiz" && currentHotspot.questions) {
+      // Calculate quiz score
+      const totalQuestions = currentHotspot.questions.length;
+      const correctAnswers = currentHotspot.questions.filter((q, idx) => {
+        const userAnswer = quizAnswers[q.id];
+        if (q.type === "multiple-choice") {
+          return userAnswer === q.correctAnswer;
+        } else if (q.type === "true-false") {
+          return userAnswer === q.correctAnswer;
+        } else if (q.type === "fill-blank") {
+          return String(userAnswer).toLowerCase().trim() === String(q.correctAnswer).toLowerCase().trim();
+        }
+        return false;
+      }).length;
+      
+      logInteraction("hotspot_completed", {
+        hotspotId: hotspotId,
+        hotspotType: hotspotType,
+        timestamp: hotspotTimestamp,
+        quizScore: correctAnswers,
+        quizTotal: totalQuestions,
+        answers: quizAnswers,
+      });
+    } else {
+      logInteraction("hotspot_completed", {
+        hotspotId: hotspotId,
+        hotspotType: hotspotType,
+        timestamp: hotspotTimestamp,
+      });
+    }
     
     // Mark hotspot as completed BEFORE clearing currentHotspot
     setCompletedHotspots(prev => {
@@ -286,6 +346,9 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
     // Clear current hotspot and reset state
     setCurrentHotspot(null);
     setSelectedAnswer(null);
+    setQuizAnswers({});
+    setCurrentQuizIndex(0);
+    setQuizShowFeedback(false);
     setShowFeedback(false);
     
     // Small delay before resuming to ensure state updates are processed
@@ -321,8 +384,8 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <Badge variant={currentHotspot.type === "question" ? "default" : "outline"}>
-                      {currentHotspot.type}
+                    <Badge variant={currentHotspot.type === "question" || currentHotspot.type === "quiz" ? "default" : "outline"}>
+                      {currentHotspot.type === "quiz" ? "Quiz" : currentHotspot.type}
                     </Badge>
                     <span className="text-sm font-mono text-muted-foreground">
                       {formatTime(currentHotspot.timestamp)}
@@ -330,7 +393,151 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
                   </div>
 
                   <h3 className="text-xl font-semibold">{currentHotspot.title}</h3>
-                  <p className="text-muted-foreground">{currentHotspot.content}</p>
+                  {currentHotspot.content && <p className="text-muted-foreground">{currentHotspot.content}</p>}
+
+                  {currentHotspot.type === "quiz" && currentHotspot.questions && currentHotspot.questions.length > 0 && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <span>Question {currentQuizIndex + 1} of {currentHotspot.questions.length}</span>
+                        {quizShowFeedback && (
+                          <span className="font-medium">
+                            Score: {currentHotspot.questions.filter((q) => {
+                              const userAnswer = quizAnswers[q.id];
+                              if (q.type === "multiple-choice") {
+                                return userAnswer === q.correctAnswer;
+                              } else if (q.type === "true-false") {
+                                return userAnswer === q.correctAnswer;
+                              } else if (q.type === "fill-blank") {
+                                return String(userAnswer).toLowerCase().trim() === String(q.correctAnswer).toLowerCase().trim();
+                              }
+                              return false;
+                            }).length} / {currentHotspot.questions.length}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {(() => {
+                        const question = currentHotspot.questions[currentQuizIndex];
+                        const userAnswer = quizAnswers[question.id];
+                        const isCorrect = question.type === "multiple-choice" 
+                          ? userAnswer === question.correctAnswer
+                          : question.type === "true-false"
+                          ? userAnswer === question.correctAnswer
+                          : String(userAnswer).toLowerCase().trim() === String(question.correctAnswer).toLowerCase().trim();
+                        
+                        return (
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-medium mb-2">{question.question}</h4>
+                            </div>
+
+                            {question.type === "multiple-choice" && question.options && (
+                              <div className="space-y-2">
+                                {question.options.map((option, optIndex) => {
+                                  const isSelected = userAnswer === optIndex;
+                                  return (
+                                    <button
+                                      key={optIndex}
+                                      onClick={() => handleQuizAnswer(question.id, optIndex)}
+                                      disabled={quizShowFeedback}
+                                      className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
+                                        quizShowFeedback
+                                          ? optIndex === question.correctAnswer
+                                            ? "border-green-600 bg-green-50 dark:bg-green-950"
+                                            : isSelected
+                                            ? "border-red-600 bg-red-50 dark:bg-red-950"
+                                            : "border-border"
+                                          : isSelected
+                                          ? "border-primary bg-primary/10"
+                                          : "border-border hover:border-primary/50"
+                                      }`}
+                                      data-testid={`quiz-option-${optIndex}`}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span>{option}</span>
+                                        {quizShowFeedback && optIndex === question.correctAnswer && (
+                                          <Check className="h-4 w-4 text-green-600" />
+                                        )}
+                                        {quizShowFeedback && isSelected && !isCorrect && (
+                                          <X className="h-4 w-4 text-red-600" />
+                                        )}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {question.type === "true-false" && (
+                              <div className="space-y-2">
+                                {["true", "false"].map((value) => {
+                                  const isSelected = userAnswer === value;
+                                  return (
+                                    <button
+                                      key={value}
+                                      onClick={() => handleQuizAnswer(question.id, value)}
+                                      disabled={quizShowFeedback}
+                                      className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
+                                        quizShowFeedback
+                                          ? value === String(question.correctAnswer)
+                                            ? "border-green-600 bg-green-50 dark:bg-green-950"
+                                            : isSelected
+                                            ? "border-red-600 bg-red-50 dark:bg-red-950"
+                                            : "border-border"
+                                          : isSelected
+                                          ? "border-primary bg-primary/10"
+                                          : "border-border hover:border-primary/50"
+                                      }`}
+                                      data-testid={`quiz-tf-${value}`}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span className="capitalize">{value}</span>
+                                        {quizShowFeedback && value === String(question.correctAnswer) && (
+                                          <Check className="h-4 w-4 text-green-600" />
+                                        )}
+                                        {quizShowFeedback && isSelected && !isCorrect && (
+                                          <X className="h-4 w-4 text-red-600" />
+                                        )}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {question.type === "fill-blank" && (
+                              <div className="space-y-2">
+                                <Input
+                                  placeholder="Enter your answer..."
+                                  value={String(userAnswer || "")}
+                                  onChange={(e) => handleQuizAnswer(question.id, e.target.value)}
+                                  disabled={quizShowFeedback}
+                                  className={quizShowFeedback 
+                                    ? isCorrect 
+                                      ? "border-green-600 bg-green-50 dark:bg-green-950" 
+                                      : "border-red-600 bg-red-50 dark:bg-red-950"
+                                    : ""
+                                  }
+                                  data-testid="quiz-fill-blank"
+                                />
+                                {quizShowFeedback && (
+                                  <p className="text-sm text-muted-foreground">
+                                    Correct answer: {String(question.correctAnswer)}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+
+                            {quizShowFeedback && question.explanation && (
+                              <div className="p-3 bg-muted rounded-lg">
+                                <p className="text-sm">{question.explanation}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
 
                   {currentHotspot.type === "question" && currentHotspot.options && currentHotspot.options.length > 0 && (
                     <div className="space-y-3">
@@ -369,22 +576,60 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
                     </div>
                   )}
 
-                  <div className="flex justify-end gap-2 pt-2">
-                    {currentHotspot.type === "question" && currentHotspot.options && currentHotspot.options.length > 0 && !showFeedback && (
-                      <Button
-                        onClick={handleAnswerSubmit}
-                        disabled={selectedAnswer === null}
-                        data-testid="button-submit-answer"
-                      >
-                        Submit Answer
-                      </Button>
+                  <div className="flex justify-between gap-2 pt-2">
+                    {currentHotspot.type === "quiz" && currentHotspot.questions && (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={handleQuizPrevious}
+                          disabled={currentQuizIndex === 0}
+                          data-testid="button-quiz-previous"
+                        >
+                          Previous
+                        </Button>
+                        {currentQuizIndex < currentHotspot.questions.length - 1 ? (
+                          <Button
+                            onClick={handleQuizNext}
+                            disabled={!quizAnswers[currentHotspot.questions[currentQuizIndex].id] && !quizShowFeedback}
+                            data-testid="button-quiz-next"
+                          >
+                            Next
+                          </Button>
+                        ) : null}
+                      </div>
                     )}
-                    {(currentHotspot.type !== "question" || !currentHotspot.options || currentHotspot.options.length === 0 || showFeedback) && (
-                      <Button onClick={handleContinue} data-testid="button-continue">
-                        Continue
-                        <SkipForward className="h-4 w-4 ml-2" />
-                      </Button>
-                    )}
+                    <div className="flex gap-2 ml-auto">
+                      {currentHotspot.type === "question" && currentHotspot.options && currentHotspot.options.length > 0 && !showFeedback && (
+                        <Button
+                          onClick={handleAnswerSubmit}
+                          disabled={selectedAnswer === null}
+                          data-testid="button-submit-answer"
+                        >
+                          Submit Answer
+                        </Button>
+                      )}
+                      {currentHotspot.type === "quiz" && currentHotspot.questions && (
+                        <>
+                          {!quizShowFeedback && currentQuizIndex === currentHotspot.questions.length - 1 && (
+                            <Button
+                              onClick={handleAnswerSubmit}
+                              disabled={!quizAnswers[currentHotspot.questions[currentQuizIndex].id]}
+                              data-testid="button-submit-quiz"
+                            >
+                              Submit Quiz
+                            </Button>
+                          )}
+                        </>
+                      )}
+                      {(currentHotspot.type !== "question" && currentHotspot.type !== "quiz") || 
+                       (currentHotspot.type === "question" && showFeedback) ||
+                       (currentHotspot.type === "quiz" && quizShowFeedback) ? (
+                        <Button onClick={handleContinue} data-testid="button-continue">
+                          Continue
+                          <SkipForward className="h-4 w-4 ml-2" />
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </CardContent>
