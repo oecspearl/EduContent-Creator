@@ -798,7 +798,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/content", requireAuth, async (req, res) => {
     try {
-      const { title, description, type, data, isPublished, isPublic, tags } = req.body;
+      const { title, description, type, data, isPublished, isPublic, tags, subject, gradeLevel, ageRange } = req.body;
 
       if (!title || !type || !data) {
         return res.status(400).json({ message: "Missing required fields" });
@@ -813,6 +813,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isPublished: isPublished || false,
         isPublic: isPublic || false,
         tags: tags || null,
+        subject: subject || null,
+        gradeLevel: gradeLevel || null,
+        ageRange: ageRange || null,
       });
 
       res.json(content);
@@ -833,7 +836,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden" });
       }
 
-      const { title, description, data, isPublished, isPublic, tags } = req.body;
+      const { title, description, data, isPublished, isPublic, tags, subject, gradeLevel, ageRange } = req.body;
       const updates: any = {};
 
       if (title !== undefined) updates.title = title;
@@ -842,6 +845,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isPublished !== undefined) updates.isPublished = isPublished;
       if (isPublic !== undefined) updates.isPublic = isPublic;
       if (tags !== undefined) updates.tags = tags;
+      if (subject !== undefined) updates.subject = subject;
+      if (gradeLevel !== undefined) updates.gradeLevel = gradeLevel;
+      if (ageRange !== undefined) updates.ageRange = ageRange;
 
       const updated = await storage.updateContent(req.params.id, updates);
       res.json(updated);

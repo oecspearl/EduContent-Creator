@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import type { H5pContent, ImageHotspotData, ImageHotspot } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
+import { ContentMetadataFields } from "@/components/ContentMetadataFields";
 
 export default function ImageHotspotCreator() {
   const params = useParams();
@@ -34,6 +35,9 @@ export default function ImageHotspotCreator() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [subject, setSubject] = useState("");
+  const [gradeLevel, setGradeLevel] = useState("");
+  const [ageRange, setAgeRange] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [hotspots, setHotspots] = useState<ImageHotspot[]>([]);
   const [isPublished, setIsPublished] = useState(false);
@@ -50,6 +54,9 @@ export default function ImageHotspotCreator() {
     if (content && content.type === "image-hotspot") {
       setTitle(content.title);
       setDescription(content.description || "");
+      setSubject(content.subject || "");
+      setGradeLevel(content.gradeLevel || "");
+      setAgeRange(content.ageRange || "");
       const imageData = content.data as ImageHotspotData;
       setImageUrl(imageData.imageUrl || "");
       setHotspots(imageData.hotspots || []);
@@ -66,6 +73,9 @@ export default function ImageHotspotCreator() {
         const response = await apiRequest("PUT", `/api/content/${contentId}`, {
           title,
           description,
+          subject,
+          gradeLevel,
+          ageRange,
           data,
           isPublished: publish,
           isPublic,
@@ -75,6 +85,9 @@ export default function ImageHotspotCreator() {
         const response = await apiRequest("POST", "/api/content", {
           title,
           description,
+          subject,
+          gradeLevel,
+          ageRange,
           type: "image-hotspot",
           data,
           isPublished: publish,
@@ -221,6 +234,14 @@ export default function ImageHotspotCreator() {
                     data-testid="textarea-description"
                   />
                 </div>
+                <ContentMetadataFields
+                  subject={subject}
+                  gradeLevel={gradeLevel}
+                  ageRange={ageRange}
+                  onSubjectChange={setSubject}
+                  onGradeLevelChange={setGradeLevel}
+                  onAgeRangeChange={setAgeRange}
+                />
                 <div className="space-y-2">
                   <Label htmlFor="imageUrl">Image URL *</Label>
                   <Input

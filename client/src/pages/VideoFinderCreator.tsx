@@ -15,6 +15,7 @@ import { ArrowLeft, Search, Globe, ExternalLink, Play, Sparkles, X, CheckSquare,
 import { Textarea } from "@/components/ui/textarea";
 import type { H5pContent, VideoFinderData, VideoResult } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
+import { ContentMetadataFields } from "@/components/ContentMetadataFields";
 
 export default function VideoFinderCreator() {
   const params = useParams();
@@ -53,11 +54,11 @@ export default function VideoFinderCreator() {
       setTitle(content.title);
       setDescription(content.description || "");
       const data = content.data as VideoFinderData;
-      setSubject(data.searchCriteria.subject);
+      setSubject(content.subject || data.searchCriteria.subject || "");
+      setGradeLevel(content.gradeLevel || data.searchCriteria.gradeLevel || "");
+      setAgeRange(content.ageRange || data.searchCriteria.ageRange || "");
       setTopic(data.searchCriteria.topic);
       setLearningOutcome(data.searchCriteria.learningOutcome);
-      setGradeLevel(data.searchCriteria.gradeLevel);
-      setAgeRange(data.searchCriteria.ageRange);
       setVideoCount(data.searchCriteria.videoCount);
       setSearchResults(data.searchResults || []);
       setSelectedVideoIds((data.searchResults || []).map(v => v.id));
@@ -91,6 +92,9 @@ export default function VideoFinderCreator() {
         const response = await apiRequest("PUT", `/api/content/${contentId}`, {
           title,
           description,
+          subject,
+          gradeLevel,
+          ageRange,
           data,
           isPublished: params.publish,
           isPublic,
@@ -100,6 +104,9 @@ export default function VideoFinderCreator() {
         const response = await apiRequest("POST", "/api/content", {
           title,
           description,
+          subject,
+          gradeLevel,
+          ageRange,
           type: "video-finder",
           data,
           isPublished: params.publish,
@@ -388,6 +395,14 @@ export default function VideoFinderCreator() {
                     data-testid="input-description"
                   />
                 </div>
+                <ContentMetadataFields
+                  subject={subject}
+                  gradeLevel={gradeLevel}
+                  ageRange={ageRange}
+                  onSubjectChange={setSubject}
+                  onGradeLevelChange={setGradeLevel}
+                  onAgeRangeChange={setAgeRange}
+                />
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="space-y-0.5">
                     <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>

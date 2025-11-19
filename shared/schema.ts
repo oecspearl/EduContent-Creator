@@ -32,6 +32,9 @@ export const h5pContent = pgTable("h5p_content", {
   isPublished: boolean("is_published").default(false).notNull(),
   isPublic: boolean("is_public").default(false).notNull(), // Share with other teachers
   tags: text("tags").array(),
+  subject: text("subject"), // Subject area
+  gradeLevel: text("grade_level"), // Grade level
+  ageRange: text("age_range"), // Age range
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

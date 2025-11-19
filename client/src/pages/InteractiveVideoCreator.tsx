@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import type { H5pContent, InteractiveVideoData, VideoHotspot } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
+import { ContentMetadataFields } from "@/components/ContentMetadataFields";
 
 export default function InteractiveVideoCreator() {
   const params = useParams();
@@ -38,6 +39,9 @@ export default function InteractiveVideoCreator() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [subject, setSubject] = useState("");
+  const [gradeLevel, setGradeLevel] = useState("");
+  const [ageRange, setAgeRange] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [hotspots, setHotspots] = useState<VideoHotspot[]>([]);
   const [isPublished, setIsPublished] = useState(false);
@@ -58,6 +62,9 @@ export default function InteractiveVideoCreator() {
     if (content && content.type === "interactive-video") {
       setTitle(content.title);
       setDescription(content.description || "");
+      setSubject(content.subject || "");
+      setGradeLevel(content.gradeLevel || "");
+      setAgeRange(content.ageRange || "");
       const videoData = content.data as InteractiveVideoData;
       setVideoUrl(videoData.videoUrl || "");
       setHotspots(videoData.hotspots || []);
@@ -74,6 +81,9 @@ export default function InteractiveVideoCreator() {
         const response = await apiRequest("PUT", `/api/content/${contentId}`, {
           title,
           description,
+          subject,
+          gradeLevel,
+          ageRange,
           data,
           isPublished: publish,
           isPublic,
@@ -83,6 +93,9 @@ export default function InteractiveVideoCreator() {
         const response = await apiRequest("POST", "/api/content", {
           title,
           description,
+          subject,
+          gradeLevel,
+          ageRange,
           type: "interactive-video",
           data,
           isPublished: publish,
@@ -284,6 +297,14 @@ export default function InteractiveVideoCreator() {
                   data-testid="textarea-description"
                 />
               </div>
+              <ContentMetadataFields
+                subject={subject}
+                gradeLevel={gradeLevel}
+                ageRange={ageRange}
+                onSubjectChange={setSubject}
+                onGradeLevelChange={setGradeLevel}
+                onAgeRangeChange={setAgeRange}
+              />
               <div className="space-y-2">
                 <Label htmlFor="videoUrl">YouTube Video URL *</Label>
                 <Input

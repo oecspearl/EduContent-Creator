@@ -16,6 +16,7 @@ import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertC
 import type { PresentationData, SlideContent, H5pContent } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
+import { ContentMetadataFields } from "@/components/ContentMetadataFields";
 
 declare global {
   interface Window {
@@ -39,6 +40,7 @@ export default function PresentationCreator() {
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [gradeLevel, setGradeLevel] = useState("");
   const [ageRange, setAgeRange] = useState("");
@@ -71,9 +73,10 @@ export default function PresentationCreator() {
       setTitle(content.title);
       setDescription(content.description || "");
       const data = content.data as PresentationData;
+      setSubject(content.subject || "");
+      setGradeLevel(content.gradeLevel || data.gradeLevel || "");
+      setAgeRange(content.ageRange || data.ageRange || "");
       setTopic(data.topic);
-      setGradeLevel(data.gradeLevel);
-      setAgeRange(data.ageRange);
       setLearningOutcomes(data.learningOutcomes);
       setCustomInstructions(data.customInstructions || "");
       setSlides(data.slides || []);
@@ -124,6 +127,9 @@ export default function PresentationCreator() {
         const response = await apiRequest("PUT", `/api/content/${contentId}`, {
           title,
           description,
+          subject,
+          gradeLevel,
+          ageRange,
           data,
           isPublished: params.publish,
           isPublic,
@@ -133,6 +139,9 @@ export default function PresentationCreator() {
         const response = await apiRequest("POST", "/api/content", {
           title,
           description,
+          subject,
+          gradeLevel,
+          ageRange,
           type: "presentation",
           data,
           isPublished: params.publish,
@@ -383,6 +392,9 @@ export default function PresentationCreator() {
           await apiRequest("PUT", `/api/content/${contentId}`, {
             title,
             description,
+            subject,
+            gradeLevel,
+            ageRange,
             data: updatedData,
             isPublished,
           });
@@ -656,6 +668,14 @@ export default function PresentationCreator() {
                   data-testid="input-description"
                 />
               </div>
+              <ContentMetadataFields
+                subject={subject}
+                gradeLevel={gradeLevel}
+                ageRange={ageRange}
+                onSubjectChange={setSubject}
+                onGradeLevelChange={setGradeLevel}
+                onAgeRangeChange={setAgeRange}
+              />
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div className="space-y-0.5">
                   <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>

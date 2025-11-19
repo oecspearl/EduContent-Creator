@@ -22,6 +22,7 @@ import { QuizPageEditor } from "@/components/book-pages/QuizPageEditor";
 import { ImagePageEditor } from "@/components/book-pages/ImagePageEditor";
 import { AudioRecorder } from "@/components/book-pages/AudioRecorder";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
+import { ContentMetadataFields } from "@/components/ContentMetadataFields";
 
 export default function InteractiveBookCreator() {
   const params = useParams();
@@ -35,6 +36,7 @@ export default function InteractiveBookCreator() {
   const [description, setDescription] = useState("");
   const [subject, setSubject] = useState("");
   const [gradeLevel, setGradeLevel] = useState("");
+  const [ageRange, setAgeRange] = useState("");
   const [pages, setPages] = useState<InteractiveBookData["pages"]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [settings, setSettings] = useState({
@@ -61,11 +63,12 @@ export default function InteractiveBookCreator() {
     if (content && content.type === "interactive-book") {
       setTitle(content.title);
       setDescription(content.description || "");
+      setSubject(content.subject || "");
+      setGradeLevel(content.gradeLevel || "");
+      setAgeRange(content.ageRange || "");
       const data = content.data as InteractiveBookData;
       const loadedPages = data.pages || [];
       setPages(loadedPages);
-      setSubject(data.subject || "");
-      setGradeLevel(data.gradeLevel || "");
       setSettings(data.settings || settings);
       setIsPublished(content.isPublished);
       setIsPublic(content.isPublic || false);
@@ -86,18 +89,16 @@ export default function InteractiveBookCreator() {
       const data: InteractiveBookData = { 
         pages, 
         settings,
-        ...(subject && { subject }),
-        ...(gradeLevel && { gradeLevel }),
       };
       
       if (isEditing) {
         const response = await apiRequest("PUT", `/api/content/${contentId}`, {
-          title, description, data, isPublished: publish, isPublic,
+          title, description, subject, gradeLevel, ageRange, data, isPublished: publish, isPublic,
         });
         return await response.json();
       } else {
         const response = await apiRequest("POST", "/api/content", {
-          title, description, type: "interactive-book", data, isPublished: publish, isPublic,
+          title, description, subject, gradeLevel, ageRange, type: "interactive-book", data, isPublished: publish, isPublic,
         });
         return await response.json();
       }
@@ -345,35 +346,14 @@ export default function InteractiveBookCreator() {
                   data-testid="input-description"
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="subject">Subject</Label>
-                  <Input
-                    id="subject"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="e.g., Mathematics, Science, Language Arts"
-                    data-testid="input-subject"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="gradeLevel">Grade Level</Label>
-                  <Select value={gradeLevel} onValueChange={setGradeLevel}>
-                    <SelectTrigger id="gradeLevel" data-testid="select-grade-level">
-                      <SelectValue placeholder="Select grade level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pre-K">Pre-K</SelectItem>
-                      <SelectItem value="Kindergarten">Kindergarten</SelectItem>
-                      <SelectItem value="K-2">K-2 (Grades K-2)</SelectItem>
-                      <SelectItem value="3-5">3-5 (Grades 3-5)</SelectItem>
-                      <SelectItem value="6-8">6-8 (Grades 6-8)</SelectItem>
-                      <SelectItem value="9-12">9-12 (Grades 9-12)</SelectItem>
-                      <SelectItem value="Higher Education">Higher Education</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              <ContentMetadataFields
+                subject={subject}
+                gradeLevel={gradeLevel}
+                ageRange={ageRange}
+                onSubjectChange={setSubject}
+                onGradeLevelChange={setGradeLevel}
+                onAgeRangeChange={setAgeRange}
+              />
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div className="space-y-0.5">
                   <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>

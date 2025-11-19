@@ -18,6 +18,7 @@ import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Image as ImageIcon, Upload, X
 import type { H5pContent, MemoryGameData, MemoryCard } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
+import { ContentMetadataFields } from "@/components/ContentMetadataFields";
 
 type CardPairEditorProps = {
   card1: MemoryCard;
@@ -233,6 +234,9 @@ export default function MemoryGameCreator() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [subject, setSubject] = useState("");
+  const [gradeLevel, setGradeLevel] = useState("");
+  const [ageRange, setAgeRange] = useState("");
   const [cards, setCards] = useState<MemoryGameData["cards"]>([]);
   const [settings, setSettings] = useState({
     rows: 4,
@@ -254,6 +258,9 @@ export default function MemoryGameCreator() {
     if (content && content.type === "memory-game") {
       setTitle(content.title);
       setDescription(content.description || "");
+      setSubject(content.subject || "");
+      setGradeLevel(content.gradeLevel || "");
+      setAgeRange(content.ageRange || "");
       const data = content.data as MemoryGameData;
       setCards(data.cards || []);
       setSettings(data.settings || settings);
@@ -268,12 +275,12 @@ export default function MemoryGameCreator() {
       
       if (isEditing) {
         const response = await apiRequest("PUT", `/api/content/${contentId}`, {
-          title, description, data, isPublished: publish, isPublic,
+          title, description, subject, gradeLevel, ageRange, data, isPublished: publish, isPublic,
         });
         return await response.json();
       } else {
         const response = await apiRequest("POST", "/api/content", {
-          title, description, type: "memory-game", data, isPublished: publish, isPublic,
+          title, description, subject, gradeLevel, ageRange, type: "memory-game", data, isPublished: publish, isPublic,
         });
         return await response.json();
       }
@@ -446,6 +453,14 @@ export default function MemoryGameCreator() {
                   data-testid="input-description"
                 />
               </div>
+              <ContentMetadataFields
+                subject={subject}
+                gradeLevel={gradeLevel}
+                ageRange={ageRange}
+                onSubjectChange={setSubject}
+                onGradeLevelChange={setGradeLevel}
+                onAgeRangeChange={setAgeRange}
+              />
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div className="space-y-0.5">
                   <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>

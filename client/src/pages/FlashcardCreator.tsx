@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import type { H5pContent, FlashcardData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
+import { ContentMetadataFields } from "@/components/ContentMetadataFields";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
 
 export default function FlashcardCreator() {
@@ -38,6 +39,9 @@ export default function FlashcardCreator() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [subject, setSubject] = useState("");
+  const [gradeLevel, setGradeLevel] = useState("");
+  const [ageRange, setAgeRange] = useState("");
   const [cards, setCards] = useState<FlashcardData["cards"]>([]);
   const [settings, setSettings] = useState({
     shuffleCards: false,
@@ -59,6 +63,9 @@ export default function FlashcardCreator() {
     if (content && content.type === "flashcard") {
       setTitle(content.title);
       setDescription(content.description || "");
+      setSubject(content.subject || "");
+      setGradeLevel(content.gradeLevel || "");
+      setAgeRange(content.ageRange || "");
       const flashcardData = content.data as FlashcardData;
       setCards(flashcardData.cards || []);
       setSettings({
@@ -79,6 +86,9 @@ export default function FlashcardCreator() {
         const response = await apiRequest("PUT", `/api/content/${contentId}`, {
           title,
           description,
+          subject,
+          gradeLevel,
+          ageRange,
           data,
           isPublished: publish,
           isPublic,
@@ -88,6 +98,9 @@ export default function FlashcardCreator() {
         const response = await apiRequest("POST", "/api/content", {
           title,
           description,
+          subject,
+          gradeLevel,
+          ageRange,
           type: "flashcard",
           data,
           isPublished: publish,
@@ -261,6 +274,14 @@ export default function FlashcardCreator() {
                     data-testid="textarea-description"
                   />
                 </div>
+                <ContentMetadataFields
+                  subject={subject}
+                  gradeLevel={gradeLevel}
+                  ageRange={ageRange}
+                  onSubjectChange={setSubject}
+                  onGradeLevelChange={setGradeLevel}
+                  onAgeRangeChange={setAgeRange}
+                />
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="space-y-0.5">
                     <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>

@@ -15,6 +15,7 @@ import { AIGenerationModal } from "@/components/AIGenerationModal";
 import { ArrowLeft, Sparkles, Plus, Trash2, Globe, HelpCircle } from "lucide-react";
 import type { H5pContent, FillInBlanksData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
+import { ContentMetadataFields } from "@/components/ContentMetadataFields";
 
 export default function FillBlanksCreator() {
   const params = useParams();
@@ -26,6 +27,9 @@ export default function FillBlanksCreator() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [subject, setSubject] = useState("");
+  const [gradeLevel, setGradeLevel] = useState("");
+  const [ageRange, setAgeRange] = useState("");
   const [text, setText] = useState("");
   const [blanks, setBlanks] = useState<FillInBlanksData["blanks"]>([]);
   const [settings, setSettings] = useState({
@@ -47,6 +51,9 @@ export default function FillBlanksCreator() {
     if (content && content.type === "fill-blanks") {
       setTitle(content.title);
       setDescription(content.description || "");
+      setSubject(content.subject || "");
+      setGradeLevel(content.gradeLevel || "");
+      setAgeRange(content.ageRange || "");
       const data = content.data as FillInBlanksData;
       setText(data.text || "");
       setBlanks(data.blanks || []);
@@ -62,12 +69,12 @@ export default function FillBlanksCreator() {
       
       if (isEditing) {
         const response = await apiRequest("PUT", `/api/content/${contentId}`, {
-          title, description, data, isPublished: publish, isPublic,
+          title, description, subject, gradeLevel, ageRange, data, isPublished: publish, isPublic,
         });
         return await response.json();
       } else {
         const response = await apiRequest("POST", "/api/content", {
-          title, description, type: "fill-blanks", data, isPublished: publish, isPublic,
+          title, description, subject, gradeLevel, ageRange, type: "fill-blanks", data, isPublished: publish, isPublic,
         });
         return await response.json();
       }
@@ -174,6 +181,14 @@ export default function FillBlanksCreator() {
                   data-testid="input-description"
                 />
               </div>
+              <ContentMetadataFields
+                subject={subject}
+                gradeLevel={gradeLevel}
+                ageRange={ageRange}
+                onSubjectChange={setSubject}
+                onGradeLevelChange={setGradeLevel}
+                onAgeRangeChange={setAgeRange}
+              />
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div className="space-y-0.5">
                   <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>

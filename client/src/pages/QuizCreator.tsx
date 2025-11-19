@@ -29,6 +29,7 @@ import {
 import type { H5pContent, QuizData, QuizQuestion } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
+import { ContentMetadataFields } from "@/components/ContentMetadataFields";
 
 export default function QuizCreator() {
   const params = useParams();
@@ -39,6 +40,9 @@ export default function QuizCreator() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [subject, setSubject] = useState("");
+  const [gradeLevel, setGradeLevel] = useState("");
+  const [ageRange, setAgeRange] = useState("");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [settings, setSettings] = useState({
     shuffleQuestions: false,
@@ -61,6 +65,9 @@ export default function QuizCreator() {
     if (content && content.type === "quiz") {
       setTitle(content.title);
       setDescription(content.description || "");
+      setSubject(content.subject || "");
+      setGradeLevel(content.gradeLevel || "");
+      setAgeRange(content.ageRange || "");
       const quizData = content.data as QuizData;
       setQuestions(quizData.questions || []);
       setSettings({
@@ -79,18 +86,24 @@ export default function QuizCreator() {
       const data: QuizData = { questions, settings };
       
       if (isEditing) {
-        const response = await apiRequest("PUT", `/api/content/${contentId}`, {
-          title,
-          description,
-          data,
-          isPublished: publish,
-          isPublic,
-        });
+      const response = await apiRequest("PUT", `/api/content/${contentId}`, {
+        title,
+        description,
+        subject,
+        gradeLevel,
+        ageRange,
+        data,
+        isPublished: publish,
+        isPublic,
+      });
         return await response.json();
       } else {
         const response = await apiRequest("POST", "/api/content", {
           title,
           description,
+          subject,
+          gradeLevel,
+          ageRange,
           type: "quiz",
           data,
           isPublished: publish,
@@ -264,6 +277,14 @@ export default function QuizCreator() {
                     data-testid="textarea-description"
                   />
                 </div>
+                <ContentMetadataFields
+                  subject={subject}
+                  gradeLevel={gradeLevel}
+                  ageRange={ageRange}
+                  onSubjectChange={setSubject}
+                  onGradeLevelChange={setGradeLevel}
+                  onAgeRangeChange={setAgeRange}
+                />
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="space-y-0.5">
                     <Label htmlFor="isPublic" className="text-base">Share as Public Resource</Label>
