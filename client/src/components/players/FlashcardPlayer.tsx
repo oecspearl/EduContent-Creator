@@ -234,6 +234,7 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
           maxHeight: "500px",
           perspective: "1000px",
           WebkitPerspective: "1000px",
+          overflow: "hidden",
         }}
         onClick={() => setIsFlipped(!isFlipped)}
         data-testid="flashcard"
@@ -251,9 +252,7 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
         >
           {/* Front */}
           <Card
-            className={`absolute inset-0 ${
-              isFlipped ? "invisible" : "visible"
-            } flex items-center justify-center hover-elevate overflow-hidden`}
+            className="absolute inset-0 flex items-center justify-center hover-elevate"
             style={{
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
@@ -261,10 +260,19 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
               WebkitTransform: "rotateY(0deg)",
               width: "100%",
               height: "100%",
+              margin: 0,
+              padding: 0,
+              opacity: isFlipped ? 0 : 1,
+              pointerEvents: isFlipped ? "none" : "auto",
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
             }}
           >
-            <CardContent className="p-8 text-center w-full">
-              <div className="space-y-4">
+            <CardContent className="p-8 text-center w-full h-full overflow-hidden flex flex-col items-center justify-center">
+              <div className="space-y-4 w-full">
                 <div className="text-xs uppercase tracking-wide text-muted-foreground">Front</div>
                 {currentCard.frontImageUrl && !frontImageError && (
                   <div className="mb-4">
@@ -298,9 +306,7 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
 
           {/* Back */}
           <Card
-            className={`absolute inset-0 ${
-              !isFlipped ? "invisible" : "visible"
-            } flex items-center justify-center bg-primary/5 hover-elevate overflow-hidden`}
+            className="absolute inset-0 flex items-center justify-center bg-primary/5 hover-elevate"
             style={{
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
@@ -308,10 +314,19 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
               WebkitTransform: "rotateY(180deg)",
               width: "100%",
               height: "100%",
+              margin: 0,
+              padding: 0,
+              opacity: !isFlipped ? 0 : 1,
+              pointerEvents: !isFlipped ? "none" : "auto",
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
             }}
           >
-            <CardContent className="p-8 text-center w-full">
-              <div className="space-y-4">
+            <CardContent className="p-8 text-center w-full h-full overflow-hidden flex flex-col items-center justify-center">
+              <div className="space-y-4 w-full">
                 <div className="text-xs uppercase tracking-wide text-muted-foreground">Back</div>
                 {currentCard.backImageUrl && !backImageError && (
                   <div className="mb-4">
