@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
-import { ArrowLeft, Sparkles, Plus, Trash2, Globe, HelpCircle } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Trash2, Globe, HelpCircle, Save } from "lucide-react";
 import type { H5pContent, FillInBlanksData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { ContentMetadataFields } from "@/components/ContentMetadataFields";
@@ -39,6 +39,7 @@ export default function FillBlanksCreator() {
   });
   const [isPublished, setIsPublished] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
+  const [autosave, setAutosave] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -89,13 +90,27 @@ export default function FillBlanksCreator() {
   });
 
   useEffect(() => {
+    if (!autosave) return; // Skip autosave if disabled
     if (!title || !text || blanks.length === 0) return;
     const timer = setTimeout(() => {
       setIsSaving(true);
       saveMutation.mutate(isPublished);
     }, 2000);
     return () => clearTimeout(timer);
-  }, [title, description, text, blanks, settings, isPublic]);
+  }, [title, description, text, blanks, settings, isPublic, autosave, isPublished]);
+  
+  const handleManualSave = () => {
+    if (!title || !text || blanks.length === 0) {
+      toast({
+        title: "Cannot save",
+        description: "Please add a title, text, and at least one blank.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsSaving(true);
+    saveMutation.mutate(isPublished);
+  };
 
   const addBlank = () => {
     setBlanks([...blanks, {
@@ -128,6 +143,18 @@ export default function FillBlanksCreator() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {!autosave && (
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={handleManualSave}
+                disabled={isSaving || !title || !text || blanks.length === 0}
+                data-testid="button-save"
+              >
+                <Save className="h-4 w-4 mr-1" />
+                {isSaving ? "Saving..." : "Save"}
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate">
               <Sparkles className="h-4 w-4 mr-2" />
               AI Generate
@@ -299,6 +326,20 @@ export default function FillBlanksCreator() {
               <CardTitle>Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="autosave" className="text-base">Autosave</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Automatically save changes after 2 seconds
+                  </p>
+                </div>
+                <Switch
+                  id="autosave"
+                  checked={autosave}
+                  onCheckedChange={setAutosave}
+                  data-testid="switch-autosave"
+                />
+              </div>
               <div className="flex items-center justify-between">
                 <Label>Case sensitive answers</Label>
                 <Switch

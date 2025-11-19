@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
-import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Download } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Download, Save } from "lucide-react";
 import type { H5pContent, DragAndDropData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
@@ -39,6 +39,7 @@ export default function DragDropCreator() {
   });
   const [isPublished, setIsPublished] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
+  const [autosave, setAutosave] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -89,13 +90,27 @@ export default function DragDropCreator() {
   });
 
   useEffect(() => {
+    if (!autosave) return; // Skip autosave if disabled
     if (!title || items.length === 0 || zones.length === 0) return;
     const timer = setTimeout(() => {
       setIsSaving(true);
       saveMutation.mutate(isPublished);
     }, 2000);
     return () => clearTimeout(timer);
-  }, [title, description, items, zones, settings, isPublic]);
+  }, [title, description, items, zones, settings, isPublic, autosave, isPublished]);
+  
+  const handleManualSave = () => {
+    if (!title || items.length === 0 || zones.length === 0) {
+      toast({
+        title: "Cannot save",
+        description: "Please add a title, at least one item, and one zone.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsSaving(true);
+    saveMutation.mutate(isPublished);
+  };
 
   const addZone = () => {
     setZones([...zones, {
@@ -152,6 +167,18 @@ export default function DragDropCreator() {
               >
                 <Download className="h-4 w-4 mr-2" />
                 Download HTML
+              </Button>
+            )}
+            {!autosave && (
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={handleManualSave}
+                disabled={isSaving || !title || items.length === 0 || zones.length === 0}
+                data-testid="button-save"
+              >
+                <Save className="h-4 w-4 mr-1" />
+                {isSaving ? "Saving..." : "Save"}
               </Button>
             )}
             <Button variant="outline" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate">
@@ -351,6 +378,20 @@ export default function DragDropCreator() {
               <CardTitle>Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="autosave" className="text-base">Autosave</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Automatically save changes after 2 seconds
+                  </p>
+                </div>
+                <Switch
+                  id="autosave"
+                  checked={autosave}
+                  onCheckedChange={setAutosave}
+                  data-testid="switch-autosave"
+                />
+              </div>
               <div className="flex items-center justify-between">
                 <Label>Show zone labels</Label>
                 <Switch

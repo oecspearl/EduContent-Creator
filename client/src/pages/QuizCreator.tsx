@@ -52,6 +52,7 @@ export default function QuizCreator() {
   });
   const [isPublished, setIsPublished] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
+  const [autosave, setAutosave] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -124,6 +125,7 @@ export default function QuizCreator() {
   });
 
   useEffect(() => {
+    if (!autosave) return; // Skip autosave if disabled
     if (!title || questions.length === 0) return;
     
     const timer = setTimeout(() => {
@@ -132,7 +134,20 @@ export default function QuizCreator() {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [title, description, questions, settings, isPublic]);
+  }, [title, description, questions, settings, isPublic, autosave, isPublished]);
+  
+  const handleManualSave = () => {
+    if (!title || questions.length === 0) {
+      toast({
+        title: "Cannot save",
+        description: "Please add a title and at least one question.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsSaving(true);
+    saveMutation.mutate(isPublished);
+  };
 
   const addQuestion = () => {
     const newQuestion: QuizQuestion = {
@@ -208,6 +223,18 @@ export default function QuizCreator() {
               >
                 <Download className="h-4 w-4 mr-1" />
                 Download HTML
+              </Button>
+            )}
+            {!autosave && (
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={handleManualSave}
+                disabled={isSaving || !title || questions.length === 0}
+                data-testid="button-save"
+              >
+                <Save className="h-4 w-4 mr-1" />
+                {isSaving ? "Saving..." : "Save"}
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={() => setShowSettings(!showSettings)} data-testid="button-settings">
@@ -468,6 +495,20 @@ export default function QuizCreator() {
                   <CardTitle>Quiz Settings</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="autosave" className="text-base">Autosave</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Automatically save changes after 2 seconds
+                      </p>
+                    </div>
+                    <Switch
+                      id="autosave"
+                      checked={autosave}
+                      onCheckedChange={setAutosave}
+                      data-testid="switch-autosave"
+                    />
+                  </div>
                   <div className="flex items-center justify-between">
                     <Label htmlFor="shuffle">Shuffle Questions</Label>
                     <Switch

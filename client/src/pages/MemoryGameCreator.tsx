@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
 import { ImageGeneratorDialog } from "@/components/ImageGeneratorDialog";
-import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Image as ImageIcon, Upload, X, Download } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Image as ImageIcon, Upload, X, Download, Save } from "lucide-react";
 import type { H5pContent, MemoryGameData, MemoryCard } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
@@ -246,6 +246,7 @@ export default function MemoryGameCreator() {
   });
   const [isPublished, setIsPublished] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
+  const [autosave, setAutosave] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -295,13 +296,27 @@ export default function MemoryGameCreator() {
   });
 
   useEffect(() => {
+    if (!autosave) return; // Skip autosave if disabled
     if (!title || cards.length === 0) return;
     const timer = setTimeout(() => {
       setIsSaving(true);
       saveMutation.mutate(isPublished);
     }, 2000);
     return () => clearTimeout(timer);
-  }, [title, description, cards, settings, isPublic]);
+  }, [title, description, cards, settings, isPublic, autosave, isPublished]);
+  
+  const handleManualSave = () => {
+    if (!title || cards.length === 0) {
+      toast({
+        title: "Cannot save",
+        description: "Please add a title and at least one card pair.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsSaving(true);
+    saveMutation.mutate(isPublished);
+  };
 
   const addPair = () => {
     const matchId = Date.now().toString();
@@ -398,6 +413,18 @@ export default function MemoryGameCreator() {
               >
                 <Download className="h-4 w-4 mr-2" />
                 Download HTML
+              </Button>
+            )}
+            {!autosave && (
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={handleManualSave}
+                disabled={isSaving || !title || cards.length === 0}
+                data-testid="button-save"
+              >
+                <Save className="h-4 w-4 mr-1" />
+                {isSaving ? "Saving..." : "Save"}
               </Button>
             )}
             <Button variant="outline" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate">
@@ -527,6 +554,20 @@ export default function MemoryGameCreator() {
               <CardTitle>Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="autosave" className="text-base">Autosave</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Automatically save changes after 2 seconds
+                  </p>
+                </div>
+                <Switch
+                  id="autosave"
+                  checked={autosave}
+                  onCheckedChange={setAutosave}
+                  data-testid="switch-autosave"
+                />
+              </div>
               <div className="flex items-center justify-between">
                 <Label>Show timer</Label>
                 <Switch
