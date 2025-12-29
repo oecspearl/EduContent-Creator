@@ -235,11 +235,18 @@ export type ContentType = "quiz" | "flashcard" | "interactive-video" | "image-ho
 
 export type QuizQuestion = {
   id: string;
-  type: "multiple-choice" | "true-false" | "fill-blank";
+  type: "multiple-choice" | "true-false" | "fill-blank" | "ordering" | "drag-drop";
   question: string;
   options?: string[]; // for multiple-choice
-  correctAnswer: string | number; // index for multiple-choice, "true"/"false" for true-false, string for fill-blank
+  correctAnswer: string | number | string[] | Record<string, string>; // index for multiple-choice, "true"/"false" for true-false, string for fill-blank, array of items in order for ordering, Record<itemId, zoneId> for drag-drop
   explanation?: string;
+  // For ordering questions
+  items?: string[]; // List of items to be ordered
+  // For drag-drop questions
+  zones?: Array<{ id: string; label: string }>; // Drop zones/categories
+  dragItems?: Array<{ id: string; content: string; correctZone: string }>; // Items to drag
+  caseSensitive?: boolean; // For fill-blank questions
+  acceptableAnswers?: string[]; // For fill-blank questions (multiple correct answers)
 };
 
 export type QuizData = {

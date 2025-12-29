@@ -380,9 +380,43 @@ export default function QuizCreator() {
                                   if (value === "true-false") {
                                     updates.options = undefined;
                                     updates.correctAnswer = "true";
+                                    updates.items = undefined;
+                                    updates.zones = undefined;
+                                    updates.dragItems = undefined;
                                   } else if (value === "multiple-choice" && !question.options) {
                                     updates.options = ["", "", "", ""];
                                     updates.correctAnswer = 0;
+                                    updates.items = undefined;
+                                    updates.zones = undefined;
+                                    updates.dragItems = undefined;
+                                  } else if (value === "fill-blank") {
+                                    updates.options = undefined;
+                                    updates.correctAnswer = "";
+                                    updates.items = undefined;
+                                    updates.zones = undefined;
+                                    updates.dragItems = undefined;
+                                    updates.caseSensitive = false;
+                                    updates.acceptableAnswers = [];
+                                  } else if (value === "ordering") {
+                                    updates.options = undefined;
+                                    const defaultItems = ["", "", ""];
+                                    updates.items = question.items || defaultItems;
+                                    updates.correctAnswer = question.items || defaultItems;
+                                    updates.zones = undefined;
+                                    updates.dragItems = undefined;
+                                  } else if (value === "drag-drop") {
+                                    updates.options = undefined;
+                                    updates.items = undefined;
+                                    const defaultZones = [{ id: "zone1", label: "Category 1" }, { id: "zone2", label: "Category 2" }];
+                                    const defaultItems = [{ id: "item1", content: "", correctZone: "zone1" }, { id: "item2", content: "", correctZone: "zone2" }];
+                                    updates.zones = question.zones || defaultZones;
+                                    updates.dragItems = question.dragItems || defaultItems;
+                                    // Store correct answer as a mapping of itemId -> zoneId
+                                    const correctMapping: Record<string, string> = {};
+                                    (updates.dragItems || defaultItems).forEach((item: any) => {
+                                      correctMapping[item.id] = item.correctZone;
+                                    });
+                                    updates.correctAnswer = correctMapping;
                                   }
                                   updateQuestion(index, updates);
                                 }}
@@ -394,6 +428,8 @@ export default function QuizCreator() {
                                   <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
                                   <SelectItem value="true-false">True/False</SelectItem>
                                   <SelectItem value="fill-blank">Fill in Blank</SelectItem>
+                                  <SelectItem value="ordering">Ordering</SelectItem>
+                                  <SelectItem value="drag-drop">Drag and Drop</SelectItem>
                                 </SelectContent>
                               </Select>
                               <Button
@@ -456,14 +492,229 @@ export default function QuizCreator() {
                           )}
 
                           {question.type === "fill-blank" && (
-                            <div>
-                              <Label>Correct Answer</Label>
-                              <Input
-                                placeholder="Enter the correct answer..."
-                                value={question.correctAnswer as string}
-                                onChange={(e) => updateQuestion(index, { correctAnswer: e.target.value })}
-                                data-testid={`input-answer-${index}`}
-                              />
+                            <div className="space-y-3">
+                              <div>
+                                <Label>Correct Answer(s)</Label>
+                                <Input
+                                  placeholder="Enter the correct answer..."
+                                  value={Array.isArray(question.acceptableAnswers) && question.acceptableAnswers.length > 0 
+                                    ? question.acceptableAnswers[0] 
+                                    : (question.correctAnswer as string) || ""}
+                                  onChange={(e) => {
+                                    const answer = e.target.value;
+                                    updateQuestion(index, { 
+                                      correctAnswer: answer,
+                                      acceptableAnswers: [answer]
+                                    });
+                                  }}
+                                  data-testid={`input-answer-${index}`}
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  You can add multiple acceptable answers below
+                                </p>
+                              </div>
+                              <div>
+                                <Label>Additional Acceptable Answers (Optional)</Label>
+                                <Textarea
+                                  placeholder="Enter additional acceptable answers, one per line..."
+                                  value={question.acceptableAnswers?.slice(1).join("\n") || ""}
+                                  onChange={(e) => {
+                                    const firstAnswer = Array.isArray(question.acceptableAnswers) && question.acceptableAnswers.length > 0
+                                      ? question.acceptableAnswers[0]
+                                      : (question.correctAnswer as string) || "";
+                                    const additional = e.target.value.split("\n").filter(a => a.trim());
+                                    updateQuestion(index, {
+                                      acceptableAnswers: [firstAnswer, ...additional]
+                                    });
+                                  }}
+                                  rows={3}
+                                  className="text-sm"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id={`case-sensitive-${index}`}
+                                  checked={question.caseSensitive || false}
+                                  onChange={(e) => updateQuestion(index, { caseSensitive: e.target.checked })}
+                                  className="rounded"
+                                />
+                                <Label htmlFor={`case-sensitive-${index}`} className="text-sm font-normal">
+                                  Case sensitive
+                                </Label>
+                              </div>
+                            </div>
+                          )}
+
+                          {question.type === "ordering" && (
+                            <div className="space-y-3">
+                              <Label>Items to Order (drag to reorder)</Label>
+                              <p className="text-xs text-muted-foreground">
+                                Arrange items in the correct order. The order you set here is the correct answer.
+                              </p>
+                              <div className="space-y-2">
+                                {question.items?.map((item, itemIndex) => (
+                                  <div key={itemIndex} className="flex items-center gap-2">
+                                    <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
+                                    <Input
+                                      placeholder={`Item ${itemIndex + 1}`}
+                                      value={item}
+                                      onChange={(e) => {
+                                        const newItems = [...(question.items || [])];
+                                        newItems[itemIndex] = e.target.value;
+                                        updateQuestion(index, { 
+                                          items: newItems,
+                                          correctAnswer: newItems
+                                        });
+                                      }}
+                                      data-testid={`input-item-${index}-${itemIndex}`}
+                                    />
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
+                                        const newItems = question.items?.filter((_, i) => i !== itemIndex) || [];
+                                        updateQuestion(index, { 
+                                          items: newItems,
+                                          correctAnswer: newItems
+                                        });
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newItems = [...(question.items || []), ""];
+                                    updateQuestion(index, { 
+                                      items: newItems,
+                                      correctAnswer: newItems
+                                    });
+                                  }}
+                                >
+                                  <Plus className="h-4 w-4 mr-1" />
+                                  Add Item
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {question.type === "drag-drop" && (
+                            <div className="space-y-4">
+                              <div>
+                                <Label>Drop Zones (Categories)</Label>
+                                <p className="text-xs text-muted-foreground mb-2">
+                                  Define the categories or zones where items can be dropped
+                                </p>
+                                <div className="space-y-2">
+                                  {question.zones?.map((zone, zoneIndex) => (
+                                    <div key={zone.id} className="flex items-center gap-2">
+                                      <Input
+                                        placeholder={`Zone ${zoneIndex + 1} label`}
+                                        value={zone.label}
+                                        onChange={(e) => {
+                                          const newZones = [...(question.zones || [])];
+                                          newZones[zoneIndex] = { ...zone, label: e.target.value };
+                                          updateQuestion(index, { zones: newZones });
+                                        }}
+                                        data-testid={`input-zone-${index}-${zoneIndex}`}
+                                      />
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => {
+                                          const newZones = question.zones?.filter((_, i) => i !== zoneIndex) || [];
+                                          // Also remove drag items that reference this zone
+                                          const newDragItems = question.dragItems?.filter(item => item.correctZone !== zone.id) || [];
+                                          updateQuestion(index, { zones: newZones, dragItems: newDragItems });
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      const newZone = { id: `zone${Date.now()}`, label: "" };
+                                      const newZones = [...(question.zones || []), newZone];
+                                      updateQuestion(index, { zones: newZones });
+                                    }}
+                                  >
+                                    <Plus className="h-4 w-4 mr-1" />
+                                    Add Zone
+                                  </Button>
+                                </div>
+                              </div>
+                              <div>
+                                <Label>Drag Items</Label>
+                                <p className="text-xs text-muted-foreground mb-2">
+                                  Define items that students will drag to the correct zones
+                                </p>
+                                <div className="space-y-2">
+                                  {question.dragItems?.map((item, itemIndex) => (
+                                    <div key={item.id} className="flex items-center gap-2">
+                                      <Input
+                                        placeholder={`Item ${itemIndex + 1}`}
+                                        value={item.content}
+                                        onChange={(e) => {
+                                          const newDragItems = [...(question.dragItems || [])];
+                                          newDragItems[itemIndex] = { ...item, content: e.target.value };
+                                          updateQuestion(index, { dragItems: newDragItems });
+                                        }}
+                                        data-testid={`input-drag-item-${index}-${itemIndex}`}
+                                      />
+                                      <Select
+                                        value={item.correctZone}
+                                        onValueChange={(zoneId) => {
+                                          const newDragItems = [...(question.dragItems || [])];
+                                          newDragItems[itemIndex] = { ...item, correctZone: zoneId };
+                                          updateQuestion(index, { dragItems: newDragItems });
+                                        }}
+                                      >
+                                        <SelectTrigger className="w-40">
+                                          <SelectValue placeholder="Correct zone" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {question.zones?.map((zone) => (
+                                            <SelectItem key={zone.id} value={zone.id}>
+                                              {zone.label || `Zone ${zone.id}`}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => {
+                                          const newDragItems = question.dragItems?.filter((_, i) => i !== itemIndex) || [];
+                                          updateQuestion(index, { dragItems: newDragItems });
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      const firstZone = question.zones?.[0]?.id || "zone1";
+                                      const newItem = { id: `item${Date.now()}`, content: "", correctZone: firstZone };
+                                      const newDragItems = [...(question.dragItems || []), newItem];
+                                      updateQuestion(index, { dragItems: newDragItems });
+                                    }}
+                                    disabled={!question.zones || question.zones.length === 0}
+                                  >
+                                    <Plus className="h-4 w-4 mr-1" />
+                                    Add Item
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
                           )}
 

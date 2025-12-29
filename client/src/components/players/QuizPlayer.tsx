@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, XCircle, RotateCcw } from "lucide-react";
+import { CheckCircle2, XCircle, RotateCcw, GripVertical } from "lucide-react";
 import type { QuizData } from "@shared/schema";
 import { useProgressTracker } from "@/hooks/use-progress-tracker";
 import { ScreenReaderAnnouncer, useScreenReaderAnnounce } from "@/components/ScreenReaderAnnouncer";
@@ -17,9 +17,11 @@ type QuizPlayerProps = {
 
 export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<(string | number | null)[]>(new Array(data.questions.length).fill(null));
+  const [answers, setAnswers] = useState<(string | number | string[] | Record<string, string> | null)[]>(new Array(data.questions.length).fill(null));
   const [showResults, setShowResults] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [draggedOrderIndex, setDraggedOrderIndex] = useState<number | null>(null);
   const { announcement, announce } = useScreenReaderAnnounce();
   const restartButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -98,7 +100,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     }
   }, [currentIndex, answers, lastSentProgress, isProgressInitialized, isAuthenticated]);
 
-  const handleAnswer = (answer: string | number) => {
+  const handleAnswer = (answer: string | number | string[] | Record<string, string>) => {
     // Don't allow changing answers after explanation is shown
     if (showExplanation) return;
     
@@ -110,12 +112,12 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     logInteraction("answered");
     
     // If immediate feedback is enabled, show explanation
-    if (data.settings.provideFeedback && currentQuestion.explanation) {
+    if (data.settings.showCorrectAnswers && currentQuestion.explanation) {
       setShowExplanation(true);
     }
     
     // Screen reader announcement
-    const isCorrect = currentQuestion.correctAnswer === answer;
+    const isCorrect = checkAnswerCorrectness(currentQuestion, answer);
     announce(
       isCorrect 
         ? "Correct! " + (currentQuestion.explanation || "")
@@ -124,11 +126,67 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     );
   };
 
+  const checkAnswerCorrectness = (question: any, answer: string | number | string[] | Record<string, string> | null): boolean => {
+    if (answer === null) return false;
+    
+    if (question.type === "multiple-choice" || question.type === "true-false" || question.type === "fill-blank") {
+      if (question.type === "fill-blank") {
+        const userAnswer = (answer as string).trim();
+        const correctAnswer = (question.correctAnswer as string).trim();
+        const acceptableAnswers = question.acceptableAnswers || [correctAnswer];
+        const caseSensitive = question.caseSensitive || false;
+        
+        return acceptableAnswers.some((acc: string) => {
+          const normalizedAcc = acc.trim();
+          return caseSensitive 
+            ? userAnswer === normalizedAcc
+            : userAnswer.toLowerCase() === normalizedAcc.toLowerCase();
+        });
+      }
+      return question.correctAnswer === answer;
+    }
+    
+    if (question.type === "ordering") {
+      const userOrder = answer as string[];
+      const correctOrder = question.correctAnswer as string[];
+      if (!userOrder || !correctOrder || userOrder.length !== correctOrder.length) return false;
+      return JSON.stringify(userOrder) === JSON.stringify(correctOrder);
+    }
+    
+    if (question.type === "drag-drop") {
+      const userPlacements = answer as Record<string, string>;
+      if (!userPlacements || !question.dragItems) return false;
+      
+      return question.dragItems.every((item: any) => {
+        return userPlacements[item.id] === item.correctZone;
+      });
+    }
+    
+    return false;
+  };
+
   const handleNext = () => {
     // Don't allow advancing without an answer
     if (answers[currentIndex] === null) {
-      announce("Please select an answer before continuing", "assertive");
+      announce("Please provide an answer before continuing", "assertive");
       return;
+    }
+    
+    // For ordering and drag-drop, check if answer is complete
+    const currentQ = data.questions[currentIndex];
+    if (currentQ.type === "ordering") {
+      const answer = answers[currentIndex] as string[] | null;
+      if (!answer || answer.length !== currentQ.items?.length || answer.some(a => !a.trim())) {
+        announce("Please arrange all items in order before continuing", "assertive");
+        return;
+      }
+    }
+    if (currentQ.type === "drag-drop") {
+      const answer = answers[currentIndex] as Record<string, string> | null;
+      if (!answer || !currentQ.dragItems || currentQ.dragItems.some((item: any) => !answer[item.id])) {
+        announce("Please place all items in their correct zones before continuing", "assertive");
+        return;
+      }
     }
     
     setShowExplanation(false);
@@ -139,11 +197,24 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     } else {
       // Quiz completed - save attempt and show results
       const score = calculateScore();
-      const answersData = data.questions.map((q, i) => ({
-        questionId: q.id,
-        answer: answers[i] || "",
-        isCorrect: q.correctAnswer === answers[i],
-      }));
+      const answersData = data.questions.map((q, i) => {
+        const answer = answers[i];
+        // Convert complex answer types to serializable format
+        let serializedAnswer: string | number | boolean;
+        if (Array.isArray(answer)) {
+          serializedAnswer = JSON.stringify(answer);
+        } else if (typeof answer === 'object' && answer !== null) {
+          serializedAnswer = JSON.stringify(answer);
+        } else {
+          serializedAnswer = answer as string | number | boolean;
+        }
+        
+        return {
+          questionId: q.id,
+          answer: serializedAnswer,
+          isCorrect: checkAnswerCorrectness(q, answer),
+        };
+      });
       
       // Save quiz attempt (which also updates progress to 100%)
       // Don't update local state here - let reconciliation handle it on success
@@ -173,7 +244,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
   const calculateScore = () => {
     return data.questions.reduce((score, question, index) => {
       const answer = answers[index];
-      if (question.correctAnswer === answer) {
+      if (checkAnswerCorrectness(question, answer)) {
         return score + 1;
       }
       return score;
@@ -181,7 +252,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
   };
 
   const isCorrect = (questionIndex: number) => {
-    return data.questions[questionIndex].correctAnswer === answers[questionIndex];
+    return checkAnswerCorrectness(data.questions[questionIndex], answers[questionIndex]);
   };
 
   if (showResults) {
@@ -345,6 +416,166 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
               data-testid="input-fill-blank"
               aria-label="Answer input"
             />
+          )}
+
+          {currentQuestion.type === "ordering" && currentQuestion.items && (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground mb-3">
+                Drag items to arrange them in the correct order
+              </p>
+              <div className="space-y-2">
+                {(() => {
+                  const currentOrder = (answers[currentIndex] as string[]) || [...currentQuestion.items];
+                  return currentOrder.map((itemText, orderIndex) => (
+                    <div
+                      key={`${orderIndex}-${itemText}`}
+                      draggable={!showExplanation}
+                      onDragStart={() => setDraggedOrderIndex(orderIndex)}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.add("border-primary");
+                      }}
+                      onDragLeave={(e) => {
+                        e.currentTarget.classList.remove("border-primary");
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove("border-primary");
+                        if (draggedOrderIndex === null) return;
+                        
+                        const newOrder = [...currentOrder];
+                        const [removed] = newOrder.splice(draggedOrderIndex, 1);
+                        newOrder.splice(orderIndex, 0, removed);
+                        handleAnswer(newOrder);
+                        setDraggedOrderIndex(null);
+                      }}
+                      className={`flex items-center gap-3 p-3 border rounded-lg bg-card ${
+                        showExplanation ? "cursor-default" : "cursor-move hover:bg-muted"
+                      }`}
+                    >
+                      <GripVertical className="h-5 w-5 text-muted-foreground" />
+                      <span className="flex-1">{itemText}</span>
+                      <span className="text-sm text-muted-foreground">#{orderIndex + 1}</span>
+                    </div>
+                  ));
+                })()}
+              </div>
+              {showExplanation && data.settings.showCorrectAnswers && (
+                <div className="mt-3 p-3 rounded-lg bg-muted">
+                  <p className="text-sm font-medium mb-1">Correct Order:</p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    {(currentQuestion.correctAnswer as string[] || currentQuestion.items || []).map((item, idx) => (
+                      <li key={idx} className="text-sm">{item}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentQuestion.type === "drag-drop" && currentQuestion.zones && currentQuestion.dragItems && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Drag items to their correct zones
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                {/* Drag Items */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Items to Drag</h4>
+                  <div className="space-y-2 min-h-[200px] p-3 border rounded-lg bg-muted/50">
+                    {currentQuestion.dragItems
+                      .filter((item: any) => {
+                        const placements = (answers[currentIndex] as Record<string, string>) || {};
+                        return !placements[item.id];
+                      })
+                      .map((item: any) => (
+                        <div
+                          key={item.id}
+                          draggable={!showExplanation}
+                          onDragStart={() => setDraggedItem(item.id)}
+                          className={`p-3 border rounded-lg cursor-move bg-card hover:bg-muted ${
+                            showExplanation ? "cursor-default opacity-50" : ""
+                          }`}
+                        >
+                          {item.content}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+                
+                {/* Drop Zones */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Drop Zones</h4>
+                  <div className="space-y-2">
+                    {currentQuestion.zones.map((zone: any) => {
+                      const placements = (answers[currentIndex] as Record<string, string>) || {};
+                      const zoneItems = currentQuestion.dragItems?.filter((item: any) => placements[item.id] === zone.id) || [];
+                      
+                      return (
+                        <div
+                          key={zone.id}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            if (!showExplanation) {
+                              e.currentTarget.classList.add("border-primary", "bg-primary/5");
+                            }
+                          }}
+                          onDragLeave={(e) => {
+                            e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                            if (!draggedItem || showExplanation) return;
+                            
+                            const newPlacements = { ...placements, [draggedItem]: zone.id };
+                            handleAnswer(newPlacements);
+                            setDraggedItem(null);
+                          }}
+                          className={`min-h-[80px] p-3 border-2 border-dashed rounded-lg ${
+                            showExplanation && data.settings.showCorrectAnswers
+                              ? (() => {
+                                  const correctAnswer = currentQuestion.correctAnswer as Record<string, string>;
+                                  const allCorrect = zoneItems.length > 0 && zoneItems.every((item: any) => correctAnswer?.[item.id] === zone.id);
+                                  const hasIncorrect = zoneItems.some((item: any) => correctAnswer?.[item.id] !== zone.id);
+                                  if (allCorrect && !hasIncorrect) return "border-green-600 bg-green-50 dark:bg-green-950";
+                                  if (hasIncorrect) return "border-destructive bg-destructive/10";
+                                  return "";
+                                })()
+                              : ""
+                          }`}
+                        >
+                          <div className="font-medium mb-2">{zone.label}</div>
+                          <div className="space-y-1">
+                            {zoneItems.map((item: any) => {
+                              const correctAnswer = currentQuestion.correctAnswer as Record<string, string>;
+                              const isCorrect = showExplanation && data.settings.showCorrectAnswers 
+                                ? correctAnswer?.[item.id] === zone.id
+                                : null;
+                              return (
+                                <div
+                                  key={item.id}
+                                  className={`p-2 bg-background border rounded text-sm ${
+                                    isCorrect === true ? "border-green-600 bg-green-50 dark:bg-green-950" :
+                                    isCorrect === false ? "border-destructive bg-destructive/10" : ""
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span>{item.content}</span>
+                                    {isCorrect === true && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                                    {isCorrect === false && <XCircle className="h-4 w-4 text-destructive" />}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {showExplanation && currentQuestion.explanation && (

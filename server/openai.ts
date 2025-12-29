@@ -22,7 +22,11 @@ export async function generateQuizQuestions(request: AIGenerationRequest): Promi
   const prompt = `Generate ${request.numberOfItems} quiz questions about "${request.topic}" at ${request.difficulty} difficulty level${request.gradeLevel ? ` for ${request.gradeLevel}` : ""}.
 
 Requirements:
-- Mix of multiple-choice (with 4 options), true/false, and fill-in-the-blank questions
+- Mix of question types:
+  * Multiple-choice (with 4 options) - ${Math.ceil(request.numberOfItems * 0.4)} questions
+  * Fill-in-the-blank - ${Math.ceil(request.numberOfItems * 0.2)} questions
+  * Ordering (arrange items in sequence) - ${Math.ceil(request.numberOfItems * 0.2)} questions
+  * Drag and Drop (match items to categories) - ${Math.ceil(request.numberOfItems * 0.2)} questions
 - Each question should have a correct answer and an explanation
 - Make questions educational and engaging
 ${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
@@ -32,10 +36,22 @@ Respond in JSON format with an array of questions following this structure:
   "questions": [
     {
       "id": "unique-id",
-      "type": "multiple-choice" | "true-false" | "fill-blank",
+      "type": "multiple-choice" | "fill-blank" | "ordering" | "drag-drop",
       "question": "question text",
-      "options": ["option1", "option2", "option3", "option4"], // only for multiple-choice
-      "correctAnswer": 0 | "true" | "false" | "answer text",
+      // For multiple-choice:
+      "options": ["option1", "option2", "option3", "option4"],
+      "correctAnswer": 0, // index of correct option
+      // For fill-blank:
+      "correctAnswer": "answer text",
+      "acceptableAnswers": ["answer1", "answer2"], // optional alternative answers
+      "caseSensitive": false,
+      // For ordering:
+      "items": ["item1", "item2", "item3"], // items to be ordered
+      "correctAnswer": ["item1", "item2", "item3"], // correct order (same as items)
+      // For drag-drop:
+      "zones": [{"id": "zone1", "label": "Category 1"}, {"id": "zone2", "label": "Category 2"}],
+      "dragItems": [{"id": "item1", "content": "Item text", "correctZone": "zone1"}, {"id": "item2", "content": "Item text", "correctZone": "zone2"}],
+      "correctAnswer": {"item1": "zone1", "item2": "zone2"}, // mapping of itemId to zoneId
       "explanation": "why this is the correct answer"
     }
   ]
