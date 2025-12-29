@@ -119,7 +119,7 @@ export default function AnalyticsPage() {
       </a>
       
       {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-50" role="banner">
+      <header className="border-b border-border/40 bg-card sticky top-0 z-50" role="banner">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
@@ -138,7 +138,7 @@ export default function AnalyticsPage() {
                 className="h-10 w-10 rounded-lg"
               />
               <div>
-                <h1 className="text-xl font-bold text-foreground">OECS Content Creator</h1>
+                <h1 className="text-xl font-semibold text-foreground">OECS Content Creator</h1>
               </div>
             </div>
           </div>
@@ -185,78 +185,78 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Main Content */}
-      <main id="main-content" className="max-w-7xl mx-auto px-6 py-8" role="main">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Analytics Dashboard</h2>
-          <p className="text-muted-foreground">
+      <main id="main-content" className="max-w-7xl mx-auto px-6 py-12" role="main">
+        <div className="mb-12">
+          <h2 className="text-2xl font-semibold text-foreground mb-3">Analytics Dashboard</h2>
+          <p className="text-base text-muted-foreground">
             Track performance and engagement for your educational content
           </p>
         </div>
 
         {isLoading ? (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[1, 2, 3, 4].map(i => (
-                <Skeleton key={i} className="h-32" />
+                <Skeleton key={i} className="h-32 rounded-lg" />
               ))}
             </div>
-            <Skeleton className="h-96" />
+            <Skeleton className="h-96 rounded-lg" />
           </div>
         ) : (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Content</CardTitle>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+              <Card className="border-border/40 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3 p-6">
+                  <CardTitle className="text-sm font-normal text-foreground">Total Content</CardTitle>
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold" data-testid="text-total-content">{totalContent}</div>
-                  <p className="text-xs text-muted-foreground">
+                <CardContent className="px-6 pb-6">
+                  <div className="text-2xl font-semibold" data-testid="text-total-content">{totalContent}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
                     {publishedContent} published
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+              <Card className="border-border/40 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3 p-6">
+                  <CardTitle className="text-sm font-normal text-foreground">Total Views</CardTitle>
                   <Eye className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold" data-testid="text-total-views">{totalViews}</div>
-                  <p className="text-xs text-muted-foreground">
+                <CardContent className="px-6 pb-6">
+                  <div className="text-2xl font-semibold" data-testid="text-total-views">{totalViews}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Unique learners
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Avg Completion</CardTitle>
+              <Card className="border-border/40 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3 p-6">
+                  <CardTitle className="text-sm font-normal text-foreground">Avg Completion</CardTitle>
                   <Target className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold" data-testid="text-avg-completion">
+                <CardContent className="px-6 pb-6">
+                  <div className="text-2xl font-semibold" data-testid="text-avg-completion">
                     {avgCompletion.toFixed(1)}%
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Across all content
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Interactions</CardTitle>
+              <Card className="border-border/40 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3 p-6">
+                  <CardTitle className="text-sm font-normal text-foreground">Total Interactions</CardTitle>
                   <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold" data-testid="text-total-interactions">
+                <CardContent className="px-6 pb-6">
+                  <div className="text-2xl font-semibold" data-testid="text-total-interactions">
                     {totalInteractions}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground mt-1">
                     All engagement events
                   </p>
                 </CardContent>
@@ -265,12 +265,12 @@ export default function AnalyticsPage() {
 
             {/* Chart */}
             {chartData.length > 0 && (
-              <Card className="mb-8">
-                <CardHeader>
-                  <CardTitle>Top Content by Views</CardTitle>
-                  <CardDescription>Viewer count and average completion for your most popular content</CardDescription>
+              <Card className="mb-12 border-border/40 shadow-sm">
+                <CardHeader className="p-6 pb-4">
+                  <CardTitle className="text-lg font-medium">Top Content by Views</CardTitle>
+                  <CardDescription className="text-sm text-muted-foreground">Viewer count and average completion for your most popular content</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-6 pb-6">
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={chartData}>
@@ -321,18 +321,18 @@ export default function AnalyticsPage() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="rounded-md border">
+                  <div className="rounded-md border border-border/40">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Viewers</TableHead>
-                          <TableHead className="text-right">Avg Completion</TableHead>
-                          <TableHead className="text-right">Interactions</TableHead>
-                          <TableHead className="text-right">Created</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                        <TableRow className="border-border/40">
+                          <TableHead className="font-normal">Title</TableHead>
+                          <TableHead className="font-normal">Type</TableHead>
+                          <TableHead className="font-normal">Status</TableHead>
+                          <TableHead className="text-right font-normal">Viewers</TableHead>
+                          <TableHead className="text-right font-normal">Avg Completion</TableHead>
+                          <TableHead className="text-right font-normal">Interactions</TableHead>
+                          <TableHead className="text-right font-normal">Created</TableHead>
+                          <TableHead className="text-right font-normal">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -340,23 +340,26 @@ export default function AnalyticsPage() {
                           const config = contentTypeConfig[item.type] || contentTypeConfig.quiz;
                           const Icon = config.icon;
                           return (
-                            <TableRow key={item.contentId} data-testid={`row-analytics-${item.contentId}`}>
+                            <TableRow key={item.contentId} data-testid={`row-analytics-${item.contentId}`} className="border-border/40">
                               <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
-                                  <div className={`h-8 w-8 rounded ${config.color} flex items-center justify-center flex-shrink-0`}>
-                                    <Icon className="h-4 w-4" />
+                                <div className="flex items-center gap-3">
+                                  <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                                    <Icon className="h-4 w-4 text-muted-foreground" />
                                   </div>
                                   <span className="truncate max-w-xs">{item.title}</span>
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <Badge variant="outline">{config.label}</Badge>
+                                <span className="text-sm text-muted-foreground">{config.label}</span>
                               </TableCell>
                               <TableCell>
                                 {item.isPublished ? (
-                                  <Badge variant="default">Published</Badge>
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                    <span className="text-xs font-normal text-muted-foreground">Published</span>
+                                  </div>
                                 ) : (
-                                  <Badge variant="secondary">Draft</Badge>
+                                  <span className="text-xs font-normal text-muted-foreground">Draft</span>
                                 )}
                               </TableCell>
                               <TableCell className="text-right" data-testid={`text-viewers-${item.contentId}`}>

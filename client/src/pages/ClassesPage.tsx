@@ -413,7 +413,7 @@ Science 101,Basic Science,Science,Grade 5,student1@example.com,student2@example.
         Skip to main content
       </a>
       
-      <header className="border-b bg-card sticky top-0 z-50" role="banner">
+      <header className="border-b border-border/40 bg-card sticky top-0 z-50" role="banner">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
@@ -432,7 +432,7 @@ Science 101,Basic Science,Science,Grade 5,student1@example.com,student2@example.
                 className="h-10 w-10 rounded-lg"
               />
               <div>
-                <h1 className="text-xl font-bold text-foreground">OECS Content Creator</h1>
+                <h1 className="text-xl font-semibold text-foreground">OECS Content Creator</h1>
               </div>
             </div>
           </div>
@@ -468,15 +468,15 @@ Science 101,Basic Science,Science,Grade 5,student1@example.com,student2@example.
         </div>
       </div>
 
-      <main id="main-content" className="max-w-7xl mx-auto px-6 py-8" role="main">
-        <div className="mb-8 flex items-center justify-between">
+      <main id="main-content" className="max-w-7xl mx-auto px-6 py-12" role="main">
+        <div className="mb-12 flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">Class Management</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-2xl font-semibold text-foreground mb-3">Class Management</h2>
+            <p className="text-base text-muted-foreground">
               Create and manage classes, enroll students, and assign content
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Dialog open={isCSVDialogOpen} onOpenChange={setIsCSVDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" data-testid="button-bulk-upload">
@@ -658,13 +658,13 @@ Science 101,Basic Science,Science,Grade 5,student1@example.com,student2@example.
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {classes.map((class_) => (
-              <Card key={class_.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
+              <Card key={class_.id} className="border-border/40 shadow-sm hover:shadow-md transition-all duration-150 ease-out">
+                <CardHeader className="p-6 pb-4">
+                  <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <CardTitle className="mb-1">{class_.name}</CardTitle>
+                      <CardTitle className="text-lg font-medium mb-2">{class_.name}</CardTitle>
                       {class_.description && (
-                        <CardDescription className="line-clamp-2">
+                        <CardDescription className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                           {class_.description}
                         </CardDescription>
                       )}
@@ -673,6 +673,7 @@ Science 101,Basic Science,Science,Grade 5,student1@example.com,student2@example.
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8"
                         onClick={() => handleEdit(class_)}
                         data-testid={`button-edit-${class_.id}`}
                       >
@@ -681,6 +682,7 @@ Science 101,Basic Science,Science,Grade 5,student1@example.com,student2@example.
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8"
                         onClick={() => handleDelete(class_.id)}
                         data-testid={`button-delete-${class_.id}`}
                       >
@@ -689,23 +691,23 @@ Science 101,Basic Science,Science,Grade 5,student1@example.com,student2@example.
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
+                <CardContent className="px-6 pb-4">
+                  <div className="space-y-3">
                     {class_.subject && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <BookOpen className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">{class_.subject}</span>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <BookOpen className="h-4 w-4" />
+                        <span>{class_.subject}</span>
                       </div>
                     )}
                     {class_.gradeLevel && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">{class_.gradeLevel}</span>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <GraduationCap className="h-4 w-4" />
+                        <span>{class_.gradeLevel}</span>
                       </div>
                     )}
                     <Button
                       variant="outline"
-                      className="w-full mt-4"
+                      className="w-full mt-4 h-10 border-border/40"
                       onClick={() => {
                         setSelectedClassId(class_.id);
                         setIsEnrollmentsDialogOpen(true);

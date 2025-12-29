@@ -246,7 +246,7 @@ export default function Dashboard() {
       </a>
       
       {/* Header */}
-      <header className="border-b bg-card" role="banner">
+      <header className="border-b border-border/40 bg-card" role="banner">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
@@ -255,7 +255,7 @@ export default function Dashboard() {
               className="h-10 w-10 rounded-lg"
             />
             <div>
-              <h1 className="text-xl font-bold text-foreground">OECS Content Creator</h1>
+              <h1 className="text-xl font-semibold text-foreground">OECS Content Creator</h1>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -321,35 +321,50 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main id="main-content" className="max-w-7xl mx-auto px-6 py-8" role="main">
+      <main id="main-content" className="max-w-7xl mx-auto px-6 py-12" role="main">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">
+        <div className="mb-12">
+          <h2 className="text-2xl font-semibold text-foreground mb-3">
             Welcome back, {user?.fullName?.split(" ")[0]}!
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Create and manage your interactive educational content
           </p>
         </div>
 
         {/* Create Content Buttons */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Create New Content</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mb-12">
+          <h3 className="text-xl font-medium text-foreground mb-6">Create New Content</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {Object.entries(contentTypeConfig).map(([type, config]) => {
               const Icon = config.icon;
+              // Extract color from config for left border
+              const borderColorMap: Record<ContentType, string> = {
+                quiz: "border-l-blue-500",
+                flashcard: "border-l-purple-500",
+                "interactive-video": "border-l-green-500",
+                "image-hotspot": "border-l-orange-500",
+                "drag-drop": "border-l-pink-500",
+                "fill-blanks": "border-l-cyan-500",
+                "memory-game": "border-l-yellow-500",
+                "interactive-book": "border-l-indigo-500",
+                "video-finder": "border-l-emerald-500",
+                "presentation": "border-l-sky-500",
+              };
               return (
                 <Card
                   key={type}
-                  className="hover-elevate active-elevate-2 cursor-pointer transition-all"
+                  className={`border-l-2 ${borderColorMap[type as ContentType]} border-border/40 bg-card hover:shadow-md cursor-pointer transition-all duration-150 ease-out`}
                   onClick={() => handleCreate(type as ContentType)}
                   data-testid={`button-create-${type}`}
                 >
-                  <CardHeader className="pb-3">
-                    <div className={`h-12 w-12 rounded-lg ${config.color} flex items-center justify-center mb-3`}>
-                      <Icon className="h-6 w-6" />
+                  <CardHeader className="p-6">
+                    <div className="flex items-center gap-4 mb-2">
+                      <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+                        <Icon className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <CardTitle className="text-base font-medium">{config.label}</CardTitle>
                     </div>
-                    <CardTitle className="text-lg">{config.label}</CardTitle>
                   </CardHeader>
                 </Card>
               );
@@ -358,15 +373,15 @@ export default function Dashboard() {
         </div>
 
         {/* Search and Filters */}
-        <div className="mb-6 space-y-4">
-          <div className="flex gap-2">
+        <div className="mb-12 space-y-6">
+          <div className="flex gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 placeholder="Search by title or description..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-11 h-11 border-border/40"
                 data-testid="input-search"
               />
             </div>
@@ -374,6 +389,7 @@ export default function Dashboard() {
               variant={showFilters ? "secondary" : "outline"}
               onClick={() => setShowFilters(!showFilters)}
               data-testid="button-toggle-filters"
+              className="h-11 border-border/40"
             >
               <Filter className="h-5 w-5 mr-2" />
               Filters
@@ -383,6 +399,7 @@ export default function Dashboard() {
                 variant="ghost"
                 onClick={clearFilters}
                 data-testid="button-clear-filters"
+                className="h-11"
               >
                 <X className="h-5 w-5 mr-2" />
                 Clear
@@ -391,13 +408,13 @@ export default function Dashboard() {
           </div>
 
           {showFilters && (
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <Card className="border-border/40 shadow-sm">
+              <CardContent className="p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Content Type</label>
+                    <label className="text-sm font-normal text-foreground mb-2 block">Content Type</label>
                     <Select value={typeFilter} onValueChange={setTypeFilter}>
-                      <SelectTrigger data-testid="select-type-filter">
+                      <SelectTrigger data-testid="select-type-filter" className="border-border/40 h-11">
                         <SelectValue placeholder="All types" />
                       </SelectTrigger>
                       <SelectContent>
@@ -417,9 +434,9 @@ export default function Dashboard() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Subject</label>
+                    <label className="text-sm font-normal text-foreground mb-2 block">Subject</label>
                     <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-                      <SelectTrigger data-testid="select-subject-filter">
+                      <SelectTrigger data-testid="select-subject-filter" className="border-border/40 h-11">
                         <SelectValue placeholder="All subjects" />
                       </SelectTrigger>
                       <SelectContent>
@@ -434,9 +451,9 @@ export default function Dashboard() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Grade</label>
+                    <label className="text-sm font-normal text-foreground mb-2 block">Grade</label>
                     <Select value={gradeFilter} onValueChange={setGradeFilter}>
-                      <SelectTrigger data-testid="select-grade-filter">
+                      <SelectTrigger data-testid="select-grade-filter" className="border-border/40 h-11">
                         <SelectValue placeholder="All grades" />
                       </SelectTrigger>
                       <SelectContent>
@@ -451,33 +468,36 @@ export default function Dashboard() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Tags</label>
+                    <label className="text-sm font-normal text-foreground mb-2 block">Tags</label>
                     <Input
                       placeholder="e.g., science, math"
                       value={tagFilter}
                       onChange={(e) => setTagFilter(e.target.value)}
                       data-testid="input-tag-filter"
+                      className="border-border/40 h-11"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">Comma-separated</p>
+                    <p className="text-xs text-muted-foreground mt-2">Comma-separated</p>
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">From Date</label>
+                    <label className="text-sm font-normal text-foreground mb-2 block">From Date</label>
                     <Input
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
                       data-testid="input-start-date"
+                      className="border-border/40 h-11"
                     />
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">To Date</label>
+                    <label className="text-sm font-normal text-foreground mb-2 block">To Date</label>
                     <Input
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
                       data-testid="input-end-date"
+                      className="border-border/40 h-11"
                     />
                   </div>
                 </div>
@@ -487,9 +507,9 @@ export default function Dashboard() {
         </div>
 
         {/* View Mode Toggle */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-lg font-semibold text-foreground">My Content</h3>
+            <h3 className="text-xl font-medium text-foreground mb-1">My Content</h3>
             {contents && (
               <p className="text-sm text-muted-foreground">
                 {contents.length} {contents.length === 1 ? "item" : "items"} found
@@ -518,33 +538,33 @@ export default function Dashboard() {
 
         {/* Content Library */}
         {isLoading ? (
-          <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+          <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-6"}>
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-12 w-12 rounded-lg mb-3" />
-                  <Skeleton className="h-6 w-3/4" />
+              <Card key={i} className="border-border/40 shadow-sm">
+                <CardHeader className="p-6">
+                  <Skeleton className="h-10 w-10 rounded-md mb-4" />
+                  <Skeleton className="h-5 w-3/4 mb-2" />
                   <Skeleton className="h-4 w-1/2" />
                 </CardHeader>
-                <CardFooter>
+                <CardFooter className="p-6 pt-4">
                   <Skeleton className="h-9 w-full" />
                 </CardFooter>
               </Card>
             ))}
           </div>
         ) : !contents || contents.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
+          <Card className="text-center border-border/40 shadow-sm">
+            <CardContent className="py-16 px-6">
               <div className="flex flex-col items-center">
-                <div className="h-24 w-24 bg-muted rounded-full flex items-center justify-center mb-6">
-                  <BookOpen className="h-12 w-12 text-muted-foreground" />
+                <div className="h-20 w-20 bg-muted rounded-full flex items-center justify-center mb-6">
+                  <BookOpen className="h-10 w-10 text-muted-foreground" />
                 </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">No content yet</h3>
-                <p className="text-muted-foreground mb-6 max-w-md">
+                <h3 className="text-xl font-medium text-foreground mb-3">No content yet</h3>
+                <p className="text-base text-muted-foreground mb-8 max-w-md leading-relaxed">
                   Get started by creating your first piece of interactive content. Choose from quizzes, flashcards,
                   interactive videos, or image hotspots.
                 </p>
-                <Button onClick={() => handleCreate("quiz")} data-testid="button-create-first">
+                <Button onClick={() => handleCreate("quiz")} data-testid="button-create-first" className="h-11">
                   <Plus className="h-5 w-5 mr-2" />
                   Create Your First Content
                 </Button>
@@ -559,62 +579,86 @@ export default function Dashboard() {
 
               const Icon = config.icon;
 
+              // Border color mapping for left border tint
+              const borderColorMap: Record<ContentType, string> = {
+                quiz: "border-l-blue-500",
+                flashcard: "border-l-purple-500",
+                "interactive-video": "border-l-green-500",
+                "image-hotspot": "border-l-orange-500",
+                "drag-drop": "border-l-pink-500",
+                "fill-blanks": "border-l-cyan-500",
+                "memory-game": "border-l-yellow-500",
+                "interactive-book": "border-l-indigo-500",
+                "video-finder": "border-l-emerald-500",
+                "presentation": "border-l-sky-500",
+              };
+
               return (
-                <div key={type}>
-                  <h4 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
-                    <Icon className="h-5 w-5" />
+                <div key={type} className="mb-12">
+                  <h4 className="text-xl font-medium text-foreground mb-6 flex items-center gap-3">
+                    <Icon className="h-5 w-5 text-muted-foreground" />
                     {config.pluralLabel}
-                    <Badge variant="secondary">{typeContents.length}</Badge>
+                    <span className="text-sm font-normal text-muted-foreground">({typeContents.length})</span>
                   </h4>
-                  <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+                  <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-6"}>
                     {typeContents.map((content) => (
-                      <Card key={content.id} className="hover-elevate transition-all" data-testid={`card-content-${content.id}`}>
-                        <CardHeader>
-                          <div className="flex items-start justify-between mb-2">
-                            <div className={`h-12 w-12 rounded-lg ${config.color} flex items-center justify-center`}>
-                              <Icon className="h-6 w-6" />
+                      <Card 
+                        key={content.id} 
+                        className={`border-l-2 ${borderColorMap[type as ContentType]} border-border/40 bg-card shadow-sm hover:shadow-md transition-all duration-150 ease-out`}
+                        data-testid={`card-content-${content.id}`}
+                      >
+                        <CardHeader className="p-6 pb-4">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+                              <Icon className="h-5 w-5 text-muted-foreground" />
                             </div>
                             {content.isPublished && (
-                              <Badge variant="default" className="bg-green-600 hover:bg-green-600">Published</Badge>
+                              <div className="flex items-center gap-1.5">
+                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                <span className="text-xs font-normal text-muted-foreground">Published</span>
+                              </div>
                             )}
                           </div>
-                          <CardTitle className="text-xl">{content.title}</CardTitle>
+                          <CardTitle className="text-lg font-medium mb-2">{content.title}</CardTitle>
                           {content.description && (
-                            <CardDescription className="line-clamp-2">{content.description}</CardDescription>
+                            <CardDescription className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                              {content.description}
+                            </CardDescription>
                           )}
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="px-6 pb-4">
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <span>Updated {format(new Date(content.updatedAt), "MMM d, yyyy")}</span>
                             {content.tags && content.tags.length > 0 && (
                               <>
                                 <span>•</span>
-                                <div className="flex gap-1 flex-wrap">
+                                <div className="flex gap-1.5 flex-wrap">
                                   {content.tags.slice(0, 2).map((tag, i) => (
-                                    <Badge key={i} variant="outline" className="text-xs">
+                                    <span key={i} className="text-xs text-muted-foreground">
                                       {tag}
-                                    </Badge>
+                                    </span>
                                   ))}
                                 </div>
                               </>
                             )}
                           </div>
                         </CardContent>
-                        <CardFooter className="flex gap-2">
+                        <CardFooter className="p-6 pt-4 flex gap-2 border-t border-border/40">
                           <Button
                             variant="default"
                             size="sm"
-                            className="flex-1"
+                            className="flex-1 h-9"
                             onClick={() => handleEdit(content.id, content.type as ContentType)}
                             data-testid={`button-edit-${content.id}`}
                           >
-                            <Edit className="h-4 w-4 mr-1" />
+                            <Edit className="h-4 w-4 mr-1.5" />
                             Edit
                           </Button>
                           <AssignToClassDialog contentId={content.id}>
                             <Button
                               variant="outline"
                               size="icon"
+                              className="h-9 w-9 border-border/40"
                               data-testid={`button-assign-${content.id}`}
                               aria-label="Assign to class"
                             >
@@ -624,6 +668,7 @@ export default function Dashboard() {
                           <Button
                             variant="outline"
                             size="icon"
+                            className="h-9 w-9 border-border/40"
                             onClick={() => handlePlay(content.id)}
                             data-testid={`button-play-${content.id}`}
                             aria-label="Preview content"
@@ -633,6 +678,7 @@ export default function Dashboard() {
                           <Button
                             variant="outline"
                             size="icon"
+                            className="h-9 w-9 border-border/40"
                             onClick={() => handleShare(content.id)}
                             data-testid={`button-share-${content.id}`}
                             aria-label="Share content"
@@ -642,6 +688,7 @@ export default function Dashboard() {
                           <Button
                             variant="outline"
                             size="icon"
+                            className="h-9 w-9 border-border/40"
                             onClick={() => handleDeleteClick(content.id, content.title)}
                             data-testid={`button-delete-${content.id}`}
                             aria-label="Delete content"
