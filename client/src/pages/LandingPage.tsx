@@ -29,7 +29,7 @@ export default function LandingPage() {
   const contentTypes = [
     { icon: BookOpen, name: "Quiz", description: "Interactive quizzes with instant feedback", color: "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400" },
     { icon: Layers, name: "Flashcard", description: "Digital flashcards with optional images", color: "bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400" },
-    { icon: Video, name: "Interactive Video", description: "Videos with embedded questions", color: "bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400" },
+    { icon: Video, name: "Interactive Video", description: "Videos with embedded questions", color: "bg-[#3D7A2B]/10 dark:bg-[#3D7A2B]/20 text-[#3D7A2B] dark:text-[#3D7A2B]/80" },
     { icon: ImageIcon, name: "Image Hotspot", description: "Clickable areas on images", color: "bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400" },
     { icon: Move, name: "Drag & Drop", description: "Match items by dragging", color: "bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-400" },
     { icon: Edit3, name: "Fill in Blanks", description: "Complete sentences with missing words", color: "bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400" },
@@ -139,7 +139,7 @@ export default function LandingPage() {
         <div 
           className="absolute inset-0 z-10"
           style={{
-            background: 'linear-gradient(135deg, rgba(82, 64, 59, 0.85) 0%, rgba(34, 139, 34, 0.75) 50%, rgba(0, 128, 128, 0.85) 100%)'
+            background: 'linear-gradient(135deg, rgba(82, 64, 59, 0.85) 0%, rgba(61, 122, 43, 0.75) 50%, rgba(0, 128, 128, 0.85) 100%)'
           }}
         />
 
@@ -199,7 +199,7 @@ export default function LandingPage() {
             </div>
             <div className="text-center">
               <div className="text-4xl font-bold text-white mb-2" style={{ color: '#a3e635' }}>100%</div>
-              <div className="text-sm text-gray-100">Free to Start</div>
+              <div className="text-sm text-gray-100">Free</div>
             </div>
           </div>
         </div>
@@ -262,7 +262,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section id="get-started" className="py-20 bg-primary text-primary-foreground scroll-mt-20">
+      <section id="get-started" className="py-20 text-white scroll-mt-20" style={{ backgroundColor: '#1B7D26' }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h3 className="text-3xl sm:text-4xl font-bold mb-4">
             Ready to Transform Your Teaching?
