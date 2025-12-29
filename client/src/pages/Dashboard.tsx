@@ -36,7 +36,8 @@ import {
   HelpCircle,
   BarChart3,
   Presentation,
-  Users
+  Users,
+  GraduationCap
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { H5pContent, ContentType } from "@shared/schema";
@@ -283,7 +284,7 @@ export default function Dashboard() {
               data-testid="button-classes"
               aria-label="Manage classes"
             >
-              <Users className="h-5 w-5" />
+              <GraduationCap className="h-5 w-5" />
             </Button>
             <Button
               variant="ghost"
