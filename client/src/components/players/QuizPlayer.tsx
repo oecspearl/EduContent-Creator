@@ -105,7 +105,14 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     
     if (question.type === "ordering") {
       const answerArray = answer as string[];
-      return answerArray && answerArray.length === question.items?.length && answerArray.every(item => item.trim());
+      if (!answerArray || answerArray.length !== question.items?.length) return false;
+      // Check that all items are present and non-empty
+      if (!answerArray.every(item => item.trim())) return false;
+      // Check that the order is different from the initial order (user has actually reordered)
+      // If items are the same as the original, it means user hasn't interacted yet
+      const originalOrder = question.items || [];
+      const hasChanged = JSON.stringify(answerArray) !== JSON.stringify(originalOrder);
+      return hasChanged;
     }
     
     if (question.type === "drag-drop") {
@@ -131,11 +138,16 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     // Check if question is complete
     const isComplete = isQuestionComplete(currentQuestion, answer);
     
+    // For ordering and drag-drop questions, don't show explanation during interaction
+    // Only show it when user clicks Next button
+    const shouldShowFeedbackNow = currentQuestion.type !== "ordering" && currentQuestion.type !== "drag-drop";
+    
     // Only show explanation if:
     // 1. Immediate feedback is enabled
     // 2. Question has an explanation
     // 3. Question is complete (for ordering/drag-drop, this means all items are placed)
-    if (data.settings.showCorrectAnswers && currentQuestion.explanation && isComplete) {
+    // 4. It's not an ordering/drag-drop question (those show feedback on Next click)
+    if (data.settings.showCorrectAnswers && currentQuestion.explanation && isComplete && shouldShowFeedbackNow) {
       setShowExplanation(true);
       
       // Screen reader announcement
@@ -150,9 +162,13 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
       // For incomplete ordering/drag-drop questions, provide progress feedback
       if (currentQuestion.type === "ordering") {
         const answerArray = answer as string[];
-        const completed = answerArray?.filter(item => item.trim()).length || 0;
-        const total = currentQuestion.items?.length || 0;
-        announce(`Ordered ${completed} of ${total} items`, "polite");
+        const originalOrder = currentQuestion.items || [];
+        const hasChanged = JSON.stringify(answerArray) !== JSON.stringify(originalOrder);
+        if (hasChanged) {
+          // User has reordered items, show progress
+          const total = currentQuestion.items?.length || 0;
+          announce(`Items reordered. Continue arranging all ${total} items.`, "polite");
+        }
       } else if (currentQuestion.type === "drag-drop") {
         const placements = answer as Record<string, string>;
         const placed = Object.keys(placements).length;
