@@ -19,24 +19,77 @@ export function getOpenAIClient() {
 }
 
 export async function generateQuizQuestions(request: AIGenerationRequest): Promise<QuizQuestion[]> {
-  const prompt = `Generate ${request.numberOfItems} quiz questions about "${request.topic}" at ${request.difficulty} difficulty level${request.gradeLevel ? ` for ${request.gradeLevel}` : ""}.
-
-Requirements:
-- Mix of question types:
+  // Determine question type distribution
+  let typeDistribution: string;
+  if (request.questionTypeMode === "all-same" && request.questionType) {
+    // All questions of the same type
+    const typeLabel = {
+      "multiple-choice": "Multiple-choice",
+      "true-false": "True/False",
+      "fill-blank": "Fill-in-the-blank",
+      "ordering": "Ordering",
+      "drag-drop": "Drag and Drop"
+    }[request.questionType] || "Multiple-choice";
+    typeDistribution = `All ${request.numberOfItems} questions should be ${typeLabel} type.`;
+  } else if (request.questionTypeMode === "mixed" && request.questionTypes && request.questionTypes.length > 0) {
+    // Specific types for each question
+    const typeCounts: Record<string, number> = {};
+    request.questionTypes.forEach(type => {
+      typeCounts[type] = (typeCounts[type] || 0) + 1;
+    });
+    const typeList = Object.entries(typeCounts)
+      .map(([type, count]) => {
+        const typeLabel = {
+          "multiple-choice": "Multiple-choice",
+          "true-false": "True/False",
+          "fill-blank": "Fill-in-the-blank",
+          "ordering": "Ordering",
+          "drag-drop": "Drag and Drop"
+        }[type] || type;
+        return `${count} ${typeLabel} question${count > 1 ? 's' : ''}`;
+      })
+      .join(", ");
+    typeDistribution = `Generate exactly: ${typeList}.`;
+    
+    // Add per-question type specification
+    const perQuestionTypes = request.questionTypes.map((type, idx) => {
+      const typeLabel = {
+        "multiple-choice": "Multiple-choice",
+        "true-false": "True/False",
+        "fill-blank": "Fill-in-the-blank",
+        "ordering": "Ordering",
+        "drag-drop": "Drag and Drop"
+      }[type] || type;
+      return `Question ${idx + 1}: ${typeLabel}`;
+    }).join("\n");
+    typeDistribution += `\n\nSpecific question types:\n${perQuestionTypes}`;
+  } else {
+    // Default: mix of types
+    typeDistribution = `Mix of question types:
   * Multiple-choice (with 4 options) - ${Math.ceil(request.numberOfItems * 0.4)} questions
   * Fill-in-the-blank - ${Math.ceil(request.numberOfItems * 0.2)} questions
   * Ordering (arrange items in sequence) - ${Math.ceil(request.numberOfItems * 0.2)} questions
-  * Drag and Drop (match items to categories) - ${Math.ceil(request.numberOfItems * 0.2)} questions
+  * Drag and Drop (match items to categories) - ${Math.ceil(request.numberOfItems * 0.2)} questions`;
+  }
+
+  const prompt = `Generate ${request.numberOfItems} quiz questions about "${request.topic}" at ${request.difficulty} difficulty level${request.gradeLevel ? ` for ${request.gradeLevel}` : ""}.
+
+Requirements:
+- ${typeDistribution}
 - Each question should have a correct answer and an explanation
 - Make questions educational and engaging
 ${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
+
+${request.questionTypeMode === "mixed" && request.questionTypes ? `
+IMPORTANT: The questions must be generated in the exact order and types specified above. Question 1 must be ${request.questionTypes[0]}, Question 2 must be ${request.questionTypes[1] || request.questionTypes[0]}, etc.
+` : ""}
 
 Respond in JSON format with an array of questions following this structure:
 {
   "questions": [
     {
       "id": "unique-id",
-      "type": "multiple-choice" | "fill-blank" | "ordering" | "drag-drop",
+      "type": "multiple-choice" | "true-false" | "fill-blank" | "ordering" | "drag-drop",
       "question": "question text",
       // For multiple-choice:
       "options": ["option1", "option2", "option3", "option4"],
