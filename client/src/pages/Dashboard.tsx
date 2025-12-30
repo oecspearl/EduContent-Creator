@@ -721,30 +721,6 @@ export default function Dashboard() {
                   <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-6"}>
                     {typeContents.map((content) => {
                       return (
-                        quiz: "bg-blue-100 dark:bg-blue-900/30",
-                        flashcard: "bg-purple-100 dark:bg-purple-900/30",
-                        "interactive-video": "bg-green-100 dark:bg-green-900/30",
-                        "image-hotspot": "bg-orange-100 dark:bg-orange-900/30",
-                        "drag-drop": "bg-pink-100 dark:bg-pink-900/30",
-                        "fill-blanks": "bg-cyan-100 dark:bg-cyan-900/30",
-                        "memory-game": "bg-yellow-100 dark:bg-yellow-900/30",
-                        "interactive-book": "bg-indigo-100 dark:bg-indigo-900/30",
-                        "video-finder": "bg-emerald-100 dark:bg-emerald-900/30",
-                        "presentation": "bg-sky-100 dark:bg-sky-900/30",
-                      };
-                      const iconColorMap: Record<ContentType, string> = {
-                        quiz: "text-blue-600 dark:text-blue-400",
-                        flashcard: "text-purple-600 dark:text-purple-400",
-                        "interactive-video": "text-green-600 dark:text-green-400",
-                        "image-hotspot": "text-orange-600 dark:text-orange-400",
-                        "drag-drop": "text-pink-600 dark:text-pink-400",
-                        "fill-blanks": "text-cyan-600 dark:text-cyan-400",
-                        "memory-game": "text-yellow-600 dark:text-yellow-400",
-                        "interactive-book": "text-indigo-600 dark:text-indigo-400",
-                        "video-finder": "text-emerald-600 dark:text-emerald-400",
-                        "presentation": "text-sky-600 dark:text-sky-400",
-                      };
-                      return (
                       <Card 
                         key={content.id} 
                         className={`border-l-4 ${borderColorMap[type as ContentType]} border-border/40 bg-card shadow-md hover:shadow-xl transition-all duration-300 ease-out hover:scale-[1.02]`}
