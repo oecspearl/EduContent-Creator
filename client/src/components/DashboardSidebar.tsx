@@ -7,10 +7,6 @@ import {
   Users, 
   HelpCircle, 
   Settings,
-  FileText,
-  MessageSquare,
-  Calendar as CalendarIcon,
-  BookOpen,
   X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -27,9 +23,6 @@ const navItems: NavItem[] = [
   { label: "My Classes", icon: GraduationCap, path: "/classes" },
   { label: "Analytics", icon: BarChart3, path: "/analytics" },
   { label: "Shared Resources", icon: Users, path: "/shared-resources" },
-  { label: "Documents", icon: FileText, path: "/dashboard" },
-  { label: "Messages", icon: MessageSquare, path: "/dashboard", badge: 0 },
-  { label: "Schedule", icon: CalendarIcon, path: "/dashboard" },
   { label: "Help", icon: HelpCircle, path: "/help" },
   { label: "Settings", icon: Settings, path: "/dashboard" },
 ];
@@ -100,21 +93,6 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
         })}
       </nav>
 
-      {/* Upgrade Section */}
-      <div className="p-6 border-t border-border/40">
-        <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-4 text-center">
-          <div className="h-16 w-16 mx-auto mb-3 bg-primary/10 rounded-lg flex items-center justify-center">
-            <BookOpen className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="text-sm font-semibold text-foreground mb-1">Pro Features</h3>
-          <p className="text-xs text-muted-foreground mb-3">
-            Upgrade to unlock advanced features
-          </p>
-          <Button size="sm" className="w-full">
-            Learn More
-          </Button>
-        </div>
-      </div>
     </aside>
   );
 }
