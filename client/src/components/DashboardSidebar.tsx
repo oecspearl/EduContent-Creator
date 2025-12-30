@@ -74,15 +74,17 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
           return (
             <Button
               key={item.path}
-              variant={isActive ? "secondary" : "ghost"}
+              variant="ghost"
               className={cn(
-                "w-full justify-start gap-3 h-11",
-                isActive && "bg-muted font-medium"
+                "w-full justify-start gap-3 h-11 transition-colors",
+                isActive 
+                  ? "bg-primary text-white font-semibold hover:bg-primary/90 shadow-sm" 
+                  : "text-foreground hover:bg-muted/50"
               )}
               onClick={() => handleNavigate(item.path)}
             >
-              <Icon className="h-5 w-5" />
-              <span className="flex-1 text-left">{item.label}</span>
+              <Icon className={cn("h-5 w-5", isActive ? "text-white" : "text-foreground")} />
+              <span className={cn("flex-1 text-left", isActive && "text-white")}>{item.label}</span>
               {item.badge !== undefined && item.badge > 0 && (
                 <span className="h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
                   {item.badge}
