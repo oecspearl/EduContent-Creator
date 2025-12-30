@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { 
   FileQuestion, 
   Layers, 
@@ -26,23 +25,26 @@ import {
   Play, 
   Share2, 
   Trash2,
-  LogOut,
   Grid3x3,
   List,
   BookOpen,
   Search,
   Filter,
   X,
-  HelpCircle,
   BarChart3,
   Presentation,
   Users,
-  GraduationCap
+  TrendingUp,
+  Eye,
+  CheckCircle2,
+  Menu
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { H5pContent, ContentType } from "@shared/schema";
 import { format } from "date-fns";
 import { AssignToClassDialog } from "@/components/AssignToClassDialog";
+import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { DashboardRightSidebar } from "@/components/DashboardRightSidebar";
 
 const contentTypeConfig: Record<ContentType, { icon: typeof FileQuestion; label: string; pluralLabel: string; color: string }> = {
   quiz: { icon: FileQuestion, label: "Quiz", pluralLabel: "Quizzes", color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
@@ -72,6 +74,7 @@ export default function Dashboard() {
   const [showFilters, setShowFilters] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [contentToDelete, setContentToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Build query key with filters
   const filters: Record<string, string> = {};
@@ -238,104 +241,177 @@ export default function Dashboard() {
     return acc;
   }, {} as Record<ContentType, H5pContent[]>);
 
+  // Fetch analytics for quick stats
+  const { data: analytics } = useQuery<any[]>({
+    queryKey: ["/api/analytics/overview"],
+  });
+
+  // Calculate quick stats
+  const totalContent = contents?.length || 0;
+  const publishedContent = contents?.filter(c => c.isPublished).length || 0;
+  const totalViews = analytics?.reduce((sum, item) => sum + item.uniqueViewers, 0) || 0;
+  const avgCompletion = analytics && analytics.length > 0
+    ? analytics.reduce((sum, item) => sum + item.avgCompletion, 0) / analytics.length
+    : 0;
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#E5EDD3' }}>
+    <div className="min-h-screen flex" style={{ backgroundColor: '#E5EDD3' }}>
       {/* Skip to main content for keyboard navigation */}
       <a href="#main-content" className="skip-to-content">
         Skip to main content
       </a>
       
-      {/* Header */}
-      <header className="border-b border-border/40 bg-card" role="banner">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      {/* Left Sidebar - Desktop */}
+      <div className="hidden lg:block">
+        <DashboardSidebar />
+      </div>
+
+      {/* Left Sidebar - Mobile (Overlay) */}
+      {sidebarOpen && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="fixed left-0 top-0 bottom-0 z-50 lg:hidden">
+            <DashboardSidebar onNavigate={() => setSidebarOpen(false)} />
+          </div>
+        </>
+      )}
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile Header */}
+        <div className="lg:hidden border-b border-border/40 bg-card px-4 py-3 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label="Toggle menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center gap-2">
             <img 
               src="/favicon.png" 
               alt="OECS Content Creator Logo" 
-              className="h-10 w-10 rounded-lg"
+              className="h-8 w-8 rounded-lg"
             />
-            <div>
-              <h1 className="text-xl font-semibold text-foreground">OECS Content Creator</h1>
+            <h1 className="text-lg font-semibold text-foreground">OECS Content Creator</h1>
+          </div>
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+
+        <main id="main-content" className="flex-1 overflow-y-auto px-4 lg:px-6 py-6 lg:py-8" role="main">
+          {/* Search Bar */}
+          <div className="mb-6">
+            <div className="relative max-w-2xl">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="Search content..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-11 h-11 border-border/40 bg-card"
+                data-testid="input-search"
+              />
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/shared-resources")}
-              data-testid="button-shared-resources"
-              aria-label="Browse shared resources"
-            >
-              <Users className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/analytics")}
-              data-testid="button-analytics"
-              aria-label="View analytics dashboard"
-            >
-              <BarChart3 className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/classes")}
-              data-testid="button-classes"
-              aria-label="Manage classes"
-            >
-              <GraduationCap className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/help")}
-              data-testid="button-help"
-              aria-label="Open help documentation"
-            >
-              <HelpCircle className="h-5 w-5" />
-            </Button>
-            <ThemeToggle />
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {user ? getInitials(user.fullName) : "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="hidden md:block">
-                <p className="text-sm font-medium text-foreground">{user?.fullName}</p>
-                <p className="text-xs text-muted-foreground">{user?.role}</p>
+
+          {/* Hero Banner */}
+          <Card className="mb-8 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+            <CardContent className="p-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold text-foreground mb-2">
+                    Track Your Students' Progress Easier With OECS Content Creator
+                  </h2>
+                  <p className="text-muted-foreground mb-4">
+                    Create engaging educational content and monitor student performance in real-time
+                  </p>
+                  <Button onClick={() => navigate("/analytics")} size="lg">
+                    View Analytics
+                  </Button>
+                </div>
+                <div className="hidden md:block">
+                  <div className="h-32 w-32 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <BarChart3 className="h-16 w-16 text-primary" />
+                  </div>
+                </div>
               </div>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleLogout} 
-              data-testid="button-logout"
-              aria-label="Log out"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
+            </CardContent>
+          </Card>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <Card className="border-border/40 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Content</CardTitle>
+                <FileQuestion className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalContent}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {publishedContent} published
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/40 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+                <Eye className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalViews}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Across all content
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/40 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg. Completion</CardTitle>
+                <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{Math.round(avgCompletion)}%</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Student completion rate
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/40 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Performance</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {analytics && analytics.length > 0 ? analytics.length : 0}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Active content items
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main id="main-content" className="max-w-7xl mx-auto px-6 py-12" role="main">
-        {/* Welcome Section */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-semibold text-foreground mb-3">
-            Welcome back, {user?.fullName?.split(" ")[0]}!
-          </h2>
-          <p className="text-base text-muted-foreground">
-            Create and manage your interactive educational content
-          </p>
-        </div>
+          {/* Welcome Section */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold text-foreground mb-3">
+              Welcome back, {user?.fullName?.split(" ")[0]}!
+            </h2>
+            <p className="text-base text-muted-foreground">
+              Create and manage your interactive educational content
+            </p>
+          </div>
 
-        {/* Create Content Buttons */}
-        <div className="mb-12">
-          <h3 className="text-xl font-medium text-foreground mb-6">Create New Content</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Create Content Buttons */}
+          <div className="mb-8">
+            <h3 className="text-xl font-medium text-foreground mb-6">Create New Content</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {Object.entries(contentTypeConfig).map(([type, config]) => {
               const Icon = config.icon;
               // Extract color from config for left border
@@ -372,40 +448,30 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Search and Filters */}
-        <div className="mb-12 space-y-6">
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Search by title or description..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-11 h-11 border-border/40"
-                data-testid="input-search"
-              />
-            </div>
-            <Button
-              variant={showFilters ? "secondary" : "outline"}
-              onClick={() => setShowFilters(!showFilters)}
-              data-testid="button-toggle-filters"
-              className="h-11 border-border/40"
-            >
-              <Filter className="h-5 w-5 mr-2" />
-              Filters
-            </Button>
-            {hasActiveFilters && (
+          {/* Filters */}
+          <div className="mb-8 space-y-4">
+            <div className="flex gap-3">
               <Button
-                variant="ghost"
-                onClick={clearFilters}
-                data-testid="button-clear-filters"
-                className="h-11"
+                variant={showFilters ? "secondary" : "outline"}
+                onClick={() => setShowFilters(!showFilters)}
+                data-testid="button-toggle-filters"
+                className="h-11 border-border/40"
               >
-                <X className="h-5 w-5 mr-2" />
-                Clear
+                <Filter className="h-5 w-5 mr-2" />
+                Filters
               </Button>
-            )}
-          </div>
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  onClick={clearFilters}
+                  data-testid="button-clear-filters"
+                  className="h-11"
+                >
+                  <X className="h-5 w-5 mr-2" />
+                  Clear
+                </Button>
+              )}
+            </div>
 
           {showFilters && (
             <Card className="border-border/40 shadow-sm">
@@ -506,38 +572,38 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* View Mode Toggle */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-xl font-medium text-foreground mb-1">My Content</h3>
-            {contents && (
-              <p className="text-sm text-muted-foreground">
-                {contents.length} {contents.length === 1 ? "item" : "items"} found
-              </p>
-            )}
+          {/* View Mode Toggle */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-xl font-medium text-foreground mb-1">My Content</h3>
+              {contents && (
+                <p className="text-sm text-muted-foreground">
+                  {contents.length} {contents.length === 1 ? "item" : "items"} found
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === "grid" ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => setViewMode("grid")}
+                data-testid="button-view-grid"
+              >
+                <Grid3x3 className="h-5 w-5" />
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => setViewMode("list")}
+                data-testid="button-view-list"
+              >
+                <List className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={viewMode === "grid" ? "secondary" : "ghost"}
-              size="icon"
-              onClick={() => setViewMode("grid")}
-              data-testid="button-view-grid"
-            >
-              <Grid3x3 className="h-5 w-5" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="icon"
-              onClick={() => setViewMode("list")}
-              data-testid="button-view-list"
-            >
-              <List className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
 
-        {/* Content Library */}
-        {isLoading ? (
+          {/* Content Library */}
+          {isLoading ? (
           <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-6"}>
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <Card key={i} className="border-border/40 shadow-sm">
@@ -703,8 +769,14 @@ export default function Dashboard() {
               );
             })}
           </div>
-        )}
-      </main>
+          )}
+        </main>
+      </div>
+
+      {/* Right Sidebar */}
+      <div className="hidden xl:block">
+        <DashboardRightSidebar />
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
