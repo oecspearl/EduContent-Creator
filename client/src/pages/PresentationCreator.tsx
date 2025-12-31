@@ -94,19 +94,24 @@ export default function PresentationCreator() {
   // Handle return from Google authentication
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('googleAuthSuccess') === 'true' && user?.googleAccessToken) {
-      // User just authenticated with Google, show success message
-      toast({
-        title: "Google Account Connected!",
-        description: "You can now create presentations.",
-      });
-      
+    if (urlParams.get('googleAuthSuccess') === 'true') {
+      // Refresh user data to get updated Google tokens
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+
+      // Show success message (wait a bit for query to refresh)
+      setTimeout(() => {
+        toast({
+          title: "Google Account Connected!",
+          description: "You can now create presentations.",
+        });
+      }, 500);
+
       // Clean up URL
       urlParams.delete('googleAuthSuccess');
       const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
       window.history.replaceState({}, '', newUrl);
     }
-  }, [user, toast]);
+  }, [toast]);
 
   const saveMutation = useMutation({
     mutationFn: async (params: { publish: boolean }) => {
@@ -464,10 +469,10 @@ export default function PresentationCreator() {
           title: "Google Authentication Required",
           description: "Redirecting to Google sign-in...",
         });
-        
-        // Build return URL with current location
-        const returnUrl = window.location.pathname;
-        
+
+        // Build return URL with current location (including query params)
+        const returnUrl = window.location.pathname + window.location.search;
+
         // Redirect to Google OAuth with return URL
         setTimeout(() => {
           window.location.href = `/api/auth/google?returnTo=${encodeURIComponent(returnUrl)}`;
