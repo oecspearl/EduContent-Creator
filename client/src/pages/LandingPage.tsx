@@ -450,9 +450,11 @@ export default function LandingPage() {
             {/* Brand */}
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                  <BookOpen className="h-4 w-4 text-primary-foreground" />
-                </div>
+                <img 
+                  src="/favicon.png" 
+                  alt="OECS Content Creator Logo" 
+                  className="h-8 w-8 rounded-lg"
+                />
                 <span className="font-bold text-foreground">OECS Content Creator</span>
               </div>
               <p className="text-sm text-muted-foreground">
