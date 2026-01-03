@@ -22,6 +22,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
   const [showExplanation, setShowExplanation] = useState(false);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [draggedOrderIndex, setDraggedOrderIndex] = useState<number | null>(null);
+  const [fillBlankInputValue, setFillBlankInputValue] = useState<string>("");
   const { announcement, announce } = useScreenReaderAnnounce();
   const restartButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -72,8 +73,15 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
         // Mark this question as initialized
         initializedOrderingQuestionsRef.current.add(currentIndex);
       }
+      
+      // Reset fill-blank input value when moving to a new question
+      if (currentQuestion.type === "fill-blank") {
+        setFillBlankInputValue(answers[currentIndex] as string || "");
+      } else {
+        setFillBlankInputValue("");
+      }
     }
-  }, [currentIndex, currentQuestion.type, currentQuestion.items, currentQuestion.correctAnswer]);
+  }, [currentIndex, currentQuestion.type, currentQuestion.items, currentQuestion.correctAnswer, answers]);
 
   // Reset initialization when auth changes from false → true
   useEffect(() => {
@@ -256,6 +264,11 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
   };
 
   const handleNext = () => {
+    // For fill-blank questions, save the current input value if it hasn't been saved yet
+    if (currentQuestion.type === "fill-blank" && fillBlankInputValue.trim() && answers[currentIndex] === null) {
+      handleAnswer(fillBlankInputValue);
+    }
+    
     // Don't allow advancing without an answer
     if (answers[currentIndex] === null) {
       announce("Please provide an answer before continuing", "assertive");
@@ -288,6 +301,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     }
     
     setShowExplanation(false);
+    setFillBlankInputValue(""); // Reset fill-blank input when moving to next question
     if (currentIndex < data.questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
       // Announce question change for screen readers
@@ -329,6 +343,8 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
   const handlePrevious = () => {
     setShowExplanation(false);
     setCurrentIndex(currentIndex - 1);
+    // Reset fill-blank input value when moving to previous question
+    setFillBlankInputValue("");
   };
 
   const handleRestart = () => {
@@ -336,6 +352,7 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
     setAnswers(new Array(data.questions.length).fill(null));
     setShowResults(false);
     setShowExplanation(false);
+    setFillBlankInputValue("");
     initializedOrderingQuestionsRef.current.clear(); // Reset initialized questions
     logInteraction("quiz_restarted");
   };
@@ -509,8 +526,18 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
               type="text"
               className="w-full px-4 py-3 rounded-lg border bg-background"
               placeholder="Type your answer..."
-              value={answers[currentIndex] as string || ""}
-              onChange={(e) => !showExplanation && handleAnswer(e.target.value)}
+              value={showExplanation ? (answers[currentIndex] as string || "") : fillBlankInputValue}
+              onChange={(e) => {
+                if (!showExplanation) {
+                  setFillBlankInputValue(e.target.value);
+                }
+              }}
+              onBlur={(e) => {
+                // Only check answer when user finishes typing (on blur)
+                if (!showExplanation && e.target.value.trim()) {
+                  handleAnswer(e.target.value);
+                }
+              }}
               disabled={showExplanation}
               data-testid="input-fill-blank"
               aria-label="Answer input"

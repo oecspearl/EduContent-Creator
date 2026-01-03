@@ -18,6 +18,7 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
   const [currentHotspot, setCurrentHotspot] = useState<VideoHotspot | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string | number>>({});
+  const [fillBlankInputValues, setFillBlankInputValues] = useState<Record<string, string>>({});
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
   const [quizShowFeedback, setQuizShowFeedback] = useState(false);
   const [completedHotspots, setCompletedHotspots] = useState<Set<string>>(new Set());
@@ -516,8 +517,22 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
                               <div className="space-y-2">
                                 <Input
                                   placeholder="Enter your answer..."
-                                  value={String(userAnswer || "")}
-                                  onChange={(e) => handleQuizAnswer(question.id, e.target.value)}
+                                  value={quizShowFeedback ? String(userAnswer || "") : (fillBlankInputValues[question.id] || String(userAnswer || ""))}
+                                  onChange={(e) => {
+                                    // Store the value locally but don't check answer until blur
+                                    if (!quizShowFeedback) {
+                                      setFillBlankInputValues(prev => ({
+                                        ...prev,
+                                        [question.id]: e.target.value
+                                      }));
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    // Only save the answer when user finishes typing
+                                    if (!quizShowFeedback && e.target.value.trim()) {
+                                      handleQuizAnswer(question.id, e.target.value);
+                                    }
+                                  }}
                                   disabled={quizShowFeedback}
                                   className={quizShowFeedback 
                                     ? isCorrect 
