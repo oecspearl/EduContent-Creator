@@ -1,6 +1,15 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   BookOpen, 
   Layers, 
@@ -25,18 +34,79 @@ import heroBackground from "@assets/lboard_1763248872214.png";
 export default function LandingPage() {
   const [_, navigate] = useLocation();
   const { user } = useAuth();
+  const [selectedContentType, setSelectedContentType] = useState<number | null>(null);
 
   const contentTypes = [
-    { icon: BookOpen, name: "Quiz", description: "Interactive quizzes with instant feedback", color: "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400" },
-    { icon: Layers, name: "Flashcard", description: "Digital flashcards with optional images", color: "bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400" },
-    { icon: Video, name: "Interactive Video", description: "Videos with embedded questions", color: "bg-[#3D7A2B]/10 dark:bg-[#3D7A2B]/20 text-[#3D7A2B] dark:text-[#3D7A2B]/80" },
-    { icon: ImageIcon, name: "Image Hotspot", description: "Clickable areas on images", color: "bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400" },
-    { icon: Move, name: "Drag & Drop", description: "Match items by dragging", color: "bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-400" },
-    { icon: Edit3, name: "Fill in Blanks", description: "Complete sentences with missing words", color: "bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400" },
-    { icon: Brain, name: "Memory Game", description: "Flip cards to find matching pairs", color: "bg-yellow-100 dark:bg-yellow-950 text-yellow-600 dark:text-yellow-400" },
-    { icon: BookText, name: "Interactive Book", description: "Rich multimedia books", color: "bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400" },
-    { icon: Search, name: "Video Finder", description: "Find educational videos from YouTube", color: "bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400" },
-    { icon: Presentation, name: "Presentation", description: "AI-generated presentations with real images", color: "bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400" },
+    { 
+      icon: BookOpen, 
+      name: "Quiz", 
+      description: "Interactive quizzes with instant feedback", 
+      color: "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400",
+      detailedDescription: "Create engaging quizzes with multiple question types including multiple choice, true/false, fill-in-the-blank, ordering, and drag-and-drop. Students receive instant feedback on their answers, and you can track their performance through detailed analytics. Perfect for assessments, practice exercises, and knowledge checks."
+    },
+    { 
+      icon: Layers, 
+      name: "Flashcard", 
+      description: "Digital flashcards with optional images", 
+      color: "bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400",
+      detailedDescription: "Build digital flashcards to help students memorize key concepts, vocabulary, definitions, and more. Add images to enhance visual learning. Students can flip cards to reveal answers and study at their own pace. Ideal for language learning, terminology, and concept reinforcement."
+    },
+    { 
+      icon: Video, 
+      name: "Interactive Video", 
+      description: "Videos with embedded questions", 
+      color: "bg-[#3D7A2B]/10 dark:bg-[#3D7A2B]/20 text-[#3D7A2B] dark:text-[#3D7A2B]/80",
+      detailedDescription: "Transform passive video watching into an active learning experience. Embed questions, quizzes, and interactive elements at specific timestamps in your videos. Students must answer questions to continue watching, ensuring they stay engaged and understand the content. Great for flipped classrooms and video-based learning."
+    },
+    { 
+      icon: ImageIcon, 
+      name: "Image Hotspot", 
+      description: "Clickable areas on images", 
+      color: "bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400",
+      detailedDescription: "Create interactive images where students click on specific areas to reveal information, answer questions, or explore details. Perfect for diagrams, maps, scientific illustrations, historical images, and any visual content where location matters. Enhances spatial learning and visual comprehension."
+    },
+    { 
+      icon: Move, 
+      name: "Drag & Drop", 
+      description: "Match items by dragging", 
+      color: "bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-400",
+      detailedDescription: "Design interactive matching activities where students drag items to their correct locations or pair related concepts. Supports categorization, sequencing, labeling, and matching exercises. Provides hands-on learning through manipulation and visual organization. Excellent for teaching relationships, processes, and classifications."
+    },
+    { 
+      icon: Edit3, 
+      name: "Fill in Blanks", 
+      description: "Complete sentences with missing words", 
+      color: "bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400",
+      detailedDescription: "Create fill-in-the-blank exercises where students complete sentences, paragraphs, or formulas by typing in missing words or phrases. Supports multiple correct answers and provides immediate feedback. Ideal for grammar practice, vocabulary building, formula memorization, and comprehension exercises."
+    },
+    { 
+      icon: Brain, 
+      name: "Memory Game", 
+      description: "Flip cards to find matching pairs", 
+      color: "bg-yellow-100 dark:bg-yellow-950 text-yellow-600 dark:text-yellow-400",
+      detailedDescription: "Build memory matching games where students flip cards to find pairs. Perfect for vocabulary, definitions, images and words, concepts, and more. Makes learning fun and helps improve memory retention through gamification. Great for younger learners and review activities."
+    },
+    { 
+      icon: BookText, 
+      name: "Interactive Book", 
+      description: "Rich multimedia books", 
+      color: "bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400",
+      detailedDescription: "Create rich, multimedia digital books with text, images, videos, audio, and embedded interactive activities. Students can navigate through chapters, interact with content, and complete embedded quizzes or activities. Perfect for creating comprehensive learning resources, textbooks, and interactive stories."
+    },
+    { 
+      icon: Search, 
+      name: "Video Finder", 
+      description: "Find educational videos from YouTube", 
+      color: "bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400",
+      detailedDescription: "Search and curate educational videos from YouTube to create focused learning playlists. Organize videos by topic, add descriptions, and share curated collections with your students. Helps students discover high-quality educational content while maintaining focus on learning objectives."
+    },
+    { 
+      icon: Presentation, 
+      name: "Presentation", 
+      description: "AI-generated presentations with real images", 
+      color: "bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400",
+      detailedDescription: "Generate professional presentations using AI assistance. Create slides with real images, structured content, and engaging visuals. Perfect for lectures, lessons, and educational content delivery. Students can view presentations at their own pace, making it ideal for both in-class and remote learning."
+    },
   ];
 
   const features = [
@@ -247,7 +317,11 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             {contentTypes.map((type, index) => (
-              <Card key={index} className="hover-elevate">
+              <Card 
+                key={index} 
+                className="hover-elevate cursor-pointer transition-all hover:shadow-lg"
+                onClick={() => setSelectedContentType(index)}
+              >
                 <CardContent className="p-6">
                   <div className={`h-14 w-14 rounded-lg ${type.color} flex items-center justify-center mb-4`}>
                     <type.icon className="h-7 w-7" />
@@ -297,6 +371,77 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Content Type Details Dialog */}
+      <Dialog open={selectedContentType !== null} onOpenChange={(open) => !open && setSelectedContentType(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedContentType !== null && (() => {
+            const selectedType = contentTypes[selectedContentType];
+            const IconComponent = selectedType.icon;
+            return (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center gap-4 mb-2">
+                    <div className={`h-12 w-12 rounded-lg ${selectedType.color} flex items-center justify-center`}>
+                      <IconComponent className="h-6 w-6" />
+                    </div>
+                    <DialogTitle className="text-2xl">{selectedType.name}</DialogTitle>
+                  </div>
+                  <DialogDescription className="text-base pt-2">
+                    {selectedType.detailedDescription}
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="my-6 p-4 bg-muted/50 rounded-lg border border-primary/20">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-foreground mb-1">Get Started</p>
+                      <p className="text-sm text-muted-foreground">
+                        {user 
+                          ? "You're logged in! Access this feature from your dashboard to start creating content."
+                          : "Log in or create a free account to access this feature from your dashboard and start creating engaging educational content."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  {user ? (
+                    <Button onClick={() => navigate("/dashboard")} className="w-full sm:w-auto">
+                      Go to Dashboard
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setSelectedContentType(null);
+                          navigate("/login");
+                        }}
+                        className="w-full sm:w-auto"
+                      >
+                        Log In
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          setSelectedContentType(null);
+                          navigate("/login");
+                        }}
+                        className="w-full sm:w-auto"
+                      >
+                        Create Account
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </DialogFooter>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       {/* Footer */}
       <footer className="border-t bg-muted/30 py-12" role="contentinfo">
