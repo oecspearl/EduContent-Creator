@@ -400,10 +400,10 @@ export default function ClassesPage() {
     // If a class is selected, provide template for enrolling students
     // Otherwise, provide template for creating new classes
     const template = csvClassId && csvClassId !== "create-new"
-      ? `email
-student1@example.com
-student2@example.com
-student3@example.com`
+      ? `firstname,lastname,email
+John,Smith,john.smith@example.com
+Jane,Doe,jane.doe@example.com
+Michael,Johnson,michael.johnson@example.com`
       : `class_name,description,subject,grade_level,student_email1,student_email2,student_email3
 Math 101,Introduction to Mathematics,Mathematics,Grade 5,student1@example.com,student2@example.com,student3@example.com
 Science 101,Basic Science,Science,Grade 5,student1@example.com,student2@example.com`;

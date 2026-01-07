@@ -2033,7 +2033,9 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       }
 
       const headers = parseCSVLine(lines[0]).map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
-      const emailIndex = headers.findIndex(h => h === 'email' || h === 'e-mail' || h === 'student_email' || h.startsWith('student_email'));
+      const emailIndex = headers.findIndex(h => h === 'email' || h === 'e-mail' || h === 'student_email' || h === 'email address' || h.startsWith('student_email'));
+      const firstNameIndex = headers.findIndex(h => h === 'firstname' || h === 'first name' || h === 'first_name');
+      const lastNameIndex = headers.findIndex(h => h === 'lastname' || h === 'last name' || h === 'last_name');
       const nameIndex = headers.findIndex(h => h === 'name' || h === 'full name' || h === 'fullname');
 
       const enrollments: any[] = [];
@@ -2072,10 +2074,19 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
           let user = await storage.getProfileByEmail(email);
           if (!user) {
             // Auto-create user if they don't exist
-            const fullName = nameIndex !== -1 && values[nameIndex] 
-              ? values[nameIndex] 
-              : email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            
+            // Build full name from firstname + lastname, or fall back to name column, or derive from email
+            let fullName: string;
+            const firstName = firstNameIndex !== -1 ? values[firstNameIndex]?.trim() : '';
+            const lastName = lastNameIndex !== -1 ? values[lastNameIndex]?.trim() : '';
+
+            if (firstName || lastName) {
+              fullName = `${firstName} ${lastName}`.trim();
+            } else if (nameIndex !== -1 && values[nameIndex]) {
+              fullName = values[nameIndex];
+            } else {
+              fullName = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            }
+
             try {
               user = await storage.createProfile({
                 email,
