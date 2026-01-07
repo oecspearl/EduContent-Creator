@@ -2111,107 +2111,151 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
           await storage.bulkCreateEnrollments(enrollments);
         }
       } else {
-        // Create new classes from CSV
-        // Expected format: class_name, description, subject, grade_level, student_email1, student_email2, ...
+        // Create ONE new class from CSV with student list
+        // Expected format:
+        // class_name,description,subject,grade_level
+        // Math 101,Introduction to Mathematics,Mathematics,Grade 5
+        // (blank line)
+        // firstname,lastname,email
+        // John,Smith,john.smith@example.com
+        // Jane,Doe,jane.doe@example.com
+
         const classHeaders = ['class_name', 'name', 'class name'];
         const classNameIndex = headers.findIndex(h => classHeaders.includes(h));
-        
+
         if (classNameIndex === -1) {
           return res.status(400).json({ message: "CSV must have a 'class_name' or 'name' column for creating classes" });
         }
 
-        const createdClasses: any[] = [];
-        
-        for (let i = 1; i < lines.length; i++) {
-          const values = parseCSVLine(lines[i]).map(v => v.trim().replace(/^"|"$/g, ''));
-          const className = values[classNameIndex];
-          
-          if (!className) {
-            errors.push(`Row ${i + 1}: Missing class name`);
-            continue;
+        // Parse class info from the first data row
+        const classValues = parseCSVLine(lines[1]).map(v => v.trim().replace(/^"|"$/g, ''));
+        const className = classValues[classNameIndex];
+
+        if (!className) {
+          return res.status(400).json({ message: "Missing class name in the first data row" });
+        }
+
+        // Get description index
+        const descIndex = headers.findIndex(h => h === 'description' || h === 'desc');
+        const subjectIndex = headers.findIndex(h => h === 'subject');
+        const gradeLevelIndex = headers.findIndex(h => h === 'grade_level' || h === 'grade level' || h === 'gradelevel');
+
+        // Create class
+        const class_ = await storage.createClass({
+          name: className,
+          description: descIndex !== -1 ? classValues[descIndex] : null,
+          subject: subjectIndex !== -1 ? classValues[subjectIndex] : null,
+          gradeLevel: gradeLevelIndex !== -1 ? classValues[gradeLevelIndex] : null,
+          userId: req.session.userId!,
+        });
+
+        // Find the student section (look for firstname/lastname/email headers after a blank line)
+        let studentStartIndex = -1;
+        let studentHeaders: string[] = [];
+        let studentEmailIndex = -1;
+        let studentFirstNameIndex = -1;
+        let studentLastNameIndex = -1;
+        let studentNameIndex = -1;
+
+        for (let i = 2; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue; // Skip blank lines
+
+          const potentialHeaders = parseCSVLine(line).map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
+          const hasEmailHeader = potentialHeaders.some(h =>
+            h === 'email' || h === 'e-mail' || h === 'student_email' || h === 'email address'
+          );
+          const hasNameHeader = potentialHeaders.some(h =>
+            h === 'firstname' || h === 'first name' || h === 'first_name' ||
+            h === 'lastname' || h === 'last name' || h === 'last_name' ||
+            h === 'name' || h === 'full name' || h === 'fullname'
+          );
+
+          if (hasEmailHeader && hasNameHeader) {
+            studentHeaders = potentialHeaders;
+            studentStartIndex = i + 1;
+            studentEmailIndex = potentialHeaders.findIndex(h =>
+              h === 'email' || h === 'e-mail' || h === 'student_email' || h === 'email address'
+            );
+            studentFirstNameIndex = potentialHeaders.findIndex(h =>
+              h === 'firstname' || h === 'first name' || h === 'first_name'
+            );
+            studentLastNameIndex = potentialHeaders.findIndex(h =>
+              h === 'lastname' || h === 'last name' || h === 'last_name'
+            );
+            studentNameIndex = potentialHeaders.findIndex(h =>
+              h === 'name' || h === 'full name' || h === 'fullname'
+            );
+            break;
           }
+        }
 
-          // Create class
-          const class_ = await storage.createClass({
-            name: className,
-            description: nameIndex !== -1 ? values[nameIndex] : null,
-            subject: headers.includes('subject') ? values[headers.indexOf('subject')] : null,
-            gradeLevel: headers.includes('grade_level') || headers.includes('grade level') 
-              ? values[headers.findIndex(h => h === 'grade_level' || h === 'grade level')] 
-              : null,
-            userId: req.session.userId!,
-          });
+        let enrolledCount = 0;
 
-          createdClasses.push(class_);
+        if (studentStartIndex > 0) {
+          // Process student rows
+          for (let i = studentStartIndex; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue; // Skip blank lines
 
-          // Enroll students - look for email columns (student_email1, student_email2, etc. or just email)
-          const studentEmails: string[] = [];
-          
-          // First, check if there's a dedicated email column
-          if (emailIndex !== -1 && emailIndex < values.length) {
-            const email = values[emailIndex];
-            if (email && email.includes('@')) {
-              studentEmails.push(email);
+            const values = parseCSVLine(line).map(v => v.trim().replace(/^"|"$/g, ''));
+            const email = studentEmailIndex !== -1 ? values[studentEmailIndex] : null;
+
+            if (!email || !email.includes('@')) {
+              errors.push(`Row ${i + 1}: Missing or invalid email`);
+              continue;
             }
-          }
-          
-          // Also check for student_email columns (student_email1, student_email2, etc.)
-          headers.forEach((header, idx) => {
-            if ((header.startsWith('student_email') || header === 'email') && idx !== emailIndex) {
-              const email = values[idx];
-              if (email && email.includes('@')) {
-                studentEmails.push(email);
-              }
-            }
-          });
-          
-          // If no email columns found, treat all remaining columns after class info as potential emails
-          if (studentEmails.length === 0) {
-            const potentialEmails = values.slice(classNameIndex + 1)
-              .filter(v => v && v.includes('@'));
-            studentEmails.push(...potentialEmails);
-          }
 
-          for (const email of studentEmails) {
-            // Find user by email, or create if doesn't exist
+            // Find or create user
             let user = await storage.getProfileByEmail(email);
             if (!user) {
-              // Auto-create user if they don't exist
-              const fullName = nameIndex !== -1 && values[nameIndex] 
-                ? values[nameIndex] 
-                : email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-              
+              // Build full name from firstname + lastname, or fall back to name column, or derive from email
+              let fullName: string;
+              const firstName = studentFirstNameIndex !== -1 ? values[studentFirstNameIndex]?.trim() : '';
+              const lastName = studentLastNameIndex !== -1 ? values[studentLastNameIndex]?.trim() : '';
+
+              if (firstName || lastName) {
+                fullName = `${firstName} ${lastName}`.trim();
+              } else if (studentNameIndex !== -1 && values[studentNameIndex]) {
+                fullName = values[studentNameIndex];
+              } else {
+                fullName = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+              }
+
               try {
                 user = await storage.createProfile({
                   email,
                   fullName,
-                  password: null, // User will need to set password via password reset
+                  password: null,
                   role: 'student',
                   authProvider: 'email',
                 });
               } catch (e: any) {
-                errors.push(`Row ${i + 1}: Failed to create user for email ${email}: ${e.message}`);
+                errors.push(`Row ${i + 1}: Failed to create user for ${email}: ${e.message}`);
                 continue;
               }
             }
-            
-            // Enroll the user (whether existing or newly created)
+
+            // Enroll the user
             try {
               await storage.createClassEnrollment({
                 classId: class_.id,
                 userId: user.id,
               });
+              enrolledCount++;
             } catch (e: any) {
               if (!e.message?.includes('unique') && !e.message?.includes('duplicate')) {
                 errors.push(`Row ${i + 1}: Failed to enroll ${email}`);
+              } else {
+                enrolledCount++; // Already enrolled counts as success
               }
             }
           }
         }
 
         return res.json({
-          message: `Successfully created ${createdClasses.length} class(es)`,
-          classes: createdClasses,
+          message: `Successfully created class "${className}" with ${enrolledCount} student(s)`,
+          classes: [class_],
           errors: errors.length > 0 ? errors : undefined,
         });
       }

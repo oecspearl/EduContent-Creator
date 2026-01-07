@@ -398,15 +398,19 @@ export default function ClassesPage() {
 
   const downloadTemplate = () => {
     // If a class is selected, provide template for enrolling students
-    // Otherwise, provide template for creating new classes
+    // Otherwise, provide template for creating a new class with students
     const template = csvClassId && csvClassId !== "create-new"
       ? `firstname,lastname,email
 John,Smith,john.smith@example.com
 Jane,Doe,jane.doe@example.com
 Michael,Johnson,michael.johnson@example.com`
-      : `class_name,description,subject,grade_level,student_email1,student_email2,student_email3
-Math 101,Introduction to Mathematics,Mathematics,Grade 5,student1@example.com,student2@example.com,student3@example.com
-Science 101,Basic Science,Science,Grade 5,student1@example.com,student2@example.com`;
+      : `class_name,description,subject,grade_level
+Math 101,Introduction to Mathematics,Mathematics,Grade 5
+
+firstname,lastname,email
+John,Smith,john.smith@example.com
+Jane,Doe,jane.doe@example.com
+Michael,Johnson,michael.johnson@example.com`;
     
     const blob = new Blob([template], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
