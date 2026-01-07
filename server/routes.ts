@@ -1983,6 +1983,40 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   });
 
+  // Helper function to parse CSV line, handling quoted fields
+  function parseCSVLine(line: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+      
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          // Escaped quote
+          current += '"';
+          i++; // Skip next quote
+        } else {
+          // Toggle quote state
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        // End of field
+        result.push(current);
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    // Add the last field
+    result.push(current);
+    
+    return result;
+  }
+
   // CSV bulk upload route
   app.post("/api/classes/bulk-upload", requireAuth, async (req, res) => {
     try {
