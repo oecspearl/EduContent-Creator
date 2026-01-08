@@ -2110,10 +2110,16 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       // Send email notifications to all students in the class (non-blocking)
       (async () => {
         try {
+          console.log(`[EMAIL] Starting notification process for class: ${classId}`);
           const enrollments = await storage.getClassEnrollments(classId);
+          console.log(`[EMAIL] Found ${enrollments.length} enrollments in class`);
+          console.log(`[EMAIL] Enrollments:`, enrollments.map((e: any) => ({ email: e.email, role: e.role })));
+
           const students = enrollments
             .filter((e: any) => e.role === 'student')
             .map((e: any) => ({ email: e.email, fullName: e.fullName }));
+
+          console.log(`[EMAIL] Found ${students.length} students to notify`);
 
           if (students.length > 0) {
             const { sendBulkAssignmentNotifications } = await import('./email');
@@ -2126,10 +2132,12 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
               dueDate ? new Date(dueDate) : null,
               instructions?.trim() || null
             );
-            console.log(`Assignment notifications sent: ${result.sent} success, ${result.failed} failed`);
+            console.log(`[EMAIL] Assignment notifications sent: ${result.sent} success, ${result.failed} failed`);
+          } else {
+            console.log(`[EMAIL] No students to notify in this class`);
           }
         } catch (emailError) {
-          console.error('Failed to send assignment notification emails:', emailError);
+          console.error('[EMAIL] Failed to send assignment notification emails:', emailError);
         }
       })();
 
