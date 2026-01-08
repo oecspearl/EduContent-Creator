@@ -27,6 +27,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
 function getInitials(name: string): string {
@@ -110,12 +112,66 @@ export function DashboardRightSidebar() {
       {/* User Profile & Notifications */}
       <div className="p-6 border-b border-border/40">
         <div className="flex items-center justify-between mb-4">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            {recentActivity.length > 0 && (
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-destructive"></span>
-            )}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                {recentActivity.length > 0 && (
+                  <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-destructive"></span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-80">
+              <DropdownMenuLabel className="flex items-center justify-between">
+                <span>Recent Notifications</span>
+                {recentActivity.length > 0 && (
+                  <span className="text-xs text-muted-foreground">{recentActivity.length} new</span>
+                )}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {recentActivity.length === 0 ? (
+                <div className="py-4 text-center text-sm text-muted-foreground">
+                  No new notifications
+                </div>
+              ) : (
+                <>
+                  {recentActivity.slice(0, 5).map((activity) => (
+                    <DropdownMenuItem
+                      key={activity.progressId}
+                      className="flex items-start gap-3 p-3 cursor-pointer"
+                      onClick={() => navigate(`/analytics/${activity.contentId}`)}
+                    >
+                      <div className={`h-8 w-8 rounded flex items-center justify-center flex-shrink-0 ${getContentColor(activity.contentType)}`}>
+                        {getContentIcon(activity.contentType)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {activity.studentName}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {activity.completionPercentage}% on {activity.contentTitle}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(activity.lastAccessedAt), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                  {recentActivity.length > 5 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-center text-sm text-primary cursor-pointer justify-center"
+                        onClick={() => navigate("/analytics")}
+                      >
+                        View all activity
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <ThemeToggle />
         </div>
         <div className="flex items-center gap-3">
