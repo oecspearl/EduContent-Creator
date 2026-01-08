@@ -258,6 +258,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Forgot password - request password reset
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const profile = await storage.getProfileByEmail(email.trim().toLowerCase());
+
+      // Always return success to prevent email enumeration attacks
+      if (!profile) {
+        return res.json({ message: "If an account exists with that email, a password reset link will be sent." });
+      }
+
+      // Generate reset token
+      const crypto = await import('crypto');
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      await storage.setPasswordResetToken(email.trim().toLowerCase(), resetToken, expiresAt);
+
+      // Send password reset email
+      const { sendPasswordResetEmail } = await import('./email');
+      await sendPasswordResetEmail(profile.email, profile.fullName, resetToken);
+
+      res.json({ message: "If an account exists with that email, a password reset link will be sent." });
+    } catch (error: any) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Failed to process request" });
+    }
+  });
+
+  // Reset password - set new password using token
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, password } = req.body;
+
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: "Reset token is required" });
+      }
+
+      if (!password || typeof password !== 'string' || password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      const profile = await storage.getProfileByResetToken(token);
+
+      if (!profile) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      // Check if token is expired
+      if (!profile.passwordResetExpiry || new Date() > new Date(profile.passwordResetExpiry)) {
+        return res.status(400).json({ message: "Reset token has expired. Please request a new one." });
+      }
+
+      // Update password and clear reset token
+      await storage.updateProfile(profile.id, { password });
+      await storage.clearPasswordResetToken(profile.id);
+
+      res.json({ message: "Password has been reset successfully. You can now log in with your new password." });
+    } catch (error: any) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
+
+  // Validate reset token (for checking before showing reset form)
+  app.get("/api/auth/validate-reset-token", async (req, res) => {
+    try {
+      const token = req.query.token as string;
+
+      if (!token) {
+        return res.status(400).json({ valid: false, message: "Token is required" });
+      }
+
+      const profile = await storage.getProfileByResetToken(token);
+
+      if (!profile) {
+        return res.json({ valid: false, message: "Invalid reset token" });
+      }
+
+      if (!profile.passwordResetExpiry || new Date() > new Date(profile.passwordResetExpiry)) {
+        return res.json({ valid: false, message: "Reset token has expired" });
+      }
+
+      res.json({ valid: true, email: profile.email });
+    } catch (error: any) {
+      console.error("Validate reset token error:", error);
+      res.status(500).json({ valid: false, message: "Failed to validate token" });
+    }
+  });
+
   // Google OAuth routes
   app.get("/api/auth/google", (req, res, next) => {
     if (!isGoogleOAuthAvailable) {
@@ -1778,6 +1873,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
 
       // Check if user already exists with this email
       let user = await storage.getProfileByEmail(email.trim().toLowerCase());
+      let isNewUser = false;
 
       if (user) {
         // User exists, check if already enrolled
@@ -1796,6 +1892,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
           role: 'student',
           authProvider: 'email',
         });
+        isNewUser = true;
       }
 
       // Enroll the student
@@ -1804,13 +1901,34 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
         userId: user.id,
       });
 
+      // Send welcome email with password setup link for new users
+      let emailSent = false;
+      if (isNewUser) {
+        try {
+          const crypto = await import('crypto');
+          const resetToken = crypto.randomBytes(32).toString('hex');
+          const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours for welcome emails
+
+          await storage.setPasswordResetToken(user.email, resetToken, expiresAt);
+
+          const { sendWelcomeEmail } = await import('./email');
+          emailSent = await sendWelcomeEmail(user.email, user.fullName, resetToken, class_.name);
+        } catch (emailError) {
+          console.error("Failed to send welcome email:", emailError);
+          // Don't fail the request if email fails
+        }
+      }
+
       res.json({
-        message: "Student added and enrolled successfully",
+        message: isNewUser
+          ? (emailSent ? "Student created and enrolled. Welcome email sent." : "Student created and enrolled. Email could not be sent - student should use 'Forgot Password' to set their password.")
+          : "Student enrolled successfully",
         student: {
           id: user.id,
           email: user.email,
           fullName: user.fullName,
-        }
+        },
+        emailSent,
       });
     } catch (error: any) {
       console.error("Create student error:", error);

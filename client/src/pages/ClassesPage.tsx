@@ -253,13 +253,15 @@ export default function ClassesPage() {
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/classes", selectedClassId, "enrollments"] });
       setNewStudentData({ firstName: "", lastName: "", email: "" });
       refetchEnrollments();
       toast({
         title: "Student added",
-        description: "Student account created and enrolled in the class successfully.",
+        description: data.emailSent
+          ? "Student account created and welcome email sent with password setup link."
+          : data.message || "Student account created and enrolled in the class.",
       });
     },
     onError: (error: any) => {
@@ -979,7 +981,7 @@ Michael,Johnson,michael.johnson@example.com`;
                     {createAndEnrollStudentMutation.isPending ? "Creating..." : "Create & Enroll Student"}
                   </Button>
                   <p className="text-xs text-muted-foreground">
-                    The student will need to use "Forgot Password" on the login page to set their password.
+                    A welcome email with a password setup link will be sent to the student (if email is configured).
                   </p>
                 </TabsContent>
               </Tabs>

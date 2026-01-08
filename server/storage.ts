@@ -21,6 +21,9 @@ export interface IStorage {
   updateProfile(id: string, updates: Partial<InsertProfile>): Promise<Profile | undefined>;
   getProfileById(id: string): Promise<Profile | undefined>;
   getProfileByEmail(email: string): Promise<Profile | undefined>;
+  setPasswordResetToken(email: string, token: string, expiresAt: Date): Promise<Profile | undefined>;
+  getProfileByResetToken(token: string): Promise<Profile | undefined>;
+  clearPasswordResetToken(id: string): Promise<void>;
   
   // Content methods
   createContent(content: InsertH5pContent): Promise<H5pContent>;
@@ -125,6 +128,39 @@ export class DbStorage implements IStorage {
   async getProfileByEmail(email: string): Promise<Profile | undefined> {
     const [profile] = await db.select().from(profiles).where(eq(profiles.email, email)).limit(1);
     return profile;
+  }
+
+  async setPasswordResetToken(email: string, token: string, expiresAt: Date): Promise<Profile | undefined> {
+    const [profile] = await db
+      .update(profiles)
+      .set({
+        passwordResetToken: token,
+        passwordResetExpiry: expiresAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.email, email))
+      .returning();
+    return profile;
+  }
+
+  async getProfileByResetToken(token: string): Promise<Profile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.passwordResetToken, token))
+      .limit(1);
+    return profile;
+  }
+
+  async clearPasswordResetToken(id: string): Promise<void> {
+    await db
+      .update(profiles)
+      .set({
+        passwordResetToken: null,
+        passwordResetExpiry: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, id));
   }
 
   async createContent(insertContent: InsertH5pContent): Promise<H5pContent> {

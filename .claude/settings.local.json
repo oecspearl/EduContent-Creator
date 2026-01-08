@@ -9,7 +9,9 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd sensitive files to gitignore\n\nPrevent HEROKU_ENV_COMMANDS.txt and database_export/ from being committed.\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git push:*)",
       "Bash(npm run build:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run db:push:*)"
     ]
   }
 }
