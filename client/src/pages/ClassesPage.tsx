@@ -979,7 +979,7 @@ Michael,Johnson,michael.johnson@example.com`;
                     {createAndEnrollStudentMutation.isPending ? "Creating..." : "Create & Enroll Student"}
                   </Button>
                   <p className="text-xs text-muted-foreground">
-                    The student will receive an email to set their password.
+                    The student will need to use "Forgot Password" on the login page to set their password.
                   </p>
                 </TabsContent>
               </Tabs>
