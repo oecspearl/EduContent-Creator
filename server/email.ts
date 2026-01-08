@@ -1,78 +1,23 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-// Email configuration - supports multiple providers
-// Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD in environment
-// Or use SENDGRID_API_KEY for SendGrid
-// Or use Gmail with GMAIL_USER and GMAIL_APP_PASSWORD
+// Email configuration using Resend
+// Set RESEND_API_KEY in environment variables
 
-let transporter: nodemailer.Transporter | null = null;
+let resend: Resend | null = null;
 
-function getTransporter(): nodemailer.Transporter {
-  if (transporter) return transporter;
-
-  // Check for SendGrid
-  if (process.env.SENDGRID_API_KEY) {
-    transporter = nodemailer.createTransport({
-      host: 'smtp.sendgrid.net',
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'apikey',
-        pass: process.env.SENDGRID_API_KEY,
-      },
-    });
-    console.log('Email configured with SendGrid');
-    return transporter;
+function getResendClient(): Resend | null {
+  if (!process.env.RESEND_API_KEY) {
+    return null;
   }
-
-  // Check for Gmail
-  if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-    transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-    });
-    console.log('Email configured with Gmail');
-    return transporter;
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+    console.log('Email configured with Resend');
   }
-
-  // Check for generic SMTP
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
-      },
-    });
-    console.log('Email configured with SMTP');
-    return transporter;
-  }
-
-  // Fallback: create a test account for development (emails won't actually be sent)
-  console.warn('No email configuration found. Emails will be logged but not sent.');
-  transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    secure: false,
-    auth: {
-      user: 'test@ethereal.email',
-      pass: 'test',
-    },
-  });
-  return transporter;
+  return resend;
 }
 
 export function isEmailConfigured(): boolean {
-  return !!(
-    process.env.SENDGRID_API_KEY ||
-    (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) ||
-    (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD)
-  );
+  return !!process.env.RESEND_API_KEY;
 }
 
 const EMAIL_FROM = process.env.EMAIL_FROM || 'OECS Learning Hub <noreply@oecslearninghub.com>';
@@ -168,7 +113,9 @@ export async function sendWelcomeEmail(
   resetToken: string,
   className?: string
 ): Promise<boolean> {
-  if (!isEmailConfigured()) {
+  const client = getResendClient();
+
+  if (!client) {
     console.log(`[EMAIL NOT CONFIGURED] Would send welcome email to ${email}`);
     console.log(`Reset link: ${APP_URL}/reset-password?token=${resetToken}`);
     return false;
@@ -192,14 +139,19 @@ export async function sendWelcomeEmail(
   `;
 
   try {
-    const transport = getTransporter();
-    await transport.sendMail({
+    const { data, error } = await client.emails.send({
       from: EMAIL_FROM,
       to: email,
       subject: `Welcome to ${APP_NAME} - Set Your Password`,
       html: getBaseTemplate(content),
     });
-    console.log(`Welcome email sent to ${email}`);
+
+    if (error) {
+      console.error('Failed to send welcome email:', error);
+      return false;
+    }
+
+    console.log(`Welcome email sent to ${email}`, data);
     return true;
   } catch (error) {
     console.error('Failed to send welcome email:', error);
@@ -212,7 +164,9 @@ export async function sendPasswordResetEmail(
   fullName: string,
   resetToken: string
 ): Promise<boolean> {
-  if (!isEmailConfigured()) {
+  const client = getResendClient();
+
+  if (!client) {
     console.log(`[EMAIL NOT CONFIGURED] Would send password reset email to ${email}`);
     console.log(`Reset link: ${APP_URL}/reset-password?token=${resetToken}`);
     return false;
@@ -236,14 +190,19 @@ export async function sendPasswordResetEmail(
   `;
 
   try {
-    const transport = getTransporter();
-    await transport.sendMail({
+    const { data, error } = await client.emails.send({
       from: EMAIL_FROM,
       to: email,
       subject: `${APP_NAME} - Password Reset Request`,
       html: getBaseTemplate(content),
     });
-    console.log(`Password reset email sent to ${email}`);
+
+    if (error) {
+      console.error('Failed to send password reset email:', error);
+      return false;
+    }
+
+    console.log(`Password reset email sent to ${email}`, data);
     return true;
   } catch (error) {
     console.error('Failed to send password reset email:', error);
