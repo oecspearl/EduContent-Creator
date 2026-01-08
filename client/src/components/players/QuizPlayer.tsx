@@ -394,12 +394,19 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
               {data.questions.map((question, index) => (
                 <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                   {isCorrect(index) ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                    <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                   ) : (
-                    <XCircle className="h-5 w-5 text-destructive mt-0.5" />
+                    <XCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
                   )}
                   <div className="flex-1">
                     <p className="font-medium text-sm">{question.question}</p>
+                    {question.imageUrl && (
+                      <img
+                        src={question.imageUrl}
+                        alt={question.imageAlt || "Question image"}
+                        className="mt-2 max-h-24 object-contain rounded border bg-background"
+                      />
+                    )}
                     {!isCorrect(index) && (
                       <p className="text-xs text-muted-foreground mt-1">
                         Correct answer: {typeof question.correctAnswer === "number" && question.options
@@ -451,6 +458,16 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
             <CardTitle id={`question-${currentIndex}`} className="text-xl">{currentQuestion.question}</CardTitle>
             <Badge variant="outline">{currentQuestion.type.replace("-", " ")}</Badge>
           </div>
+          {/* Question Image */}
+          {currentQuestion.imageUrl && (
+            <div className="mt-4">
+              <img
+                src={currentQuestion.imageUrl}
+                alt={currentQuestion.imageAlt || "Question image"}
+                className="w-full max-h-64 object-contain rounded-lg border bg-muted/50"
+              />
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-3">
           {currentQuestion.type === "multiple-choice" && currentQuestion.options && (

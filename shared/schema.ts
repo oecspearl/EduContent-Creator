@@ -239,6 +239,8 @@ export type QuizQuestion = {
   id: string;
   type: "multiple-choice" | "true-false" | "fill-blank" | "ordering" | "drag-drop";
   question: string;
+  imageUrl?: string; // Optional image for the question
+  imageAlt?: string; // Alt text for the question image (accessibility)
   options?: string[]; // for multiple-choice
   correctAnswer: string | number | string[] | Record<string, string>; // index for multiple-choice, "true"/"false" for true-false, string for fill-blank, array of items in order for ordering, Record<itemId, zoneId> for drag-drop
   explanation?: string;
