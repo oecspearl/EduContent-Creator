@@ -31,7 +31,9 @@ import {
   ChevronDown,
   Upload,
   Link,
-  X
+  X,
+  RefreshCw,
+  RefreshCwOff
 } from "lucide-react";
 import type { H5pContent, QuizData, QuizQuestion } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
@@ -309,10 +311,37 @@ export default function QuizCreator() {
                 Download HTML
               </Button>
             )}
+            <Button
+              variant={autosave ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setAutosave(!autosave);
+                toast({
+                  title: autosave ? "Autosave disabled" : "Autosave enabled",
+                  description: autosave
+                    ? "Changes will not be saved automatically. Use the Save button."
+                    : "Changes will be saved automatically.",
+                });
+              }}
+              data-testid="button-autosave-toggle"
+              title={autosave ? "Autosave is ON - Click to disable" : "Autosave is OFF - Click to enable"}
+            >
+              {autosave ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Autosave On
+                </>
+              ) : (
+                <>
+                  <RefreshCwOff className="h-4 w-4 mr-1" />
+                  Autosave Off
+                </>
+              )}
+            </Button>
             {!autosave && (
-              <Button 
-                variant="default" 
-                size="sm" 
+              <Button
+                variant="default"
+                size="sm"
                 onClick={handleManualSave}
                 disabled={isSaving || !title || questions.length === 0}
                 data-testid="button-save"

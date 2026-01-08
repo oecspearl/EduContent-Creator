@@ -144,6 +144,9 @@ function Router() {
       <Route path="/analytics">
         <ProtectedRoute component={AnalyticsPage} />
       </Route>
+      <Route path="/analytics/:contentId">
+        <ProtectedRoute component={AnalyticsPage} />
+      </Route>
       <Route path="/classes">
         <ProtectedRoute component={ClassesPage} />
       </Route>
