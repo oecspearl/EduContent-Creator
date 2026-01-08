@@ -1046,6 +1046,40 @@ export class DbStorage implements IStorage {
     
     return assignments;
   }
+
+  // Get recent student activity on teacher's content
+  async getRecentStudentActivity(teacherId: string, limit: number = 10): Promise<any[]> {
+    // Get all content owned by the teacher
+    const teacherContent = await db
+      .select({ id: h5pContent.id })
+      .from(h5pContent)
+      .where(eq(h5pContent.userId, teacherId));
+
+    if (teacherContent.length === 0) return [];
+
+    const contentIds = teacherContent.map(c => c.id);
+
+    // Get recent learner progress on teacher's content
+    const recentActivity = await db
+      .select({
+        progressId: learnerProgress.id,
+        studentId: profiles.id,
+        studentName: profiles.fullName,
+        contentId: h5pContent.id,
+        contentTitle: h5pContent.title,
+        contentType: h5pContent.type,
+        completionPercentage: learnerProgress.completionPercentage,
+        lastAccessedAt: learnerProgress.lastAccessedAt,
+      })
+      .from(learnerProgress)
+      .innerJoin(profiles, eq(learnerProgress.userId, profiles.id))
+      .innerJoin(h5pContent, eq(learnerProgress.contentId, h5pContent.id))
+      .where(inArray(learnerProgress.contentId, contentIds))
+      .orderBy(desc(learnerProgress.lastAccessedAt))
+      .limit(limit);
+
+    return recentActivity;
+  }
 }
 
 export const storage = new DbStorage();

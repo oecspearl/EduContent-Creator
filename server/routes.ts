@@ -1501,6 +1501,18 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   });
 
+  // Recent student activity for teacher dashboard
+  app.get("/api/dashboard/recent-activity", requireAuth, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const activity = await storage.getRecentStudentActivity(req.session.userId!, limit);
+      res.json(activity);
+    } catch (error: any) {
+      console.error("Get recent activity error:", error);
+      res.json([]);
+    }
+  });
+
   // Analytics routes
   app.get("/api/analytics/overview", requireAuth, async (req, res) => {
     try {

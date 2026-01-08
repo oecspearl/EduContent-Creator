@@ -17,7 +17,8 @@
       "Bash(heroku config:*)",
       "Bash(heroku run:*)",
       "Bash(heroku ps:restart:*)",
-      "Bash(heroku config:set:*)"
+      "Bash(heroku config:set:*)",
+      "Bash(node test-email.mjs:*)"
     ]
   }
 }
