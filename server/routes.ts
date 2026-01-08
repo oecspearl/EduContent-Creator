@@ -1888,7 +1888,14 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       let isNewUser = false;
 
       if (user) {
-        // User exists, check if already enrolled
+        // User exists, check if they are a teacher or admin
+        if (user.role === 'teacher' || user.role === 'admin') {
+          return res.status(400).json({
+            message: "This email belongs to a teacher account. Teachers cannot be enrolled as students."
+          });
+        }
+
+        // Check if already enrolled
         const enrollments = await storage.getClassEnrollments(req.params.id);
         const alreadyEnrolled = enrollments.some((e: any) => e.userId === user!.id);
         if (alreadyEnrolled) {
