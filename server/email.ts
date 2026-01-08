@@ -235,3 +235,109 @@ export async function sendBulkWelcomeEmails(
 
   return { sent, failed };
 }
+
+export async function sendAssignmentNotificationEmail(
+  email: string,
+  studentName: string,
+  contentTitle: string,
+  contentType: string,
+  className: string,
+  contentId: string,
+  dueDate?: Date | null,
+  instructions?: string | null
+): Promise<boolean> {
+  const client = getResendClient();
+
+  if (!client) {
+    console.log(`[EMAIL NOT CONFIGURED] Would send assignment notification to ${email}`);
+    return false;
+  }
+
+  const contentLink = `${APP_URL}/public/${contentId}`;
+  const formattedDueDate = dueDate ? new Date(dueDate).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }) : null;
+
+  const contentTypeLabel = contentType
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  const content = `
+    <h2>New Assignment Available</h2>
+    <p>Hi ${studentName},</p>
+    <p>Your teacher has assigned new content for you in <strong>${className}</strong>:</p>
+    <div class="info-box">
+      <p><strong>Title:</strong> ${contentTitle}</p>
+      <p><strong>Type:</strong> ${contentTypeLabel}</p>
+      ${formattedDueDate ? `<p><strong>Due Date:</strong> ${formattedDueDate}</p>` : ''}
+      ${instructions ? `<p><strong>Instructions:</strong> ${instructions}</p>` : ''}
+    </div>
+    <div style="text-align: center;">
+      <a href="${contentLink}" class="button">Start Learning</a>
+    </div>
+    <p>Click the button above to access your assignment and begin working on it.</p>
+    <div class="info-box">
+      <p><strong>Can't click the button?</strong> Copy and paste this link into your browser:</p>
+      <p style="word-break: break-all; font-size: 12px;">${contentLink}</p>
+    </div>
+  `;
+
+  try {
+    const { data, error } = await client.emails.send({
+      from: EMAIL_FROM,
+      to: email,
+      subject: `New Assignment: ${contentTitle} - ${APP_NAME}`,
+      html: getBaseTemplate(content),
+    });
+
+    if (error) {
+      console.error('Failed to send assignment notification email:', error);
+      return false;
+    }
+
+    console.log(`Assignment notification email sent to ${email}`, data);
+    return true;
+  } catch (error) {
+    console.error('Failed to send assignment notification email:', error);
+    return false;
+  }
+}
+
+export async function sendBulkAssignmentNotifications(
+  students: Array<{ email: string; fullName: string }>,
+  contentTitle: string,
+  contentType: string,
+  className: string,
+  contentId: string,
+  dueDate?: Date | null,
+  instructions?: string | null
+): Promise<{ sent: number; failed: number }> {
+  let sent = 0;
+  let failed = 0;
+
+  for (const student of students) {
+    const success = await sendAssignmentNotificationEmail(
+      student.email,
+      student.fullName,
+      contentTitle,
+      contentType,
+      className,
+      contentId,
+      dueDate,
+      instructions
+    );
+    if (success) {
+      sent++;
+    } else {
+      failed++;
+    }
+    // Small delay to avoid rate limiting
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  return { sent, failed };
+}

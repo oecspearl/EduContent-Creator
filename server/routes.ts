@@ -2107,6 +2107,32 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
         instructions: instructions?.trim() || null,
       });
 
+      // Send email notifications to all students in the class (non-blocking)
+      (async () => {
+        try {
+          const enrollments = await storage.getClassEnrollments(classId);
+          const students = enrollments
+            .filter((e: any) => e.role === 'student')
+            .map((e: any) => ({ email: e.email, fullName: e.fullName }));
+
+          if (students.length > 0) {
+            const { sendBulkAssignmentNotifications } = await import('./email');
+            const result = await sendBulkAssignmentNotifications(
+              students,
+              content.title,
+              content.type,
+              class_.name,
+              req.params.contentId,
+              dueDate ? new Date(dueDate) : null,
+              instructions?.trim() || null
+            );
+            console.log(`Assignment notifications sent: ${result.sent} success, ${result.failed} failed`);
+          }
+        } catch (emailError) {
+          console.error('Failed to send assignment notification emails:', emailError);
+        }
+      })();
+
       res.json(assignment);
     } catch (error: any) {
       console.error("Create assignment error:", error);
