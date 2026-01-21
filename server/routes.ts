@@ -1201,11 +1201,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const request = {
+        contentType: "interactive-video" as const,
         topic,
         difficulty,
         numberOfItems: numberOfHotspots,
         gradeLevel: gradeLevel || "",
         additionalContext: additionalContext || "",
+        language: "English",
       };
 
       const hotspots = await generateVideoHotspots(request, enhancedMetadata);
@@ -1643,7 +1645,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       ].join('\n');
 
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="quiz-results-${contentId}.csv"`);
+      res.setHeader('Content-Disposition', `attachment; filename="quiz-results-${req.params.contentId}.csv"`);
       res.send(csv);
     } catch (error: any) {
       console.error("Export CSV error:", error);
@@ -1692,7 +1694,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       };
 
       res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', `attachment; filename="quiz-results-${contentId}.json"`);
+      res.setHeader('Content-Disposition', `attachment; filename="quiz-results-${req.params.contentId}.json"`);
       res.send(JSON.stringify(exportData, null, 2));
     } catch (error: any) {
       console.error("Export JSON error:", error);
@@ -2024,10 +2026,9 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       // Hash new password
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-      // Update password
+      // Update password (updatedAt is set automatically in storage layer)
       const updated = await storage.updateProfile(req.session.userId!, {
         password: hashedPassword,
-        updatedAt: new Date(),
       });
 
       if (!updated) {

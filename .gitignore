@@ -14,3 +14,4 @@ HEROKU_ENV_COMMANDS.txt
 database_export/
 *.json.bak
 credentials*.json
+.vercel
