@@ -18,7 +18,9 @@
       "Bash(heroku run:*)",
       "Bash(heroku ps:restart:*)",
       "Bash(heroku config:set:*)",
-      "Bash(node test-email.mjs:*)"
+      "Bash(node test-email.mjs:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(vercel --version:*)"
     ]
   }
 }

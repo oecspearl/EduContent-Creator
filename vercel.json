@@ -1,0 +1,19 @@
+{
+  "buildCommand": "npm run build:vercel",
+  "outputDirectory": "dist/public",
+  "framework": null,
+  "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/(.*)", "destination": "/" }
+  ],
+  "functions": {
+    "api/index.ts": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
