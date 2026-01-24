@@ -3468,21 +3468,56 @@ async function registerRoutes(app2) {
     })(req, res, next);
   });
   app2.get("/api/auth/google/callback", (req, res, next) => {
+    console.log("[Google OAuth] Callback received:", {
+      hasCode: !!req.query.code,
+      hasError: !!req.query.error,
+      error: req.query.error,
+      errorDescription: req.query.error_description
+    });
     if (!isGoogleOAuthAvailable) {
+      console.log("[Google OAuth] Not configured");
       return res.redirect("/login?error=google_not_configured");
     }
-    passport_config_default.authenticate("google", { failureRedirect: "/login" })(req, res, next);
-  }, (req, res) => {
-    req.session.userId = req.user.id;
-    const returnTo = req.session.oauthReturnTo;
-    delete req.session.oauthReturnTo;
-    req.session.save(() => {
-      if (returnTo && returnTo.startsWith("/") && !returnTo.includes("//")) {
-        res.redirect(returnTo + "?googleAuthSuccess=true");
-      } else {
-        res.redirect("/dashboard?googleAuthSuccess=true");
+    passport_config_default.authenticate("google", {
+      failureRedirect: "/login?error=google_auth_failed",
+      failureMessage: true
+    }, (err, user, info) => {
+      console.log("[Google OAuth] Authenticate result:", {
+        hasError: !!err,
+        errorMessage: err?.message,
+        hasUser: !!user,
+        userId: user?.id,
+        info
+      });
+      if (err) {
+        console.error("[Google OAuth] Authentication error:", err);
+        return res.redirect("/login?error=google_auth_error&message=" + encodeURIComponent(err.message || "Unknown error"));
       }
-    });
+      if (!user) {
+        console.log("[Google OAuth] No user returned");
+        return res.redirect("/login?error=google_no_user");
+      }
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error("[Google OAuth] Login error:", loginErr);
+          return res.redirect("/login?error=login_failed");
+        }
+        req.session.userId = user.id;
+        const returnTo = req.session.oauthReturnTo;
+        delete req.session.oauthReturnTo;
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("[Google OAuth] Session save error:", saveErr);
+          }
+          console.log("[Google OAuth] Login successful, redirecting. userId:", user.id);
+          if (returnTo && returnTo.startsWith("/") && !returnTo.includes("//")) {
+            res.redirect(returnTo + "?googleAuthSuccess=true");
+          } else {
+            res.redirect("/dashboard?googleAuthSuccess=true");
+          }
+        });
+      });
+    })(req, res, next);
   });
   app2.get("/api/auth/microsoft", async (req, res) => {
     if (!isMicrosoftOAuthAvailable) {

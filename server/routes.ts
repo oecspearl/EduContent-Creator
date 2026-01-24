@@ -383,26 +383,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/google/callback", (req, res, next) => {
+    console.log("[Google OAuth] Callback received:", {
+      hasCode: !!req.query.code,
+      hasError: !!req.query.error,
+      error: req.query.error,
+      errorDescription: req.query.error_description
+    });
+
     if (!isGoogleOAuthAvailable) {
+      console.log("[Google OAuth] Not configured");
       return res.redirect("/login?error=google_not_configured");
     }
-    passportConfig.authenticate("google", { failureRedirect: "/login" })(req, res, next);
-  }, (req: any, res) => {
-    // Set session userId
-    req.session.userId = req.user.id;
-    
-    // Get return URL from session (validate it's a safe relative path)
-    const returnTo = req.session.oauthReturnTo;
-    delete req.session.oauthReturnTo;
-    
-    req.session.save(() => {
-      // Redirect to stored return URL or dashboard
-      if (returnTo && returnTo.startsWith('/') && !returnTo.includes('//')) {
-        res.redirect(returnTo + '?googleAuthSuccess=true');
-      } else {
-        res.redirect("/dashboard?googleAuthSuccess=true");
+
+    passportConfig.authenticate("google", {
+      failureRedirect: "/login?error=google_auth_failed",
+      failureMessage: true
+    }, (err: any, user: any, info: any) => {
+      console.log("[Google OAuth] Authenticate result:", {
+        hasError: !!err,
+        errorMessage: err?.message,
+        hasUser: !!user,
+        userId: user?.id,
+        info: info
+      });
+
+      if (err) {
+        console.error("[Google OAuth] Authentication error:", err);
+        return res.redirect("/login?error=google_auth_error&message=" + encodeURIComponent(err.message || 'Unknown error'));
       }
-    });
+
+      if (!user) {
+        console.log("[Google OAuth] No user returned");
+        return res.redirect("/login?error=google_no_user");
+      }
+
+      // Log in the user
+      req.logIn(user, (loginErr: any) => {
+        if (loginErr) {
+          console.error("[Google OAuth] Login error:", loginErr);
+          return res.redirect("/login?error=login_failed");
+        }
+
+        // Set session userId
+        req.session.userId = user.id;
+
+        // Get return URL from session (validate it's a safe relative path)
+        const returnTo = req.session.oauthReturnTo;
+        delete req.session.oauthReturnTo;
+
+        req.session.save((saveErr: any) => {
+          if (saveErr) {
+            console.error("[Google OAuth] Session save error:", saveErr);
+          }
+          console.log("[Google OAuth] Login successful, redirecting. userId:", user.id);
+
+          // Redirect to stored return URL or dashboard
+          if (returnTo && returnTo.startsWith('/') && !returnTo.includes('//')) {
+            res.redirect(returnTo + '?googleAuthSuccess=true');
+          } else {
+            res.redirect("/dashboard?googleAuthSuccess=true");
+          }
+        });
+      });
+    })(req, res, next);
   });
 
   // Microsoft OAuth routes (using MSAL)
