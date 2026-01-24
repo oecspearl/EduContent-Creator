@@ -1,83 +1,81 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "../server/routes";
 
-const app = express();
-
-// Trust proxy for Vercel
-app.set('trust proxy', 1);
-
-declare module 'http' {
-  interface IncomingMessage {
-    rawBody: unknown
-  }
-}
-
-app.use(express.json({
-  limit: '50mb',
-  verify: (req, _res, buf) => {
-    req.rawBody = buf;
-  }
-}));
-app.use(express.urlencoded({ extended: false, limit: '50mb' }));
-
-// Simple logging middleware
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      console.log(`${req.method} ${path} ${res.statusCode} in ${duration}ms`);
-    }
-  });
-
-  next();
-});
-
-// Initialize routes (but don't start server)
-let initialized = false;
+let app: any = null;
+let initError: Error | null = null;
 let initPromise: Promise<void> | null = null;
 
 async function initializeApp() {
-  if (initialized) return;
+  if (app) return;
+  if (initError) throw initError;
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
     try {
-      // registerRoutes returns an HTTP server, but we just need the app configured
+      console.log('[Init] Starting Express app initialization...');
+
+      // Import express
+      const expressModule = await import('express');
+      const express = expressModule.default;
+      console.log('[Init] Express imported');
+
+      app = express();
+
+      // Trust proxy for Vercel
+      app.set('trust proxy', 1);
+
+      // Body parsing middleware
+      app.use(express.json({ limit: '50mb' }));
+      app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+      console.log('[Init] Middleware configured');
+
+      // Import and register routes
+      console.log('[Init] Importing routes...');
+      const { registerRoutes } = await import('../server/routes');
+      console.log('[Init] Routes module imported, registering...');
+
       await registerRoutes(app);
-      console.log('Routes registered successfully');
-    } catch (error) {
-      console.error('Failed to register routes:', error);
+      console.log('[Init] Routes registered successfully');
+
+      // Error handling middleware
+      app.use((err: any, _req: any, res: any, _next: any) => {
+        const status = err.status || err.statusCode || 500;
+        const message = err.message || "Internal Server Error";
+        console.error('[Error]', err);
+        res.status(status).json({ message });
+      });
+
+      console.log('[Init] App initialization complete');
+    } catch (error: any) {
+      console.error('[Init] Failed to initialize app:', error);
+      console.error('[Init] Error stack:', error.stack);
+      initError = error;
       throw error;
     }
-
-    // Error handling middleware
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      console.error('Error:', err);
-      res.status(status).json({ message });
-    });
-
-    initialized = true;
   })();
 
   return initPromise;
 }
 
-// Export for Vercel serverless
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await initializeApp();
-    return app(req as any, res as any);
+
+    if (!app) {
+      return res.status(500).json({
+        message: 'App not initialized',
+        error: initError?.message
+      });
+    }
+
+    return app(req, res);
   } catch (error: any) {
-    console.error('Handler error:', error);
-    res.status(500).json({
+    console.error('[Handler] Error:', error.message);
+    console.error('[Handler] Stack:', error.stack);
+
+    return res.status(500).json({
       message: 'Server initialization failed',
-      error: error.message
+      error: error.message,
+      stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
     });
   }
 }
