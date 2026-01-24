@@ -4,13 +4,16 @@
   "framework": null,
   "installCommand": "npm install",
   "rewrites": [
+    { "source": "/api/health", "destination": "/api/health" },
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/(.*)", "destination": "/" }
   ],
   "functions": {
     "api/index.ts": {
-      "memory": 1024,
       "maxDuration": 60
+    },
+    "api/health.ts": {
+      "maxDuration": 10
     }
   },
   "env": {
