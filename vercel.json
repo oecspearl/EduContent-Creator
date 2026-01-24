@@ -5,13 +5,15 @@
   "installCommand": "npm install",
   "rewrites": [
     { "source": "/api/health", "destination": "/api/health" },
-    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/api/(.*)", "destination": "/api-build/index" },
     { "source": "/(.*)", "destination": "/" }
   ],
   "functions": {
-    "api/**/*.ts": {
-      "maxDuration": 60,
-      "includeFiles": "{server,shared,db}/**/*.{ts,js,json}"
+    "api-build/index.js": {
+      "maxDuration": 60
+    },
+    "api/health.ts": {
+      "maxDuration": 10
     }
   },
   "env": {
