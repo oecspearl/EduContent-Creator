@@ -3269,6 +3269,8 @@ async function registerRoutes(app2) {
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    proxy: true,
+    // Trust the proxy (Vercel)
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
@@ -3276,6 +3278,7 @@ async function registerRoutes(app2) {
       // Use 'lax' since frontend and backend are same-origin
       maxAge: 1e3 * 60 * 60 * 24 * 7
       // 7 days
+      // Don't set domain - let it default to the request host
     }
   };
   if (sessionStore) {
