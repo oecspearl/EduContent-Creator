@@ -5,11 +5,11 @@
   "installCommand": "npm install",
   "rewrites": [
     { "source": "/api/health", "destination": "/api/health" },
-    { "source": "/api/(.*)", "destination": "/api-build/index" },
+    { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/(.*)", "destination": "/" }
   ],
   "functions": {
-    "api-build/index.js": {
+    "api/index.js": {
       "maxDuration": 60
     },
     "api/health.ts": {

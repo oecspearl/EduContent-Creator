@@ -16,3 +16,4 @@ database_export/
 credentials*.json
 .vercel
 api-build
+api/index.js
