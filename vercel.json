@@ -5,11 +5,11 @@
   "installCommand": "npm install",
   "rewrites": [
     { "source": "/api/health", "destination": "/api/health" },
-    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/api/(.*)", "destination": "/api/bundled" },
     { "source": "/(.*)", "destination": "/" }
   ],
   "functions": {
-    "api/index.js": {
+    "api/bundled.js": {
       "maxDuration": 60
     },
     "api/health.ts": {

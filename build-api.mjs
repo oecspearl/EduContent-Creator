@@ -1,18 +1,17 @@
 import * as esbuild from 'esbuild';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Build the bundled API
+// Build the bundled API to a separate file
 await esbuild.build({
   entryPoints: ['api/index.ts'],
   bundle: true,
   platform: 'node',
   target: 'node18',
   format: 'esm',
-  outfile: 'api/index.js',
+  outfile: 'api/bundled.js',
   packages: 'external',
   alias: {
     '@shared': path.resolve(__dirname, 'shared'),
@@ -30,12 +29,4 @@ const __dirname = path.dirname(__filename);
   },
 });
 
-// Remove the TypeScript source to avoid conflicts
-try {
-  fs.unlinkSync('api/index.ts');
-  console.log('Removed api/index.ts');
-} catch (e) {
-  // File might not exist
-}
-
-console.log('API build complete -> api/index.js');
+console.log('API build complete -> api/bundled.js');
