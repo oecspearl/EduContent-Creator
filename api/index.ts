@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "../server/routes";
 
@@ -44,13 +45,20 @@ async function initializeApp() {
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-    await registerRoutes(app);
+    try {
+      // registerRoutes returns an HTTP server, but we just need the app configured
+      await registerRoutes(app);
+      console.log('Routes registered successfully');
+    } catch (error) {
+      console.error('Failed to register routes:', error);
+      throw error;
+    }
 
     // Error handling middleware
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
-      console.error('Error:', message);
+      console.error('Error:', err);
       res.status(status).json({ message });
     });
 
@@ -61,7 +69,15 @@ async function initializeApp() {
 }
 
 // Export for Vercel serverless
-export default async function handler(req: Request, res: Response) {
-  await initializeApp();
-  return app(req, res);
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    await initializeApp();
+    return app(req as any, res as any);
+  } catch (error: any) {
+    console.error('Handler error:', error);
+    res.status(500).json({
+      message: 'Server initialization failed',
+      error: error.message
+    });
+  }
 }
