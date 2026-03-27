@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs cat:*)",
+      "Bash(npx --package typescript tsc --noEmit --project tsconfig.json)",
+      "Bash(npx vite:*)",
+      "Bash(ls /Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/.env*)",
+      "Read(//Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/**)",
+      "Bash(find /Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/client/src -name \"*.tsx\" -exec grep -l \"useRef\\\\|useCallback\\\\|useMemo\" {})",
+      "Bash(npm list:*)",
+      "Bash(ls -la /Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/.env*)",
+      "WebSearch",
+      "Bash(npm ls:*)",
+      "Bash(npx esbuild:*)"
+    ]
+  }
+}

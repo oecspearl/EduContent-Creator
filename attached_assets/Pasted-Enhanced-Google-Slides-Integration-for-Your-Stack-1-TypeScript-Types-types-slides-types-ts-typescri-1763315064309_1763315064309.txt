@@ -1,0 +1,1083 @@
+Enhanced Google Slides Integration for Your Stack
+1. TypeScript Types
+types/slides.types.ts
+typescriptexport interface SlideContent {
+  id: string;
+  userId: string;
+  type: 'google-slides' | 'quiz';
+  title: string;
+  data: SlideData;
+  presentationUrl?: string;
+  status: 'draft' | 'published';
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface SlideData {
+  slides: Slide[];
+  theme?: ThemeSettings;
+  settings?: PresentationSettings;
+}
+
+export interface Slide {
+  id?: string;
+  type: 'title' | 'title-body' | 'bullets' | 'two-column' | 'image-caption';
+  title: string;
+  content?: string;
+  bulletPoints?: string[];
+  imageUrl?: string;
+  speakerNotes?: string;
+  leftColumn?: string;
+  rightColumn?: string;
+}
+
+export interface ThemeSettings {
+  backgroundColor?: string;
+  titleColor?: string;
+  bodyColor?: string;
+  fontFamily?: string;
+}
+
+export interface PresentationSettings {
+  pageSize?: {
+    width: number;
+    height: number;
+  };
+  autoTransition?: boolean;
+}
+
+export interface GoogleSlidesResponse {
+  success: boolean;
+  presentationId: string;
+  presentationUrl: string;
+  slideCount: number;
+}
+
+export interface UserTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiryDate?: number;
+}
+2. Database Layer (Drizzle ORM)
+db/schema.ts (extend your existing schema)
+typescriptimport { pgTable, varchar, text, jsonb, timestamp } from 'drizzle-orm/pg-core';
+
+export const h5pContent = pgTable('h5p_content', {
+  id: varchar('id').primaryKey(),
+  userId: varchar('user_id').notNull(),
+  type: varchar('type').notNull(),
+  title: text('title').notNull(),
+  data: jsonb('data').$type<SlideData>().notNull(),
+  presentationUrl: text('presentation_url'),
+  presentationId: varchar('presentation_id'), // Store Google presentation ID
+  status: varchar('status').notNull().default('draft'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+export const userGoogleTokens = pgTable('user_google_tokens', {
+  userId: varchar('user_id').primaryKey(),
+  accessToken: text('access_token').notNull(),
+  refreshToken: text('refresh_token').notNull(),
+  expiryDate: timestamp('expiry_date'),
+  scope: text('scope'),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+3. Google API Service with Token Management
+services/googleAuth.service.ts
+typescriptimport { google } from 'googleapis';
+import { db } from '../db';
+import { userGoogleTokens } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
+export class GoogleAuthService {
+  private oauth2Client;
+
+  constructor() {
+    this.oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GOOGLE_REDIRECT_URI
+    );
+  }
+
+  async getAuthClient(userId: string) {
+    const tokens = await db
+      .select()
+      .from(userGoogleTokens)
+      .where(eq(userGoogleTokens.userId, userId))
+      .limit(1);
+
+    if (!tokens || tokens.length === 0) {
+      throw new Error('User tokens not found. Please re-authenticate.');
+    }
+
+    const userToken = tokens[0];
+
+    this.oauth2Client.setCredentials({
+      access_token: userToken.accessToken,
+      refresh_token: userToken.refreshToken,
+      expiry_date: userToken.expiryDate?.getTime()
+    });
+
+    // Handle token refresh automatically
+    this.oauth2Client.on('tokens', async (newTokens) => {
+      await this.updateTokens(userId, newTokens);
+    });
+
+    // Check if token is expired and refresh if needed
+    const tokenInfo = await this.oauth2Client.getTokenInfo(userToken.accessToken);
+    if (tokenInfo.expiry_date && tokenInfo.expiry_date < Date.now()) {
+      await this.refreshAccessToken(userId);
+    }
+
+    return this.oauth2Client;
+  }
+
+  async refreshAccessToken(userId: string) {
+    try {
+      const { credentials } = await this.oauth2Client.refreshAccessToken();
+      await this.updateTokens(userId, credentials);
+      return credentials;
+    } catch (error) {
+      console.error('Error refreshing access token:', error);
+      throw new Error('Failed to refresh access token. Please re-authenticate.');
+    }
+  }
+
+  async updateTokens(userId: string, tokens: any) {
+    await db
+      .update(userGoogleTokens)
+      .set({
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token || undefined,
+        expiryDate: tokens.expiry_date ? new Date(tokens.expiry_date) : undefined,
+        updatedAt: new Date()
+      })
+      .where(eq(userGoogleTokens.userId, userId));
+  }
+}
+
+export const googleAuthService = new GoogleAuthService();
+4. Enhanced Google Slides Service
+services/googleSlides.service.ts
+typescriptimport { google, slides_v1 } from 'googleapis';
+import { GoogleAuthService } from './googleAuth.service';
+import { Slide, SlideData, ThemeSettings } from '../types/slides.types';
+
+export class GoogleSlidesService {
+  private authService: GoogleAuthService;
+
+  constructor() {
+    this.authService = new GoogleAuthService();
+  }
+
+  async createPresentation(
+    userId: string,
+    title: string,
+    slideData: SlideData
+  ): Promise<{ presentationId: string; presentationUrl: string }> {
+    const auth = await this.authService.getAuthClient(userId);
+    const slidesApi = google.slides({ version: 'v1', auth });
+    const driveApi = google.drive({ version: 'v3', auth });
+
+    // Create presentation
+    const createResponse = await slidesApi.presentations.create({
+      requestBody: { title }
+    });
+
+    const presentationId = createResponse.data.presentationId!;
+
+    // Delete default slide
+    await this.deleteDefaultSlide(slidesApi, presentationId);
+
+    // Apply theme if specified
+    if (slideData.theme) {
+      await this.applyTheme(slidesApi, presentationId, slideData.theme);
+    }
+
+    // Add all slides
+    for (const slide of slideData.slides) {
+      await this.addSlide(slidesApi, presentationId, slide);
+    }
+
+    // Get presentation URL
+    const file = await driveApi.files.get({
+      fileId: presentationId,
+      fields: 'webViewLink'
+    });
+
+    return {
+      presentationId,
+      presentationUrl: file.data.webViewLink!
+    };
+  }
+
+  async updatePresentation(
+    userId: string,
+    presentationId: string,
+    slideData: SlideData
+  ): Promise<void> {
+    const auth = await this.authService.getAuthClient(userId);
+    const slidesApi = google.slides({ version: 'v1', auth });
+
+    // Get existing presentation
+    const presentation = await slidesApi.presentations.get({ presentationId });
+    
+    // Delete all existing slides except the first one
+    const slideIds = presentation.data.slides?.map(s => s.objectId!) || [];
+    if (slideIds.length > 0) {
+      const deleteRequests = slideIds.map(slideId => ({
+        deleteObject: { objectId: slideId }
+      }));
+      
+      await slidesApi.presentations.batchUpdate({
+        presentationId,
+        requestBody: { requests: deleteRequests }
+      });
+    }
+
+    // Add new slides
+    for (const slide of slideData.slides) {
+      await this.addSlide(slidesApi, presentationId, slide);
+    }
+  }
+
+  private async deleteDefaultSlide(
+    slidesApi: slides_v1.Slides,
+    presentationId: string
+  ): Promise<void> {
+    const presentation = await slidesApi.presentations.get({ presentationId });
+    const firstSlideId = presentation.data.slides?.[0]?.objectId;
+
+    if (firstSlideId) {
+      await slidesApi.presentations.batchUpdate({
+        presentationId,
+        requestBody: {
+          requests: [{ deleteObject: { objectId: firstSlideId } }]
+        }
+      });
+    }
+  }
+
+  private async addSlide(
+    slidesApi: slides_v1.Slides,
+    presentationId: string,
+    slide: Slide
+  ): Promise<string> {
+    let layoutType: string;
+
+    switch (slide.type) {
+      case 'title':
+        layoutType = 'TITLE';
+        break;
+      case 'bullets':
+        layoutType = 'TITLE_AND_BODY';
+        break;
+      case 'two-column':
+        layoutType = 'TITLE_AND_TWO_COLUMNS';
+        break;
+      case 'image-caption':
+        layoutType = 'CAPTION_ONLY';
+        break;
+      default:
+        layoutType = 'TITLE_AND_BODY';
+    }
+
+    // Create slide
+    const createResponse = await slidesApi.presentations.batchUpdate({
+      presentationId,
+      requestBody: {
+        requests: [{
+          createSlide: {
+            slideLayoutReference: { predefinedLayout: layoutType }
+          }
+        }]
+      }
+    });
+
+    const slideId = createResponse.data.replies?.[0]?.createSlide?.objectId!;
+
+    // Get slide elements
+    const presentation = await slidesApi.presentations.get({ presentationId });
+    const createdSlide = presentation.data.slides?.find(s => s.objectId === slideId);
+
+    // Add content based on slide type
+    await this.populateSlideContent(slidesApi, presentationId, createdSlide!, slide);
+
+    // Add speaker notes if present
+    if (slide.speakerNotes) {
+      await this.addSpeakerNotes(slidesApi, presentationId, slideId, slide.speakerNotes);
+    }
+
+    return slideId;
+  }
+
+  private async populateSlideContent(
+    slidesApi: slides_v1.Slides,
+    presentationId: string,
+    createdSlide: slides_v1.Schema$Page,
+    slide: Slide
+  ): Promise<void> {
+    const requests: any[] = [];
+
+    // Find text boxes by placeholder type
+    const titleBox = createdSlide.pageElements?.find(
+      el => el.shape?.placeholder?.type === 'TITLE' || 
+            el.shape?.placeholder?.type === 'CENTERED_TITLE'
+    );
+    
+    const bodyBox = createdSlide.pageElements?.find(
+      el => el.shape?.placeholder?.type === 'BODY'
+    );
+
+    // Add title
+    if (titleBox?.objectId && slide.title) {
+      requests.push({
+        insertText: {
+          objectId: titleBox.objectId,
+          text: slide.title
+        }
+      });
+    }
+
+    // Add content based on type
+    if (slide.type === 'bullets' && slide.bulletPoints && bodyBox?.objectId) {
+      const bulletText = slide.bulletPoints.map(point => `• ${point}`).join('\n');
+      requests.push({
+        insertText: {
+          objectId: bodyBox.objectId,
+          text: bulletText
+        }
+      });
+    } else if (slide.content && bodyBox?.objectId) {
+      requests.push({
+        insertText: {
+          objectId: bodyBox.objectId,
+          text: slide.content
+        }
+      });
+    }
+
+    // Handle two-column layout
+    if (slide.type === 'two-column') {
+      const leftColumn = createdSlide.pageElements?.find(
+        el => el.shape?.placeholder?.type === 'BODY' &&
+              el.shape?.placeholder?.index === 0
+      );
+      const rightColumn = createdSlide.pageElements?.find(
+        el => el.shape?.placeholder?.type === 'BODY' &&
+              el.shape?.placeholder?.index === 1
+      );
+
+      if (leftColumn?.objectId && slide.leftColumn) {
+        requests.push({
+          insertText: {
+            objectId: leftColumn.objectId,
+            text: slide.leftColumn
+          }
+        });
+      }
+
+      if (rightColumn?.objectId && slide.rightColumn) {
+        requests.push({
+          insertText: {
+            objectId: rightColumn.objectId,
+            text: slide.rightColumn
+          }
+        });
+      }
+    }
+
+    // Add image if present
+    if (slide.imageUrl) {
+      await this.addImage(slidesApi, presentationId, createdSlide.objectId!, slide.imageUrl);
+    }
+
+    if (requests.length > 0) {
+      await slidesApi.presentations.batchUpdate({
+        presentationId,
+        requestBody: { requests }
+      });
+    }
+  }
+
+  private async addImage(
+    slidesApi: slides_v1.Slides,
+    presentationId: string,
+    slideId: string,
+    imageUrl: string
+  ): Promise<void> {
+    const imageId = `image_${Date.now()}`;
+    
+    await slidesApi.presentations.batchUpdate({
+      presentationId,
+      requestBody: {
+        requests: [{
+          createImage: {
+            url: imageUrl,
+            elementProperties: {
+              pageObjectId: slideId,
+              size: {
+                width: { magnitude: 4000000, unit: 'EMU' },
+                height: { magnitude: 3000000, unit: 'EMU' }
+              },
+              transform: {
+                scaleX: 1,
+                scaleY: 1,
+                translateX: 1000000,
+                translateY: 1500000,
+                unit: 'EMU'
+              }
+            }
+          }
+        }]
+      }
+    });
+  }
+
+  private async addSpeakerNotes(
+    slidesApi: slides_v1.Slides,
+    presentationId: string,
+    slideId: string,
+    notes: string
+  ): Promise<void> {
+    // Get the notes page for this slide
+    const presentation = await slidesApi.presentations.get({ presentationId });
+    const slide = presentation.data.slides?.find(s => s.objectId === slideId);
+    const notesPageId = slide?.slideProperties?.notesPage?.objectId;
+
+    if (notesPageId) {
+      const notesPage = presentation.data.slides?.find(s => s.objectId === notesPageId);
+      const notesShape = notesPage?.pageElements?.find(
+        el => el.shape?.placeholder?.type === 'BODY'
+      );
+
+      if (notesShape?.objectId) {
+        await slidesApi.presentations.batchUpdate({
+          presentationId,
+          requestBody: {
+            requests: [{
+              insertText: {
+                objectId: notesShape.objectId,
+                text: notes
+              }
+            }]
+          }
+        });
+      }
+    }
+  }
+
+  private async applyTheme(
+    slidesApi: slides_v1.Slides,
+    presentationId: string,
+    theme: ThemeSettings
+  ): Promise<void> {
+    const requests: any[] = [];
+
+    if (theme.backgroundColor) {
+      requests.push({
+        updatePageProperties: {
+          objectId: presentationId,
+          fields: 'pageBackgroundFill',
+          pageProperties: {
+            pageBackgroundFill: {
+              solidFill: {
+                color: { rgbColor: this.hexToRgb(theme.backgroundColor) }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    if (requests.length > 0) {
+      await slidesApi.presentations.batchUpdate({
+        presentationId,
+        requestBody: { requests }
+      });
+    }
+  }
+
+  private hexToRgb(hex: string): { red: number; green: number; blue: number } {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      red: parseInt(result[1], 16) / 255,
+      green: parseInt(result[2], 16) / 255,
+      blue: parseInt(result[3], 16) / 255
+    } : { red: 1, green: 1, blue: 1 };
+  }
+
+  async shareWithClassroom(
+    userId: string,
+    presentationId: string,
+    courseId: string,
+    assignmentType: 'assignment' | 'announcement'
+  ): Promise<void> {
+    const auth = await this.authService.getAuthClient(userId);
+    const classroom = google.classroom({ version: 'v1', auth });
+    const drive = google.drive({ version: 'v3', auth });
+
+    // Get presentation details
+    const file = await drive.files.get({
+      fileId: presentationId,
+      fields: 'webViewLink, name'
+    });
+
+    if (assignmentType === 'assignment') {
+      await classroom.courses.courseWork.create({
+        courseId,
+        requestBody: {
+          title: file.data.name || 'Presentation',
+          description: 'View and study this presentation',
+          materials: [{
+            driveFile: {
+              driveFile: {
+                id: presentationId,
+                title: file.data.name
+              }
+            }
+          }],
+          workType: 'ASSIGNMENT',
+          state: 'PUBLISHED'
+        }
+      });
+    } else {
+      await classroom.courses.announcements.create({
+        courseId,
+        requestBody: {
+          text: `New presentation available: ${file.data.name}`,
+          materials: [{
+            driveFile: {
+              driveFile: {
+                id: presentationId,
+                title: file.data.name
+              }
+            }
+          }],
+          state: 'PUBLISHED'
+        }
+      });
+    }
+  }
+}
+
+export const googleSlidesService = new GoogleSlidesService();
+5. API Routes
+routes/slides.routes.ts
+typescriptimport { Router, Request, Response } from 'express';
+import { googleSlidesService } from '../services/googleSlides.service';
+import { db } from '../db';
+import { h5pContent } from '../db/schema';
+import { eq } from 'drizzle-orm';
+import { SlideContent, GoogleSlidesResponse } from '../types/slides.types';
+
+const router = Router();
+
+// Middleware to check authentication
+const requireAuth = (req: Request, res: Response, next: Function) => {
+  if (!req.session?.userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+};
+
+/**
+ * POST /api/slides/create
+ * Create a new Google Slides presentation from content
+ */
+router.post('/create', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId!;
+    const { contentId } = req.body;
+
+    // Fetch content from database
+    const content = await db
+      .select()
+      .from(h5pContent)
+      .where(eq(h5pContent.id, contentId))
+      .limit(1);
+
+    if (!content || content.length === 0) {
+      return res.status(404).json({ error: 'Content not found' });
+    }
+
+    const slideContent = content[0] as SlideContent;
+
+    // Verify user owns this content
+    if (slideContent.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    // Create presentation
+    const result = await googleSlidesService.createPresentation(
+      userId,
+      slideContent.title,
+      slideContent.data
+    );
+
+    // Update database with presentation URL and ID
+    await db
+      .update(h5pContent)
+      .set({
+        presentationUrl: result.presentationUrl,
+        presentationId: result.presentationId,
+        status: 'published',
+        updatedAt: new Date()
+      })
+      .where(eq(h5pContent.id, contentId));
+
+    const response: GoogleSlidesResponse = {
+      success: true,
+      presentationId: result.presentationId,
+      presentationUrl: result.presentationUrl,
+      slideCount: slideContent.data.slides.length
+    };
+
+    res.json(response);
+  } catch (error: any) {
+    console.error('Error creating slides:', error);
+    
+    if (error.message.includes('re-authenticate')) {
+      return res.status(401).json({ 
+        error: 'Authentication expired',
+        message: 'Please reconnect your Google account',
+        requiresReauth: true
+      });
+    }
+
+    res.status(500).json({ 
+      error: 'Failed to create presentation',
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * PUT /api/slides/update/:presentationId
+ * Update an existing Google Slides presentation
+ */
+router.put('/update/:presentationId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId!;
+    const { presentationId } = req.params;
+    const { contentId } = req.body;
+
+    // Fetch content
+    const content = await db
+      .select()
+      .from(h5pContent)
+      .where(eq(h5pContent.id, contentId))
+      .limit(1);
+
+    if (!content || content.length === 0) {
+      return res.status(404).json({ error: 'Content not found' });
+    }
+
+    const slideContent = content[0] as SlideContent;
+
+    if (slideContent.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    // Update presentation
+    await googleSlidesService.updatePresentation(
+      userId,
+      presentationId,
+      slideContent.data
+    );
+
+    await db
+      .update(h5pContent)
+      .set({ updatedAt: new Date() })
+      .where(eq(h5pContent.id, contentId));
+
+    res.json({ 
+      success: true,
+      message: 'Presentation updated successfully' 
+    });
+  } catch (error: any) {
+    console.error('Error updating slides:', error);
+    res.status(500).json({ 
+      error: 'Failed to update presentation',
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * POST /api/slides/:presentationId/share-classroom
+ * Share presentation to Google Classroom
+ */
+router.post('/:presentationId/share-classroom', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId!;
+    const { presentationId } = req.params;
+    const { courseId, assignmentType } = req.body;
+
+    await googleSlidesService.shareWithClassroom(
+      userId,
+      presentationId,
+      courseId,
+      assignmentType || 'assignment'
+    );
+
+    res.json({ 
+      success: true,
+      message: 'Presentation shared to classroom successfully' 
+    });
+  } catch (error: any) {
+    console.error('Error sharing to classroom:', error);
+    res.status(500).json({ 
+      error: 'Failed to share to classroom',
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * POST /api/slides/generate-from-ai
+ * Generate slides from AI content
+ */
+router.post('/generate-from-ai', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId!;
+    const { prompt, generateSlides } = req.body;
+
+    // Your AI generation logic here
+    // const aiGeneratedContent = await yourAIService.generateContent(prompt);
+
+    // Example structure - replace with your actual AI response
+    const slideData = {
+      slides: [
+        {
+          type: 'title' as const,
+          title: 'AI Generated Title',
+          content: 'Generated by AI'
+        },
+        // ... more slides from AI
+      ]
+    };
+
+    if (generateSlides) {
+      const result = await googleSlidesService.createPresentation(
+        userId,
+        'AI Generated Presentation',
+        slideData
+      );
+
+      // Save to database
+      const contentId = crypto.randomUUID();
+      await db.insert(h5pContent).values({
+        id: contentId,
+        userId,
+        type: 'google-slides',
+        title: 'AI Generated Presentation',
+        data: slideData,
+        presentationUrl: result.presentationUrl,
+        presentationId: result.presentationId,
+        status: 'published'
+      });
+
+      res.json({
+        success: true,
+        contentId,
+        ...result
+      });
+    } else {
+      // Just return the structured data without creating slides
+      res.json({
+        success: true,
+        slideData
+      });
+    }
+  } catch (error: any) {
+    console.error('Error generating AI slides:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate slides',
+      message: error.message 
+    });
+  }
+});
+
+export default router;
+6. Frontend Components
+components/CreateSlidesButton.tsx
+typescriptimport React, { useState } from 'react';
+import { GoogleSlidesResponse } from '../types/slides.types';
+
+interface CreateSlidesButtonProps {
+  contentId: string;
+  onSuccess?: (result: GoogleSlidesResponse) => void;
+}
+
+export const CreateSlidesButton: React.FC<CreateSlidesButtonProps> = ({ 
+  contentId, 
+  onSuccess 
+}) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<GoogleSlidesResponse | null>(null);
+
+  const createSlides = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/slides/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Important for session cookies
+        body: JSON.stringify({ contentId })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        
+        if (errorData.requiresReauth) {
+          // Redirect to Google OAuth
+          window.location.href = '/auth/google';
+          return;
+        }
+        
+        throw new Error(errorData.message || 'Failed to create slides');
+      }
+
+      const data: GoogleSlidesResponse = await response.json();
+      setResult(data);
+      onSuccess?.(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="create-slides-container">
+      <button
+        onClick={createSlides}
+        disabled={loading}
+        className="btn btn-primary"
+      >
+        {loading ? (
+          <>
+            <span className="spinner-border spinner-border-sm me-2" />
+            Creating Slides...
+          </>
+        ) : (
+          <>
+            <svg className="icon me-2" /* Google Slides icon */>
+              <path d="M..." />
+            </svg>
+            Create Google Slides
+          </>
+        )}
+      </button>
+
+      {result && (
+        <div className="alert alert-success mt-3">
+          <h5>✓ Presentation Created!</h5>
+          <p>{result.slideCount} slides created successfully</p>
+          <div className="d-flex gap-2">
+            
+              href={result.presentationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-sm btn-outline-success"
+            >
+              Open in Google Slides
+            </a>
+            <button
+              onClick={() => {/* Share to classroom logic */}}
+              className="btn btn-sm btn-outline-primary"
+            >
+              Share to Classroom
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="alert alert-danger mt-3">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+    </div>
+  );
+};
+components/ShareToClassroomModal.tsx
+typescriptimport React, { useState, useEffect } from 'react';
+
+interface ShareToClassroomModalProps {
+  presentationId: string;
+  presentationTitle: string;
+  onClose: () => void;
+}
+
+export const ShareToClassroomModal: React.FC<ShareToClassroomModalProps> = ({
+  presentationId,
+  presentationTitle,
+  onClose
+}) => {
+  const [courses, setCourses] = useState<any[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState('');
+  const [assignmentType, setAssignmentType] = useState<'assignment' | 'announcement'>('assignment');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const fetchCourses = async () => {
+    try {
+      const response = await fetch('/api/classroom/courses', {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      setCourses(data.courses || []);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    }
+  };
+
+  const handleShare = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/slides/${presentationId}/share-classroom`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          courseId: selectedCourse,
+          assignmentType
+        })
+      });
+
+      if (response.ok) {
+        alert('Successfully shared to classroom!');
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      alert('Failed to share to classroom');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal show d-block" tabIndex={-1}>
+      <div className="modal-dialog">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title">Share to Google Classroom</h5>
+            <button type="button" className="btn-close" onClick={onClose} />
+          </div>
+          <div className="modal-body">
+            <div className="mb-3">
+              <label className="form-label">Select Course</label>
+              <select
+                className="form-select"
+                value={selectedCourse}
+                onChange={(e) => setSelectedCourse(e.target.value)}
+              >
+                <option value="">Choose a course...</option>
+                {courses.map(course => (
+                  <option key={course.id} value={course.id}>
+                    {course.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Share As</label>
+              <div>
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    id="assignment"
+                    checked={assignmentType === 'assignment'}
+                    onChange={() => setAssignmentType('assignment')}
+                  />
+                  <label className="form-check-label" htmlFor="assignment">
+                    Assignment
+                  </label>
+                </div>
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    id="announcement"
+                    checked={assignmentType === 'announcement'}
+                    onChange={() => setAssignmentType('announcement')}
+                  />
+                  <label className="form-check-label" htmlFor="announcement">
+                    Announcement
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleShare}
+              disabled={!selectedCourse || loading}
+            >
+              {loading ? 'Sharing...' : 'Share'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+7. Environment Variables
+envGOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
+
+DATABASE_URL=your_neon_postgres_url
+
+SESSION_SECRET=your_session_secret
+8. Usage Example
+typescript// In your content editor/viewer page
+import { CreateSlidesButton } from './components/CreateSlidesButton';
+
+function ContentPage({ contentId }: { contentId: string }) {
+  return (
+    <div>
+      {/* Your content display */}
+      
+      <CreateSlidesButton 
+        contentId={contentId}
+        onSuccess={(result) => {
+          console.log('Slides created:', result.presentationUrl);
+          // Maybe redirect or show success message
+        }}
+      />
+    </div>
+  );
+}
+This implementation:
+
+✅ Uses TypeScript throughout
+✅ Integrates with your existing Drizzle ORM setup
+✅ Handles OAuth token refresh automatically
+✅ Works with your session-based authentication
+✅ Supports all slide types (title, bullets, two-column, images)
+✅ Includes speaker notes support
+✅ Integrates with Google Classroom
+✅ Handles errors gracefully with re-authentication prompts

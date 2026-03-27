@@ -1,0 +1,38 @@
+{
+  "name": "OECS Learning Hub",
+  "description": "Interactive Educational Content Creator Platform",
+  "repository": "https://github.com/your-username/your-repo",
+  "logo": "https://node-js-sample.herokuapp.com/node.png",
+  "keywords": ["education", "content", "h5p", "learning"],
+  "image": "heroku/nodejs",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "env": {
+    "NODE_ENV": {
+      "required": true,
+      "value": "production"
+    },
+    "SESSION_SECRET": {
+      "required": true,
+      "description": "A secret key for session encryption"
+    },
+    "DATABASE_URL": {
+      "required": true,
+      "description": "PostgreSQL connection string (Supabase or Neon)"
+    },
+    "PORT": {
+      "required": false,
+      "value": "5000"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
+    }
+  }
+}
+

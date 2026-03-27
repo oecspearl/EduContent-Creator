@@ -1,0 +1,19 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+.env
+.env.local
+.env.*.local
+*.log
+
+# Files containing secrets - never commit these
+HEROKU_ENV_COMMANDS.txt
+database_export/
+*.json.bak
+credentials*.json
+.vercel
+api-build
+.env*.local

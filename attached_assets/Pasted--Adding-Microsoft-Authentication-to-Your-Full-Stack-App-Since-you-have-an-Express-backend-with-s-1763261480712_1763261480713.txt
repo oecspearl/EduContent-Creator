@@ -1,0 +1,680 @@
+# Adding Microsoft Authentication to Your Full-Stack App
+
+Since you have an Express backend with session-based auth, you'll implement **server-side OAuth** using Passport.js. This integrates cleanly with your existing architecture.
+
+## Part 1: Backend Setup (Express)
+
+### 1.1 Install Dependencies
+
+```bash
+npm install passport passport-azure-ad express-session
+```
+
+### 1.2 Update Environment Variables
+
+Add to your `.env` file:
+
+```env
+MICROSOFT_CLIENT_ID=89c18549-65f5-4b9a-979b-6e3c95b5a9da
+MICROSOFT_CLIENT_SECRET=your_secret_here
+MICROSOFT_TENANT_ID=745c7fcf-d222-4589-aa45-ff094bce889e
+MICROSOFT_CALLBACK_URL=https://h5pcreator.org/api/auth/microsoft/callback
+
+SESSION_SECRET=your_session_secret_here
+```
+
+### 1.3 Create Client Secret in Azure
+
+1. Go to Azure Portal → Your App → **Certificates & secrets**
+2. Click **+ New client secret**
+3. Add description: "H5P Creator Backend"
+4. Choose expiration (24 months recommended)
+5. Click **Add** and **copy the Value immediately**
+
+### 1.4 Update Azure Redirect URI
+
+In Azure Portal:
+1. Go to **Authentication**
+2. Under **Web** platform, add:
+   ```
+   https://h5pcreator.org/api/auth/microsoft/callback
+   ```
+3. For local development, also add:
+   ```
+   http://localhost:5000/api/auth/microsoft/callback
+   ```
+4. Save
+
+### 1.5 Create Passport Configuration
+
+Create `server/auth/microsoftStrategy.ts`:
+
+```typescript
+import { OIDCStrategy } from 'passport-azure-ad';
+import type { IProfile, VerifyCallback } from 'passport-azure-ad';
+import { db } from '../db';
+
+export const microsoftStrategy = new OIDCStrategy(
+  {
+    identityMetadata: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID}/v2.0/.well-known/openid-configuration`,
+    clientID: process.env.MICROSOFT_CLIENT_ID!,
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+    responseType: 'code',
+    responseMode: 'form_post',
+    redirectUrl: process.env.MICROSOFT_CALLBACK_URL!,
+    allowHttpForRedirectUrl: process.env.NODE_ENV === 'development',
+    validateIssuer: true,
+    passReqToCallback: false,
+    scope: ['profile', 'email', 'openid'],
+  },
+  async (
+    iss: string,
+    sub: string,
+    profile: IProfile,
+    accessToken: string,
+    refreshToken: string,
+    done: VerifyCallback
+  ) => {
+    try {
+      // Extract user info from Microsoft profile
+      const email = profile._json.email || profile._json.preferred_username;
+      const name = profile.displayName || profile._json.name;
+      
+      // Check if user exists
+      let user = await db.query(
+        'SELECT * FROM users WHERE email = $1',
+        [email]
+      );
+
+      if (user.rows.length === 0) {
+        // Create new user
+        const result = await db.query(
+          `INSERT INTO users (email, name, microsoft_id, auth_provider, created_at) 
+           VALUES ($1, $2, $3, $4, NOW()) 
+           RETURNING *`,
+          [email, name, profile.oid, 'microsoft']
+        );
+        user = result;
+      } else {
+        // Update existing user with Microsoft ID if not set
+        await db.query(
+          `UPDATE users 
+           SET microsoft_id = $1, auth_provider = $2, updated_at = NOW() 
+           WHERE email = $3`,
+          [profile.oid, 'microsoft', email]
+        );
+      }
+
+      return done(null, user.rows[0]);
+    } catch (error) {
+      return done(error as Error);
+    }
+  }
+);
+```
+
+### 1.6 Update Database Schema
+
+Add Microsoft-related columns to your users table:
+
+```sql
+ALTER TABLE users 
+ADD COLUMN IF NOT EXISTS microsoft_id VARCHAR(255) UNIQUE,
+ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(50) DEFAULT 'local',
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_users_microsoft_id ON users(microsoft_id);
+```
+
+### 1.7 Configure Passport in Express
+
+Create or update `server/auth/passport.ts`:
+
+```typescript
+import passport from 'passport';
+import { microsoftStrategy } from './microsoftStrategy';
+
+// Configure Passport
+passport.use('azuread-openidconnect', microsoftStrategy);
+
+// Serialize user to session
+passport.serializeUser((user: any, done) => {
+  done(null, user.id);
+});
+
+// Deserialize user from session
+passport.deserializeUser(async (id: number, done) => {
+  try {
+    const result = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+    done(null, result.rows[0]);
+  } catch (error) {
+    done(error);
+  }
+});
+
+export default passport;
+```
+
+### 1.8 Create Auth Routes
+
+Create `server/routes/auth.ts`:
+
+```typescript
+import { Router } from 'express';
+import passport from '../auth/passport';
+
+const router = Router();
+
+// Microsoft login route
+router.get(
+  '/microsoft',
+  passport.authenticate('azuread-openidconnect', {
+    failureRedirect: '/login',
+  })
+);
+
+// Microsoft callback route
+router.post(
+  '/microsoft/callback',
+  passport.authenticate('azuread-openidconnect', {
+    failureRedirect: '/login',
+  }),
+  (req, res) => {
+    // Successful authentication
+    res.redirect('/dashboard');
+  }
+);
+
+// Logout route
+router.post('/logout', (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Logout failed' });
+    }
+    req.session.destroy(() => {
+      res.json({ message: 'Logged out successfully' });
+    });
+  });
+});
+
+// Get current user
+router.get('/me', (req, res) => {
+  if (req.isAuthenticated()) {
+    res.json(req.user);
+  } else {
+    res.status(401).json({ error: 'Not authenticated' });
+  }
+});
+
+export default router;
+```
+
+### 1.9 Update Main Server File
+
+Update `server/index.ts`:
+
+```typescript
+import express from 'express';
+import session from 'express-session';
+import passport from './auth/passport';
+import authRoutes from './routes/auth';
+
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Session configuration
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET!,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Routes
+app.use('/api/auth', authRoutes);
+
+// ... rest of your routes
+```
+
+### 1.10 Create Auth Middleware
+
+Create `server/middleware/auth.ts`:
+
+```typescript
+import { Request, Response, NextFunction } from 'express';
+
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ error: 'Authentication required' });
+}
+
+// Use on protected routes:
+// app.get('/api/protected', requireAuth, (req, res) => { ... });
+```
+
+---
+
+## Part 2: Frontend Setup (React + TypeScript)
+
+### 2.1 Create API Client
+
+Create `client/src/lib/api.ts`:
+
+```typescript
+interface User {
+  id: number;
+  email: string;
+  name: string;
+  auth_provider: 'local' | 'microsoft';
+}
+
+export const authApi = {
+  // Get current user
+  async getCurrentUser(): Promise<User | null> {
+    const response = await fetch('/api/auth/me', {
+      credentials: 'include',
+    });
+    if (response.ok) {
+      return response.json();
+    }
+    return null;
+  },
+
+  // Initiate Microsoft login (redirect to backend)
+  loginWithMicrosoft() {
+    window.location.href = '/api/auth/microsoft';
+  },
+
+  // Logout
+  async logout() {
+    const response = await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (response.ok) {
+      window.location.href = '/login';
+    }
+  },
+};
+```
+
+### 2.2 Create Auth Context
+
+Create `client/src/contexts/AuthContext.tsx`:
+
+```typescript
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { authApi } from '@/lib/api';
+
+interface User {
+  id: number;
+  email: string;
+  name: string;
+  auth_provider: 'local' | 'microsoft';
+}
+
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refreshUser = async () => {
+    try {
+      const currentUser = await authApi.getCurrentUser();
+      setUser(currentUser);
+    } catch (error) {
+      console.error('Failed to fetch user:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshUser();
+  }, []);
+
+  const logout = async () => {
+    await authApi.logout();
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, loading, logout, refreshUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
+}
+```
+
+### 2.3 Wrap App with AuthProvider
+
+Update `client/src/main.tsx`:
+
+```typescript
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from './contexts/AuthContext';
+import App from './App';
+import { queryClient } from './lib/queryClient';
+import './index.css';
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </QueryClientProvider>
+  </React.StrictMode>
+);
+```
+
+### 2.4 Create Login Page Component
+
+Create `client/src/pages/Login.tsx`:
+
+```typescript
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { authApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from 'wouter';
+
+export default function Login() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // Redirect if already logged in
+  if (user) {
+    setLocation('/dashboard');
+    return null;
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Welcome to H5P Creator</CardTitle>
+          <CardDescription>Sign in to continue</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button
+            onClick={() => authApi.loginWithMicrosoft()}
+            className="w-full"
+            variant="outline"
+          >
+            <svg className="mr-2 h-4 w-4" viewBox="0 0 23 23">
+              <path fill="#f3f3f3" d="M0 0h23v23H0z" />
+              <path fill="#f35325" d="M1 1h10v10H1z" />
+              <path fill="#81bc06" d="M12 1h10v10H12z" />
+              <path fill="#05a6f0" d="M1 12h10v10H1z" />
+              <path fill="#ffba08" d="M12 12h10v10H12z" />
+            </svg>
+            Sign in with Microsoft
+          </Button>
+
+          {/* Optional: Keep your existing email/password login */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-muted-foreground">
+                Or continue with email
+              </span>
+            </div>
+          </div>
+
+          {/* Your existing email/password form here */}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+```
+
+### 2.5 Create Protected Route Component
+
+Create `client/src/components/ProtectedRoute.tsx`:
+
+```typescript
+import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from 'wouter';
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    setLocation('/login');
+    return null;
+  }
+
+  return <>{children}</>;
+}
+```
+
+### 2.6 Create User Menu Component
+
+Create `client/src/components/UserMenu.tsx`:
+
+```typescript
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+
+export function UserMenu() {
+  const { user, logout } = useAuth();
+
+  if (!user) return null;
+
+  const initials = user.name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+          <Avatar>
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium">{user.name}</p>
+            <p className="text-xs text-muted-foreground">{user.email}</p>
+            <p className="text-xs text-muted-foreground">
+              via {user.auth_provider === 'microsoft' ? 'Microsoft' : 'Email'}
+            </p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+```
+
+### 2.7 Update Routes
+
+Update `client/src/App.tsx`:
+
+```typescript
+import { Route, Switch } from 'wouter';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+// ... other imports
+
+export default function App() {
+  return (
+    <Switch>
+      <Route path="/login" component={Login} />
+      
+      <Route path="/dashboard">
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Add ProtectedRoute to other protected pages */}
+      <Route path="/content/:id">
+        <ProtectedRoute>
+          <ContentPage />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Public routes */}
+      <Route path="/" component={Home} />
+    </Switch>
+  );
+}
+```
+
+---
+
+## Part 3: Testing
+
+### 3.1 Local Development
+
+1. **Start your server:**
+   ```bash
+   npm run dev
+   ```
+
+2. **Test the flow:**
+   - Go to `http://localhost:5000/login`
+   - Click "Sign in with Microsoft"
+   - You'll be redirected to Microsoft login
+   - After successful login, redirected back to your app
+   - Should see user info in dashboard
+
+### 3.2 Common Issues
+
+**Session not persisting:**
+```typescript
+// Make sure fetch includes credentials
+fetch('/api/auth/me', { credentials: 'include' })
+```
+
+**CORS issues in development:**
+```typescript
+// In server/index.ts
+import cors from 'cors';
+
+app.use(cors({
+  origin: 'http://localhost:5173', // Vite dev server
+  credentials: true,
+}));
+```
+
+**Redirect loop:**
+- Check that session secret is set
+- Verify cookie settings (secure flag in production only)
+
+---
+
+## Part 4: Production Deployment
+
+### 4.1 Environment Variables
+
+Set these in production:
+```env
+NODE_ENV=production
+MICROSOFT_CALLBACK_URL=https://h5pcreator.org/api/auth/microsoft/callback
+SESSION_SECRET=<strong-random-secret>
+```
+
+### 4.2 Security Checklist
+
+✅ Use HTTPS in production  
+✅ Set secure cookies (`secure: true`)  
+✅ Keep session secret private  
+✅ Store client secret securely (environment variables)  
+✅ Set appropriate CORS origins  
+✅ Add rate limiting to auth endpoints  
+✅ Implement CSRF protection  
+
+---
+
+## Summary
+
+You now have:
+- ✅ Server-side OAuth with Passport.js
+- ✅ Microsoft authentication integrated with existing session system
+- ✅ User data stored in PostgreSQL
+- ✅ Protected routes on frontend
+- ✅ User context across the app
+- ✅ Clean separation between auth providers
+
+The flow is:
+1. User clicks "Sign in with Microsoft"
+2. Redirected to Microsoft login
+3. Microsoft redirects back to `/api/auth/microsoft/callback`
+4. Backend creates/updates user in database
+5. Session created, user logged in
+6. Frontend fetches user data and updates context
+
+Need help with any specific part?

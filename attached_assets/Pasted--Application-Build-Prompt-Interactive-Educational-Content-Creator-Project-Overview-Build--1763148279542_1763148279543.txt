@@ -1,0 +1,554 @@
+# Application Build Prompt: Interactive Educational Content Creator
+
+## Project Overview
+
+Build a modern, full-stack web application for creating, managing, and sharing interactive educational content. The application should enable educators to create various types of H5P-compatible interactive content with AI assistance, manage their content library, and share content with students and other educators.
+
+## Core Requirements
+
+### 1. Technology Stack
+
+**Frontend:**
+- React 18+ with TypeScript
+- Vite as build tool and dev server
+- Tailwind CSS for styling
+- React Router DOM v7+ for routing
+- Lucide React for icons
+- Modern ES6+ JavaScript features
+
+**Backend & Database:**
+- Supabase for:
+  - User authentication (email/password with OAuth support)
+  - PostgreSQL database
+  - Row Level Security (RLS) policies
+  - Real-time subscriptions (optional)
+
+**AI Integration:**
+- OpenAI API (GPT-3.5-turbo or GPT-4) for content generation
+- Support for API key configuration via environment variables or in-app input
+
+**Deployment:**
+- Support for static hosting (Vercel, Netlify, Cloudflare Pages)
+- Service worker for offline support and caching
+- Environment variable configuration
+
+### 2. Application Features
+
+#### 2.1 User Authentication
+- Email/password authentication
+- OAuth integration (Google, GitHub, etc.)
+- User profile management with:
+  - Full name
+  - Email
+  - Role (teacher, student, admin)
+  - Institution/organization
+- Session persistence
+- Protected routes
+- Sign out functionality
+
+#### 2.2 Content Types
+Support four main content types with dedicated creators:
+
+**A. Quiz Creator**
+- Multiple question types:
+  - Multiple choice (4 options)
+  - True/False
+  - Fill in the blank
+  - Drag and drop
+- Question management:
+  - Add, edit, delete questions
+  - Reorder questions (drag and drop)
+  - Question explanations
+  - Correct answer indicators
+- Quiz settings:
+  - Shuffle questions
+  - Show correct answers
+  - Allow retry
+  - Time limits (optional)
+- AI generation: Generate quiz questions from topic input
+
+**B. Flashcard Creator**
+- Front/back card pairs
+- Card management:
+  - Add, edit, delete cards
+  - Reorder cards
+  - Card categories/tags
+- Flashcard settings:
+  - Shuffle cards
+  - Show progress bar
+  - Auto-flip delay
+  - Card flip animation
+- AI generation: Generate flashcard sets from topic input
+
+**C. Interactive Video Creator**
+- YouTube video integration (URL input)
+- Hotspot management:
+  - Question hotspots (multiple choice at specific timestamps)
+  - Information hotspots (text overlays)
+  - Navigation hotspots
+- Timeline-based editing
+- Video playback controls
+- AI generation: Generate hotspots based on video topic
+
+**D. Image Hotspot Creator**
+- Background image upload/URL
+- Interactive hotspot points:
+  - Clickable areas on image
+  - Descriptive text for each hotspot
+  - Tooltip/popup information
+- Image editor with coordinate system
+- AI generation: Generate hotspots based on image topic
+
+#### 2.3 AI Content Generation
+- Modal-based AI generation interface
+- Configuration options:
+  - Topic/subject input
+  - Difficulty level (beginner, intermediate, advanced)
+  - Grade level
+  - Number of items to generate
+  - Language selection
+  - Additional context/instructions
+- Content type-specific generation:
+  - Quiz questions with explanations
+  - Flashcard pairs
+  - Video hotspots
+  - Image hotspots
+- Error handling:
+  - Invalid API key detection
+  - Rate limiting handling
+  - Network error recovery
+  - Content parsing validation
+- Usage tracking: Token usage display
+
+#### 2.4 Dashboard
+- Content library display:
+  - Grid/list view toggle
+  - Content grouped by type
+  - Content cards showing:
+    - Title
+    - Type icon and label
+    - Last modified date
+    - Published status
+    - Completion percentage (if applicable)
+  - Empty state with call-to-action
+- Content actions:
+  - Create new content
+  - Edit existing content
+  - Preview/play content
+  - Share content
+  - Delete content
+- User profile display:
+  - Welcome message with user name
+  - Institution/role badge
+  - Sign out button
+- Search and filter (optional):
+  - Search by title
+  - Filter by content type
+  - Sort by date/modified
+
+#### 2.5 Content Management
+- Auto-save functionality (debounced)
+- Content versioning (optional)
+- Publish/unpublish toggle
+- Content metadata:
+  - Title
+  - Description (optional)
+  - Tags (optional)
+  - Created/updated timestamps
+- Content preview:
+  - In-app preview modal
+  - Full-screen preview
+  - Public preview URL for published content
+
+#### 2.6 Content Sharing
+- Share modal with options:
+  - Generate shareable link
+  - Copy link to clipboard
+  - Share via email (optional)
+  - QR code generation (optional)
+- Public preview pages:
+  - Shareable URLs (`/preview/:contentId`)
+  - No authentication required for published content
+  - Responsive design
+- Integration with external platforms:
+  - Share to MakerStudio (or similar platform)
+  - URL parameter passing
+  - Content metadata transfer
+
+#### 2.7 Additional Features
+- Floating AI Assistant:
+  - Chat interface for help/questions
+  - Context-aware assistance
+  - Quick actions
+- Help/Documentation page:
+  - User guides
+  - Feature explanations
+  - Video tutorials (optional)
+  - FAQ section
+- Loading states and error boundaries
+- Responsive design (mobile, tablet, desktop)
+- Accessibility features (ARIA labels, keyboard navigation)
+
+### 3. Database Schema
+
+#### 3.1 Profiles Table
+```sql
+- id (uuid, primary key, references auth.users)
+- email (text, unique)
+- full_name (text)
+- role (text: 'teacher' | 'student' | 'admin')
+- institution (text, nullable)
+- created_at (timestamptz)
+- updated_at (timestamptz)
+```
+
+#### 3.2 H5P Content Table
+```sql
+- id (uuid, primary key)
+- title (text)
+- type (text: 'quiz' | 'flashcard' | 'interactive-video' | 'image-hotspot')
+- data (jsonb) - stores full content structure
+- user_id (uuid, references profiles)
+- is_published (boolean, default false)
+- created_at (timestamptz)
+- updated_at (timestamptz)
+```
+
+#### 3.3 Content Shares Table
+```sql
+- id (uuid, primary key)
+- content_id (uuid, references h5p_content)
+- shared_by (uuid, references profiles)
+- shared_with (uuid, references profiles, nullable for public)
+- permission (text: 'view' | 'edit')
+- created_at (timestamptz)
+```
+
+#### 3.4 Completions Table (Optional)
+```sql
+- id (uuid, primary key)
+- content_id (uuid, references h5p_content)
+- user_id (uuid, references profiles)
+- percentage (integer, 0-100)
+- completed_at (timestamptz)
+```
+
+#### 3.5 Security
+- Enable Row Level Security (RLS) on all tables
+- Policies for:
+  - Users can only read/update their own content
+  - Users can read published content
+  - Users can read content shared with them
+  - Users can create shares for their own content
+
+### 4. Application Architecture
+
+#### 4.1 Project Structure
+```
+src/
+├── components/
+│   ├── Dashboard.tsx
+│   ├── QuizCreator.tsx
+│   ├── FlashcardCreator.tsx
+│   ├── InteractiveVideoCreator.tsx
+│   ├── ImageHotspotCreator.tsx
+│   ├── ContentTypeSelector.tsx
+│   ├── ContentPlayer.tsx
+│   ├── Preview.tsx
+│   ├── PublicPreview.tsx
+│   ├── ShareModal.tsx
+│   ├── AIGenerationModal.tsx
+│   ├── FloatingAssistant.tsx
+│   ├── WebAssistant.tsx
+│   ├── AuthModal.tsx
+│   ├── LoginPage.tsx
+│   ├── HelpPage.tsx
+│   ├── LoadingSpinner.tsx
+│   └── ErrorBoundary.tsx
+├── hooks/
+│   ├── useAuth.ts
+│   ├── useContent.ts
+│   ├── useCompletion.ts
+│   └── useYouTube.ts
+├── lib/
+│   ├── supabase.ts
+│   └── openai.ts
+├── types/
+│   ├── index.ts
+│   └── shared.ts
+├── utils/
+│   ├── validation.ts
+│   ├── sharing.ts
+│   ├── icons.ts
+│   └── performance.ts
+├── App.tsx
+├── main.tsx
+└── index.css
+```
+
+#### 4.2 Key Components
+
+**App.tsx:**
+- Main router setup
+- Route definitions:
+  - `/` - Main app (protected)
+  - `/auth/callback` - OAuth callback
+  - `/preview/:contentId` - Public preview
+- Lazy loading for performance
+- Suspense boundaries
+
+**Dashboard:**
+- Content library display
+- Content grouping by type
+- Create/edit/play/share actions
+- User profile display
+
+**Content Creators:**
+- Form-based editors for each content type
+- Real-time preview
+- Auto-save with debouncing
+- AI generation integration
+- Validation
+
+**Content Player:**
+- Interactive content rendering
+- H5P-compatible output
+- Progress tracking
+- Completion tracking
+
+#### 4.3 Custom Hooks
+
+**useAuth:**
+- Authentication state management
+- Sign in/up/out functions
+- Profile management
+- Session handling
+
+**useContent:**
+- Content CRUD operations
+- Content fetching
+- Auto-save functionality
+- Content validation
+
+**useCompletion:**
+- Track user progress
+- Completion percentage calculation
+- Save completion data
+
+**useYouTube:**
+- YouTube video embedding
+- Video metadata extraction
+- Video validation
+
+#### 4.4 Services
+
+**Supabase Service:**
+- Database queries
+- Authentication
+- Real-time subscriptions
+- File storage (if needed)
+
+**OpenAI Service:**
+- API key management
+- Content generation requests
+- Error handling
+- Token usage tracking
+
+### 5. UI/UX Requirements
+
+#### 5.1 Design System
+- Modern, clean interface
+- Consistent color scheme (suggest: navy, teal, orange, lime)
+- Professional typography
+- Icon system (Lucide React)
+- Responsive breakpoints:
+  - Mobile: 320px+
+  - Tablet: 768px+
+  - Desktop: 1024px+
+
+#### 5.2 Key Pages/Views
+
+**Login Page:**
+- Email/password form
+- OAuth buttons
+- Sign up link
+- Branding/logo
+
+**Dashboard:**
+- Header with branding
+- User profile section
+- Content grid/list
+- Create button (prominent)
+- Empty state
+
+**Content Creator:**
+- Toolbar with actions
+- Main editor area
+- Preview panel (optional)
+- Settings panel
+- AI generation button
+
+**Preview:**
+- Full-screen content display
+- Navigation controls
+- Share options
+- Responsive layout
+
+#### 5.3 Interactions
+- Smooth transitions and animations
+- Loading spinners
+- Toast notifications for actions
+- Modal dialogs
+- Confirmation dialogs for destructive actions
+- Drag and drop for reordering
+- Keyboard shortcuts (optional)
+
+### 6. Performance Requirements
+
+#### 6.1 Optimization
+- Code splitting:
+  - Lazy load major components
+  - Separate vendor chunks
+  - Route-based splitting
+- Bundle optimization:
+  - Tree shaking
+  - Minification
+  - Compression
+- Caching:
+  - Service worker for static assets
+  - API response caching
+  - Browser caching headers
+- Rendering:
+  - Memoization for expensive operations
+  - Debounced auto-save
+  - Virtual scrolling for large lists (optional)
+
+#### 6.2 Performance Targets
+- Initial load: < 2 seconds
+- Time to interactive: < 3 seconds
+- Bundle size: < 500KB initial (gzipped)
+- Lighthouse score: > 90
+
+### 7. Development Setup
+
+#### 7.1 Environment Variables
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_OPENAI_API_KEY=your_openai_api_key (optional)
+```
+
+#### 7.2 Scripts
+```json
+{
+  "dev": "vite",
+  "build": "vite build",
+  "preview": "vite preview",
+  "lint": "eslint ."
+}
+```
+
+#### 7.3 Dependencies
+- Core: react, react-dom, react-router-dom
+- Styling: tailwindcss, autoprefixer, postcss
+- Backend: @supabase/supabase-js
+- Icons: lucide-react
+- Build: vite, typescript
+- Linting: eslint, typescript-eslint
+
+### 8. Testing Requirements (Optional but Recommended)
+- Unit tests for utilities
+- Component tests for key components
+- Integration tests for critical flows
+- E2E tests for main user journeys
+
+### 9. Documentation Requirements
+- README with setup instructions
+- API documentation
+- Component documentation
+- Deployment guide
+- Environment setup guide
+- User guide/help content
+
+### 10. Security Considerations
+- Input validation and sanitization
+- XSS prevention
+- CSRF protection
+- Secure API key storage
+- Rate limiting for AI API
+- Content access control via RLS
+- Secure authentication flows
+
+### 11. Accessibility
+- ARIA labels and roles
+- Keyboard navigation support
+- Screen reader compatibility
+- Color contrast compliance (WCAG AA)
+- Focus management
+- Alt text for images
+
+### 12. Browser Support
+- Modern browsers (Chrome, Firefox, Safari, Edge)
+- Last 2 versions
+- Mobile browsers (iOS Safari, Chrome Mobile)
+
+## Implementation Priority
+
+### Phase 1: Core Functionality
+1. Authentication setup
+2. Database schema and migrations
+3. Basic dashboard
+4. One content creator (Quiz)
+5. Content CRUD operations
+
+### Phase 2: Content Types
+1. Flashcard creator
+2. Interactive video creator
+3. Image hotspot creator
+4. Content player/preview
+
+### Phase 3: AI Integration
+1. OpenAI service setup
+2. AI generation modal
+3. Content type-specific generation
+4. Error handling
+
+### Phase 4: Sharing & Publishing
+1. Share modal
+2. Public preview pages
+3. External platform integration
+4. QR code generation (optional)
+
+### Phase 5: Polish & Optimization
+1. Performance optimization
+2. UI/UX improvements
+3. Help/documentation
+4. Testing
+5. Accessibility audit
+
+## Success Criteria
+
+The application should:
+- ✅ Allow users to create, edit, and manage interactive educational content
+- ✅ Support multiple content types with rich editing capabilities
+- ✅ Generate content using AI with user-friendly interface
+- ✅ Provide secure authentication and user management
+- ✅ Enable content sharing and publishing
+- ✅ Deliver fast, responsive user experience
+- ✅ Work seamlessly on desktop and mobile devices
+- ✅ Maintain data security and user privacy
+- ✅ Provide clear documentation and help resources
+
+## Additional Notes
+
+- Focus on educational use case (Caribbean context can be customized)
+- Prioritize user experience and ease of use
+- Ensure content is exportable/importable (H5P format)
+- Consider future extensibility for new content types
+- Implement analytics/usage tracking (optional)
+- Support multi-language content (optional)
+
+---
+
+This prompt provides a comprehensive blueprint for building an interactive educational content creator application similar to the OECS Learning Hub H5P Manager. Adjust the specific requirements, branding, and features based on your target audience and use case.
+

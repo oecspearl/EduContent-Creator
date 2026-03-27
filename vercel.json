@@ -1,0 +1,22 @@
+{
+  "buildCommand": "npm run build:vercel",
+  "outputDirectory": "dist/public",
+  "framework": null,
+  "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/api/health", "destination": "/api/health" },
+    { "source": "/api/(.*)", "destination": "/api/bundled" },
+    { "source": "/(.*)", "destination": "/" }
+  ],
+  "functions": {
+    "api/bundled.js": {
+      "maxDuration": 60
+    },
+    "api/health.ts": {
+      "maxDuration": 10
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
+}

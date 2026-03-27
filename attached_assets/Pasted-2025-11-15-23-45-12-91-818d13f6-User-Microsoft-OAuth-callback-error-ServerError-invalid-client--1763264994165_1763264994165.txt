@@ -1,0 +1,57 @@
+2025-11-15 23:45:12.91
+818d13f6
+User
+Microsoft OAuth callback error: ServerError: invalid_client: Error(s): 7000215 - Timestamp: 2025-11-16 03:45:12Z - Description: AADSTS7000215: Invalid client secret provided. Ensure the secret being sent in the request is the client secret value, not the client secret ID, for a secret added to app '89c18549-65f5-4b9a-979b-6e3c95b5a9da'. Trace ID: b61d1e23-5794-42de-ab0e-826551015500 Correlation ID: 41c48367-db26-4d99-a9aa-040c3e32887b Timestamp: 2025-11-16 03:45:12Z - Correlation ID: 41c48367-db26-4d99-a9aa-040c3e32887b - Trace ID: b61d1e23-5794-42de-ab0e-826551015500
+2025-11-15 23:45:12.91
+818d13f6
+User
+at AuthorizationCodeClient.acquireToken (file:///home/runner/workspace/node_modules/@azure/msal-common/dist/client/AuthorizationCodeClient.mjs:57:25)
+
+2025-11-15 23:45:12.91
+818d13f6
+User
+at async ConfidentialClientApplication.acquireTokenByCode (file:///home/runner/workspace/node_modules/@azure/msal-node/dist/client/ClientApplication.mjs:83:20)
+2025-11-15 23:45:12.91
+818d13f6
+User
+at ResponseHandler.validateTokenResponse (file:///home/runner/workspace/node_modules/@azure/msal-common/dist/response/ResponseHandler.mjs:52:33)
+2025-11-15 23:45:12.91
+818d13f6
+User
+errorCode: 'invalid_client',
+2025-11-15 23:45:12.91
+818d13f6
+User
+subError: '',
+2025-11-15 23:45:12.91
+818d13f6
+User
+3:45:12 AM [express] GET /api/auth/microsoft/callback 302 in 242ms
+2025-11-15 23:45:12.91
+818d13f6
+User
+at async file:///home/runner/workspace/dist/index.js:1064:24 {
+2025-11-15 23:45:12.91
+818d13f6
+User
+errorNo: 7000215,
+2025-11-15 23:45:12.91
+818d13f6
+User
+}
+2025-11-15 23:45:12.91
+818d13f6
+User
+errorMessage: "Error(s): 7000215 - Timestamp: 2025-11-16 03:45:12Z - Description: AADSTS7000215: Invalid client secret provided. Ensure the secret being sent in the request is the client secret value, not the client secret ID, for a secret added to app '89c18549-65f5-4b9a-979b-6e3c95b5a9da'. Trace ID: b61d1e23-5794-42de-ab0e-826551015500 Correlation ID: 41c48367-db26-4d99-a9aa-040c3e32887b Timestamp: 2025-11-16 03:45:12Z - Correlation ID: 41c48367-db26-4d99-a9aa-040c3e32887b - Trace ID: b61d1e23-5794-42de-ab0e-826551015500",
+2025-11-15 23:45:12.91
+818d13f6
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-11-15 23:45:12.91
+818d13f6
+User
+correlationId: '41c48367-db26-4d99-a9aa-040c3e32887b'
+2025-11-15 23:45:12.91
+818d13f6
+User
+status: undefined,
