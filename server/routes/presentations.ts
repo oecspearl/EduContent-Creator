@@ -22,9 +22,22 @@ export function registerPresentationRoutes({ app, storage, requireTeacher }: Rou
       const { createPresentation, addSlidesToPresentation } = await import("../presentation");
       const { searchPhotos, getAltText, generateAttribution } = await import("../unsplash");
 
+      // Inject teacher metadata into the title slide
+      const enrichedSlides = slides.map((slide: any) => {
+        if (slide.type === 'title') {
+          return {
+            ...slide,
+            teacherName: slide.teacherName || user.fullName,
+            institution: slide.institution || user.institution || undefined,
+            date: slide.date || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+          };
+        }
+        return slide;
+      });
+
       // Fetch images for slides that need them
       const slidesWithImages = await Promise.all(
-        slides.map(async (slide: any) => {
+        enrichedSlides.map(async (slide: any) => {
           if (slide.imageUrl && typeof slide.imageUrl === "string" && !slide.imageUrl.startsWith("http")) {
             try {
               const photos = await searchPhotos(slide.imageUrl, 1);

@@ -27,6 +27,12 @@ import {
   IMAGE_CONTENT_SLIDE,
   QUESTIONS_SLIDE,
   FULL_IMAGE_SLIDE,
+  OUTCOMES_SLIDE,
+  VOCABULARY_SLIDE,
+  COMPARISON_SLIDE,
+  ACTIVITY_SLIDE,
+  SUMMARY_SLIDE,
+  CLOSING_SLIDE,
   FONT_FAMILY,
   FONT_FAMILY_TITLE,
   COLOR_THEMES,
@@ -207,12 +213,11 @@ async function getOAuth2Client(user: Profile): Promise<{ auth: any; user: Profil
 // ─── Public types ──────────────────────────────────────────
 
 export interface SlideContent {
-  type: 'title' | 'content' | 'guiding-questions' | 'reflection' | 'image';
+  type: 'title' | 'content' | 'guiding-questions' | 'reflection' | 'image'
+    | 'learning-outcomes' | 'vocabulary' | 'comparison' | 'activity' | 'summary' | 'closing';
   title?: string;
   subtitle?: string;
-  /** Body text — OpenAI generates this as "content" */
   content?: string;
-  /** Legacy alias — older data may use "text" instead of "content" */
   text?: string;
   bulletPoints?: string[];
   imageUrl?: string;
@@ -220,6 +225,20 @@ export interface SlideContent {
   imageAttribution?: string;
   questions?: string[];
   notes?: string;
+  emoji?: string;
+  // Metadata for title slide
+  teacherName?: string;
+  institution?: string;
+  date?: string;
+  gradeLevel?: string;
+  subject?: string;
+  // Comparison slide
+  leftHeading?: string;
+  leftPoints?: string[];
+  rightHeading?: string;
+  rightPoints?: string[];
+  // Vocabulary slide
+  terms?: Array<{ term: string; definition: string }>;
 }
 
 export interface CreatePresentationOptions {
@@ -290,12 +309,17 @@ function validateSlideImages(
 
 // ─── Slide builders ────────────────────────────────────────
 
+function addSlideNumber(requests: any[], index: number, slideId: string, totalSlides: number, theme: any) {
+  const L = CONTENT_SLIDE.slideNumber;
+  addTextBox(requests, `slidenum_${index}`, slideId, L, `${index + 1} / ${totalSlides}`,
+    textStyle(L.fontSize, theme.muted));
+}
+
 function buildTitleSlide(content: SlideContent, index: number, theme: typeof COLOR_THEMES.blue): any[] {
   const slideId = `slide_${index}`;
   const requests: any[] = [];
   const L = TITLE_SLIDE;
 
-  // Create blank slide
   requests.push({
     createSlide: {
       objectId: slideId,
@@ -303,13 +327,10 @@ function buildTitleSlide(content: SlideContent, index: number, theme: typeof COL
     },
   });
 
-  // Background: light surface colour
   requests.push({
     updatePageProperties: {
       objectId: slideId,
-      pageProperties: {
-        pageBackgroundFill: solidFill(theme.surface),
-      },
+      pageProperties: { pageBackgroundFill: solidFill(theme.surface) },
       fields: 'pageBackgroundFill',
     },
   });
@@ -319,6 +340,11 @@ function buildTitleSlide(content: SlideContent, index: number, theme: typeof COL
     L.accentBar.x, L.accentBar.y, L.accentBar.width, L.accentBar.height,
     theme.primary);
 
+  // Bottom accent bar
+  addRect(requests, `bottom_${index}`, slideId,
+    L.bottomBar.x, L.bottomBar.y, L.bottomBar.width, L.bottomBar.height,
+    theme.primary);
+
   // Title
   if (content.title) {
     addTextBox(requests, `title_${index}`, slideId, L.title, content.title,
@@ -326,15 +352,27 @@ function buildTitleSlide(content: SlideContent, index: number, theme: typeof COL
   }
 
   // Decorative divider
-  addLine(requests, `div_${index}`, slideId,
+  addLine(requests, `divider_${index}`, slideId,
     L.divider.x, L.divider.y, L.divider.width,
     theme.primary, L.divider.thickness);
 
-  // Subtitle — check both subtitle field and content/text field (OpenAI often uses "content" for subtitle)
+  // Subtitle
   const subtitleText = content.subtitle || getBodyText(content);
   if (subtitleText) {
-    addTextBox(requests, `sub_${index}`, slideId, L.subtitle, subtitleText,
-      textStyle(L.subtitle.fontSize, theme.muted, { italic: false }));
+    addTextBox(requests, `subtitle_${index}`, slideId, L.subtitle, subtitleText,
+      textStyle(L.subtitle.fontSize, theme.muted));
+  }
+
+  // Metadata line: teacher, institution, date, grade
+  const metaParts: string[] = [];
+  if (content.teacherName) metaParts.push(content.teacherName);
+  if (content.institution) metaParts.push(content.institution);
+  if (content.subject) metaParts.push(content.subject);
+  if (content.gradeLevel) metaParts.push(content.gradeLevel);
+  if (content.date) metaParts.push(content.date);
+  if (metaParts.length > 0) {
+    addTextBox(requests, `meta_${index}`, slideId, L.metadata, metaParts.join('  •  '),
+      textStyle(L.metadata.fontSize, theme.muted));
   }
 
   return requests;
@@ -373,9 +411,37 @@ function buildContentSlide(content: SlideContent, index: number, theme: typeof C
       textStyle(L.title.fontSize, theme.secondary, { bold: true, fontFamily: FONT_FAMILY_TITLE }));
 
     // Divider line under title
-    addLine(requests, `div_${index}`, slideId,
+    addLine(requests, `divider_${index}`, slideId,
       L.divider.x, L.divider.y, L.divider.width,
       theme.accent, L.divider.thickness);
+  }
+
+  // If this slide has a questions array, render them as numbered list
+  if (content.questions && content.questions.length > 0) {
+    const qText = content.questions.map((q, i) => `${i + 1}.  ${q}`).join('\n\n');
+    addTextBox(requests, `body_${index}`, slideId, L.body, qText,
+      textStyle(L.body.fontSize, BODY_TEXT));
+    requests.push({
+      updateParagraphStyle: {
+        objectId: `body_${index}`,
+        style: { lineSpacing: L.body.lineSpacing, spaceAbove: { magnitude: 6, unit: 'PT' } },
+        fields: 'lineSpacing,spaceAbove',
+      },
+    });
+
+    // Image (right column when present)
+    if (content.imageUrl && 'image' in L) {
+      const img = (L as any).image;
+      try {
+        requests.push({
+          createImage: {
+            url: content.imageUrl,
+            elementProperties: shapeProps(slideId, img.x, img.y, img.width, img.height),
+          },
+        });
+      } catch { /* skip failed image */ }
+    }
+    return requests;
   }
 
   // Body content: combine text + bullet points into one text box
@@ -491,7 +557,7 @@ function buildQuestionsSlide(content: SlideContent, index: number, theme: typeof
     theme.primary);
 
   // Rounded-look background rectangle (accent tint)
-  addRect(requests, `bg_${index}`, slideId,
+  addRect(requests, `bgrect_${index}`, slideId,
     L.bgRect.x, L.bgRect.y, L.bgRect.width, L.bgRect.height,
     theme.accent);
 
@@ -500,10 +566,15 @@ function buildQuestionsSlide(content: SlideContent, index: number, theme: typeof
   addTextBox(requests, `title_${index}`, slideId, L.title, titleText,
     textStyle(L.title.fontSize, theme.secondary, { bold: true, fontFamily: FONT_FAMILY_TITLE }));
 
-  // Questions / text content
-  const qBodyText = content.questions
-    ? content.questions.map((q, i) => `${i + 1}.  ${q}`).join('\n\n')
-    : getBodyText(content) || '';
+  // Questions / text content — build from questions array, bulletPoints, or body text
+  let qBodyText = '';
+  if (content.questions && content.questions.length > 0) {
+    qBodyText = content.questions.map((q, i) => `${i + 1}.  ${q}`).join('\n\n');
+  } else if (content.bulletPoints && content.bulletPoints.length > 0) {
+    qBodyText = content.bulletPoints.map((q, i) => `${i + 1}.  ${q}`).join('\n\n');
+  } else {
+    qBodyText = getBodyText(content) || '';
+  }
 
   if (qBodyText) {
     addTextBox(requests, `qbody_${index}`, slideId, L.body, qBodyText,
@@ -524,24 +595,262 @@ function buildQuestionsSlide(content: SlideContent, index: number, theme: typeof
   return requests;
 }
 
+function buildOutcomesSlide(content: SlideContent, index: number, theme: typeof COLOR_THEMES.blue, totalSlides: number): any[] {
+  const slideId = `slide_${index}`;
+  const requests: any[] = [];
+  const L = OUTCOMES_SLIDE;
+
+  requests.push({ createSlide: { objectId: slideId, slideLayoutReference: { predefinedLayout: 'BLANK' } } });
+  requests.push({ updatePageProperties: { objectId: slideId, pageProperties: { pageBackgroundFill: solidFill(WHITE) }, fields: 'pageBackgroundFill' } });
+
+  addRect(requests, `accent_${index}`, slideId, L.accentBar.x, L.accentBar.y, L.accentBar.width, L.accentBar.height, theme.primary);
+
+  // Emoji icon
+  if (content.emoji) {
+    addTextBox(requests, `icon_${index}`, slideId, L.iconArea, content.emoji,
+      textStyle(L.iconArea.fontSize, DARK_TEXT));
+  }
+
+  const titleText = content.title || '🎯 Learning Outcomes';
+  addTextBox(requests, `title_${index}`, slideId, L.title, titleText,
+    textStyle(L.title.fontSize, theme.secondary, { bold: true, fontFamily: FONT_FAMILY_TITLE }));
+
+  addLine(requests, `divider_${index}`, slideId, L.divider.x, L.divider.y, L.divider.width, theme.accent, L.divider.thickness);
+
+  const bodyText = content.bulletPoints ? content.bulletPoints.map((p, i) => `${i + 1}.  ${p}`).join('\n\n') : getBodyText(content) || '';
+  if (bodyText) {
+    addTextBox(requests, `body_${index}`, slideId, L.body, bodyText,
+      textStyle(L.body.fontSize, BODY_TEXT));
+    requests.push({ updateParagraphStyle: { objectId: `body_${index}`, style: { lineSpacing: L.body.lineSpacing, spaceAbove: { magnitude: 4, unit: 'PT' } }, fields: 'lineSpacing,spaceAbove' } });
+  }
+
+  addSlideNumber(requests, index, slideId, totalSlides, theme);
+  return requests;
+}
+
+function buildVocabularySlide(content: SlideContent, index: number, theme: typeof COLOR_THEMES.blue, totalSlides: number): any[] {
+  const slideId = `slide_${index}`;
+  const requests: any[] = [];
+  const L = VOCABULARY_SLIDE;
+
+  requests.push({ createSlide: { objectId: slideId, slideLayoutReference: { predefinedLayout: 'BLANK' } } });
+  requests.push({ updatePageProperties: { objectId: slideId, pageProperties: { pageBackgroundFill: solidFill(WHITE) }, fields: 'pageBackgroundFill' } });
+
+  addRect(requests, `accent_${index}`, slideId, L.accentBar.x, L.accentBar.y, L.accentBar.width, L.accentBar.height, theme.primary);
+  addRect(requests, `bgrect_${index}`, slideId, L.bgRect.x, L.bgRect.y, L.bgRect.width, L.bgRect.height, theme.accent);
+
+  const titleText = content.title || '📚 Key Vocabulary';
+  addTextBox(requests, `title_${index}`, slideId, L.title, titleText,
+    textStyle(L.title.fontSize, theme.secondary, { bold: true, fontFamily: FONT_FAMILY_TITLE }));
+
+  // Build vocabulary list from terms array or bullet points
+  let bodyText = '';
+  if (content.terms && content.terms.length > 0) {
+    bodyText = content.terms.map(t => `${t.term} — ${t.definition}`).join('\n\n');
+  } else if (content.bulletPoints) {
+    bodyText = content.bulletPoints.join('\n\n');
+  } else {
+    bodyText = getBodyText(content) || '';
+  }
+
+  if (bodyText) {
+    addTextBox(requests, `body_${index}`, slideId, L.body, bodyText,
+      textStyle(L.body.fontSize, BODY_TEXT));
+    requests.push({ updateParagraphStyle: { objectId: `body_${index}`, style: { lineSpacing: L.body.lineSpacing }, fields: 'lineSpacing' } });
+  }
+
+  addSlideNumber(requests, index, slideId, totalSlides, theme);
+  return requests;
+}
+
+function buildComparisonSlide(content: SlideContent, index: number, theme: typeof COLOR_THEMES.blue, totalSlides: number): any[] {
+  const slideId = `slide_${index}`;
+  const requests: any[] = [];
+  const L = COMPARISON_SLIDE;
+
+  requests.push({ createSlide: { objectId: slideId, slideLayoutReference: { predefinedLayout: 'BLANK' } } });
+  requests.push({ updatePageProperties: { objectId: slideId, pageProperties: { pageBackgroundFill: solidFill(WHITE) }, fields: 'pageBackgroundFill' } });
+
+  addRect(requests, `accent_${index}`, slideId, L.accentBar.x, L.accentBar.y, L.accentBar.width, L.accentBar.height, theme.primary);
+
+  if (content.title) {
+    addTextBox(requests, `title_${index}`, slideId, L.title, content.title,
+      textStyle(L.title.fontSize, theme.secondary, { bold: true, fontFamily: FONT_FAMILY_TITLE }));
+    addLine(requests, `divider_${index}`, slideId, L.divider.x, L.divider.y, L.divider.width, theme.accent, L.divider.thickness);
+  }
+
+  // Left column
+  if (content.leftHeading) {
+    addTextBox(requests, `lefthdr_${index}`, slideId, L.leftHeader, content.leftHeading,
+      textStyle(L.leftHeader.fontSize, theme.primary, { bold: true, fontFamily: FONT_FAMILY_TITLE }));
+  }
+  if (content.leftPoints && content.leftPoints.length > 0) {
+    const leftText = content.leftPoints.join('\n');
+    addTextBox(requests, `lbody_${index}`, slideId, L.leftBody, leftText,
+      textStyle(L.leftBody.fontSize, BODY_TEXT));
+    requests.push({ createParagraphBullets: { objectId: `lbody_${index}`, bulletPreset: 'BULLET_DISC_CIRCLE_SQUARE' } });
+  }
+
+  // Center divider line (vertical)
+  requests.push({
+    createLine: { objectId: `verdiv_${index}`, lineCategory: 'STRAIGHT',
+      elementProperties: shapeProps(slideId, L.centerLine.x, L.centerLine.y, 0, L.centerLine.height) },
+  });
+  requests.push({
+    updateLineProperties: { objectId: `verdiv_${index}`,
+      lineProperties: { lineFill: { solidFill: { color: { rgbColor: theme.accent } } }, weight: { magnitude: 1, unit: 'PT' } },
+      fields: 'lineFill,weight' },
+  });
+
+  // Right column
+  if (content.rightHeading) {
+    addTextBox(requests, `righthdr_${index}`, slideId, L.rightHeader, content.rightHeading,
+      textStyle(L.rightHeader.fontSize, theme.primary, { bold: true, fontFamily: FONT_FAMILY_TITLE }));
+  }
+  if (content.rightPoints && content.rightPoints.length > 0) {
+    const rightText = content.rightPoints.join('\n');
+    addTextBox(requests, `rbody_${index}`, slideId, L.rightBody, rightText,
+      textStyle(L.rightBody.fontSize, BODY_TEXT));
+    requests.push({ createParagraphBullets: { objectId: `rbody_${index}`, bulletPreset: 'BULLET_DISC_CIRCLE_SQUARE' } });
+  }
+
+  addSlideNumber(requests, index, slideId, totalSlides, theme);
+  return requests;
+}
+
+function buildActivitySlide(content: SlideContent, index: number, theme: typeof COLOR_THEMES.blue, totalSlides: number): any[] {
+  const slideId = `slide_${index}`;
+  const requests: any[] = [];
+  const L = ACTIVITY_SLIDE;
+
+  requests.push({ createSlide: { objectId: slideId, slideLayoutReference: { predefinedLayout: 'BLANK' } } });
+  requests.push({ updatePageProperties: { objectId: slideId, pageProperties: { pageBackgroundFill: solidFill(WHITE) }, fields: 'pageBackgroundFill' } });
+
+  addRect(requests, `accent_${index}`, slideId, L.accentBar.x, L.accentBar.y, L.accentBar.width, L.accentBar.height, theme.primary);
+  addRect(requests, `bgrect_${index}`, slideId, L.bgRect.x, L.bgRect.y, L.bgRect.width, L.bgRect.height, theme.surface);
+
+  // Activity icon
+  const emoji = content.emoji || '✏️';
+  addTextBox(requests, `icon_${index}`, slideId, L.iconArea, emoji,
+    textStyle(L.iconArea.fontSize, DARK_TEXT));
+
+  const titleText = content.title || 'Activity';
+  addTextBox(requests, `title_${index}`, slideId, L.title, titleText,
+    textStyle(L.title.fontSize, theme.secondary, { bold: true, fontFamily: FONT_FAMILY_TITLE }));
+
+  const bodyText = content.bulletPoints
+    ? content.bulletPoints.join('\n')
+    : getBodyText(content) || '';
+
+  if (bodyText) {
+    addTextBox(requests, `body_${index}`, slideId, L.body, bodyText,
+      textStyle(L.body.fontSize, BODY_TEXT));
+    if (content.bulletPoints) {
+      requests.push({ createParagraphBullets: { objectId: `body_${index}`, bulletPreset: 'BULLET_ARROW_DIAMOND_DISC' } });
+    }
+    requests.push({ updateParagraphStyle: { objectId: `body_${index}`, style: { lineSpacing: L.body.lineSpacing, spaceAbove: { magnitude: 4, unit: 'PT' } }, fields: 'lineSpacing,spaceAbove' } });
+  }
+
+  addSlideNumber(requests, index, slideId, totalSlides, theme);
+  return requests;
+}
+
+function buildSummarySlide(content: SlideContent, index: number, theme: typeof COLOR_THEMES.blue, totalSlides: number): any[] {
+  const slideId = `slide_${index}`;
+  const requests: any[] = [];
+  const L = SUMMARY_SLIDE;
+
+  requests.push({ createSlide: { objectId: slideId, slideLayoutReference: { predefinedLayout: 'BLANK' } } });
+  requests.push({ updatePageProperties: { objectId: slideId, pageProperties: { pageBackgroundFill: solidFill(theme.surface) }, fields: 'pageBackgroundFill' } });
+
+  addRect(requests, `accent_${index}`, slideId, L.accentBar.x, L.accentBar.y, L.accentBar.width, L.accentBar.height, theme.primary);
+
+  const titleText = content.title || '📝 Summary';
+  addTextBox(requests, `title_${index}`, slideId, L.title, titleText,
+    textStyle(L.title.fontSize, theme.secondary, { bold: true, fontFamily: FONT_FAMILY_TITLE }));
+
+  addLine(requests, `divider_${index}`, slideId, L.divider.x, L.divider.y, L.divider.width, theme.primary, L.divider.thickness);
+
+  const bodyText = content.bulletPoints
+    ? content.bulletPoints.join('\n')
+    : getBodyText(content) || '';
+
+  if (bodyText) {
+    addTextBox(requests, `body_${index}`, slideId, L.body, bodyText,
+      textStyle(L.body.fontSize, BODY_TEXT));
+    if (content.bulletPoints) {
+      requests.push({ createParagraphBullets: { objectId: `body_${index}`, bulletPreset: 'BULLET_DIAMOND_DISC_SQUARE' } });
+    }
+    requests.push({ updateParagraphStyle: { objectId: `body_${index}`, style: { lineSpacing: L.body.lineSpacing, spaceAbove: { magnitude: 4, unit: 'PT' } }, fields: 'lineSpacing,spaceAbove' } });
+  }
+
+  addSlideNumber(requests, index, slideId, totalSlides, theme);
+  return requests;
+}
+
+function buildClosingSlide(content: SlideContent, index: number, theme: typeof COLOR_THEMES.blue): any[] {
+  const slideId = `slide_${index}`;
+  const requests: any[] = [];
+  const L = CLOSING_SLIDE;
+
+  requests.push({ createSlide: { objectId: slideId, slideLayoutReference: { predefinedLayout: 'BLANK' } } });
+  requests.push({ updatePageProperties: { objectId: slideId, pageProperties: { pageBackgroundFill: solidFill(theme.surface) }, fields: 'pageBackgroundFill' } });
+
+  addRect(requests, `accent_${index}`, slideId, L.accentBar.x, L.accentBar.y, L.accentBar.width, L.accentBar.height, theme.primary);
+  addRect(requests, `bottom_${index}`, slideId, L.bottomBar.x, L.bottomBar.y, L.bottomBar.width, L.bottomBar.height, theme.primary);
+
+  const titleText = content.title || 'Thank You!';
+  addTextBox(requests, `title_${index}`, slideId, L.title, titleText,
+    textStyle(L.title.fontSize, DARK_TEXT, { bold: true, fontFamily: FONT_FAMILY_TITLE }));
+
+  addLine(requests, `divider_${index}`, slideId, L.divider.x, L.divider.y, L.divider.width, theme.primary, L.divider.thickness);
+
+  const subtitleText = content.subtitle || getBodyText(content) || 'Questions? Let\'s discuss!';
+  addTextBox(requests, `subtitle_${index}`, slideId, L.subtitle, subtitleText,
+    textStyle(L.subtitle.fontSize, theme.muted));
+
+  return requests;
+}
+
 // ─── Master builder ────────────────────────────────────────
 
 function createSlideRequests(
   content: SlideContent,
   index: number,
-  colorTheme: ColorTheme = 'blue'
+  colorTheme: ColorTheme = 'blue',
+  totalSlides: number = 10
 ): any[] {
   const theme = COLOR_THEMES[colorTheme];
+
+  // Detect questions slides even if the AI set the wrong type —
+  // if a slide has a `questions` array and isn't a content/vocabulary/etc type,
+  // route it to the questions builder regardless
+  const hasQuestions = content.questions && content.questions.length > 0;
+  const isExplicitQuestionsType = content.type === 'guiding-questions' || content.type === 'reflection';
+
+  if (isExplicitQuestionsType || (hasQuestions && content.type !== 'content' && content.type !== 'image')) {
+    return buildQuestionsSlide(content, index, theme);
+  }
 
   switch (content.type) {
     case 'title':
       return buildTitleSlide(content, index, theme);
-    case 'guiding-questions':
-    case 'reflection':
-      return buildQuestionsSlide(content, index, theme);
+    case 'learning-outcomes':
+      return buildOutcomesSlide(content, index, theme, totalSlides);
+    case 'vocabulary':
+      return buildVocabularySlide(content, index, theme, totalSlides);
+    case 'comparison':
+      return buildComparisonSlide(content, index, theme, totalSlides);
+    case 'activity':
+      return buildActivitySlide(content, index, theme, totalSlides);
+    case 'summary':
+      return buildSummarySlide(content, index, theme, totalSlides);
+    case 'closing':
+      return buildClosingSlide(content, index, theme);
     case 'content':
     case 'image':
     default:
+      // buildContentSlide now also handles `questions` array if present
       return buildContentSlide(content, index, theme);
   }
 }
@@ -577,7 +886,7 @@ export async function addSlidesToPresentation(
   for (let index = 0; index < validatedSlides.length; index++) {
     const content = validatedSlides[index];
     try {
-      const slideRequests = createSlideRequests(content, index, options.colorTheme);
+      const slideRequests = createSlideRequests(content, index, options.colorTheme, validatedSlides.length);
 
       // Combine the delete-default-slide request with the first slide's requests
       const requests = index === 0 && firstSlideId

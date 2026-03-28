@@ -224,14 +224,27 @@ export type VideoFinderData = {
 // Presentation types
 export type SlideContent = {
   id: string;
-  type: "title" | "content" | "guiding-questions" | "reflection" | "image";
+  type: "title" | "content" | "guiding-questions" | "reflection" | "image"
+    | "learning-outcomes" | "vocabulary" | "comparison" | "activity" | "summary" | "closing";
   title?: string;
+  subtitle?: string;
   content?: string;
   bulletPoints?: string[];
   imageUrl?: string;
   imageAlt?: string;
   questions?: string[];
   notes?: string;
+  emoji?: string;
+  teacherName?: string;
+  institution?: string;
+  date?: string;
+  gradeLevel?: string;
+  subject?: string;
+  leftHeading?: string;
+  leftPoints?: string[];
+  rightHeading?: string;
+  rightPoints?: string[];
+  terms?: Array<{ term: string; definition: string }>;
 };
 
 export type PresentationData = {

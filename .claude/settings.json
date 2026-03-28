@@ -11,7 +11,17 @@
       "Bash(ls -la /Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/.env*)",
       "WebSearch",
       "Bash(npm ls:*)",
-      "Bash(npx esbuild:*)"
+      "Bash(npx esbuild:*)",
+      "Bash(ls *.md)",
+      "Bash(npm test:*)",
+      "Bash(npx vitest:*)",
+      "Bash(node -e \"try { const m = require\\(''lucide-react''\\); console.log\\(''Route'' in m ? ''has Route'' : ''NO Route''\\); console.log\\(''Waypoints'' in m ? ''has Waypoints'' : ''NO Waypoints''\\); console.log\\(''GitBranch'' in m ? ''has GitBranch'' : ''NO GitBranch''\\); console.log\\(''ListOrdered'' in m ? ''has ListOrdered'' : ''NO ListOrdered''\\); } catch\\(e\\) { console.log\\(e.message\\); }\")",
+      "Bash(git fetch:*)",
+      "Bash(git rebase:*)",
+      "Bash(git stash:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/server"
     ]
   }
 }

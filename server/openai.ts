@@ -468,62 +468,148 @@ export async function generatePresentation(request: PresentationGenerationReques
     ? `\n\nAdditional Teacher Instructions:\n${request.customInstructions}\n\nPlease carefully follow these custom instructions from the teacher when creating the presentation.`
     : '';
 
-  const prompt = `Create a pedagogically sound presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
+  const contentSlideCount = request.numberOfSlides - 6; // title + outcomes + questions + reflection + summary + closing
+
+  const prompt = `Create a pedagogically sound, visually varied presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
 
 Learning Outcomes:
 ${learningOutcomesText}${customInstructionsSection}
 
-Create ${request.numberOfSlides} slides that follow best practices for educational presentations:
+Create exactly ${request.numberOfSlides} slides using a MIX of these slide types for visual variety:
 
-Slide Structure Requirements:
-1. Title Slide: Engaging title and brief subtitle
-2. Learning Outcomes Slide: List the learning outcomes clearly
-3. Content Slides (${request.numberOfSlides - 5}): Mix of:
-   - Text-heavy slides with clear headings and 3-5 bullet points
-   - Image-focused slides with descriptive alt text and brief captions
-   - Real-world examples and applications
-4. Guiding Questions Slide: 4-6 thought-provoking questions that check understanding
-5. Reflection Slide: 2-3 reflection questions for deeper thinking
+REQUIRED SLIDE SEQUENCE:
+1. **title** — Engaging title, brief subtitle. Add emoji to the title (e.g. "🌊 The Water Cycle").
+2. **learning-outcomes** — List learning outcomes as numbered bullet points. Use emoji "🎯".
+3-${request.numberOfSlides - 4}. **CONTENT SLIDES** (${contentSlideCount} slides) — Mix these types:
+   - **content** — Standard slide with title, body text, and/or bullet points. Include emoji in titles.
+   - **vocabulary** — Key terms with definitions (use "terms" array). Use for introducing new terminology.
+   - **comparison** — Two-column comparison (leftHeading/leftPoints vs rightHeading/rightPoints). Great for compare/contrast.
+   - **activity** — Student task or exercise. Use emoji "✏️" or "🤔". Frame as clear instructions.
+   - **image** — Image-focused content slide.
+${request.numberOfSlides - 3}. **guiding-questions** — 4-6 thought-provoking questions (recall → analysis → application).
+${request.numberOfSlides - 2}. **reflection** — 2-3 deeper reflection questions.
+${request.numberOfSlides - 1}. **summary** — Key takeaways as bullet points. Summarize main concepts.
+${request.numberOfSlides}. **closing** — Thank you / questions slide.
 
-Pedagogical Guidelines:
-- Use age-appropriate language and examples
-- Break complex concepts into digestible chunks
-- Include visual variety (suggest images with descriptive alt text)
-- Add speaker notes with teaching tips and explanation guidance
-- Questions should range from recall to analysis to application
-- Content should be culturally relevant and inclusive
+IMPORTANT RULES:
+- Use AT LEAST 3 different slide types among the content slides (don't use only "content")
+- Include at least 1 "vocabulary" slide if the topic has key terms
+- Include at least 1 "activity" slide with a student task
+- Add a relevant emoji at the start of EVERY slide title (e.g. "🔬 The Scientific Method", "📖 Key Vocabulary")
+- At least 40% of content slides should have an imageUrl (a 2-4 word search query for stock photos)
 
-IMPORTANT - Image Requirements:
-- AT LEAST 30-40% of slides should include relevant educational images
-- For ANY slide that would benefit from a visual (title, content, or image type), include an imageUrl
-- The imageUrl should be a short, specific search query (2-4 words) to find a relevant stock photo
-- Examples of good image queries: "students learning science", "mathematics geometric shapes", "rainforest ecosystem"
-- Always include detailed imageAlt text for accessibility
-- Images should enhance understanding and engagement
+CARIBBEAN CONTEXT:
+This is for teachers in the Organisation of Eastern Caribbean States (OECS). Where appropriate:
+- Use examples from Caribbean geography, culture, and daily life
+- Reference Caribbean ecosystems (coral reefs, rainforests, volcanic islands)
+- Include examples from Caribbean industries (tourism, agriculture, fishing)
+- Use relatable scenarios for Caribbean students
+- This is a suggestion — only apply when it naturally fits the topic
+
+SPEAKER NOTES FORMAT:
+Every slide MUST have detailed speaker notes structured as:
+"⏱ Timing: X minutes | 💡 Key point: [main takeaway] | 🗣 Say: [suggested talking point] | ❓ Ask: [discussion prompt] | 🔄 Differentiation: [tip for different learners]"
+
+IMAGE REQUIREMENTS:
+- imageUrl should be a short search query (2-4 words): "coral reef ecosystem", "volcanic island", "students laboratory"
+- Always include imageAlt with detailed accessibility description
+- Images should enhance understanding, not just decorate
 
 Respond in JSON format:
 {
   "slides": [
     {
-      "id": "unique-id",
-      "type": "title" | "content" | "guiding-questions" | "reflection" | "image",
-      "title": "slide title",
-      "content": "main text content (optional)",
+      "id": "slide-1",
+      "type": "title",
+      "title": "🌊 The Water Cycle",
+      "subtitle": "Understanding Earth's most important process",
+      "emoji": "🌊",
+      "notes": "⏱ Timing: 1 min | 💡 Key point: Set the stage | 🗣 Say: Welcome to today's lesson..."
+    },
+    {
+      "id": "slide-2",
+      "type": "learning-outcomes",
+      "title": "🎯 Learning Outcomes",
+      "emoji": "🎯",
+      "bulletPoints": ["Outcome 1", "Outcome 2"],
+      "notes": "..."
+    },
+    {
+      "id": "slide-3",
+      "type": "vocabulary",
+      "title": "📚 Key Vocabulary",
+      "emoji": "📚",
+      "terms": [
+        { "term": "Evaporation", "definition": "The process of water turning from liquid to gas" }
+      ],
+      "notes": "..."
+    },
+    {
+      "id": "slide-4",
+      "type": "content",
+      "title": "🔬 How It Works",
+      "emoji": "🔬",
       "bulletPoints": ["point 1", "point 2"],
-      "imageUrl": "concise search query for stock photo",
-      "imageAlt": "detailed accessibility description",
-      "questions": ["question 1", "question 2"],
-      "notes": "speaker notes with pedagogical guidance"
+      "imageUrl": "water cycle diagram",
+      "imageAlt": "Diagram showing the stages of the water cycle",
+      "notes": "..."
+    },
+    {
+      "id": "slide-5",
+      "type": "comparison",
+      "title": "⚖️ Evaporation vs Condensation",
+      "emoji": "⚖️",
+      "leftHeading": "Evaporation",
+      "leftPoints": ["Liquid to gas", "Happens at surface"],
+      "rightHeading": "Condensation",
+      "rightPoints": ["Gas to liquid", "Forms clouds"],
+      "notes": "..."
+    },
+    {
+      "id": "slide-6",
+      "type": "activity",
+      "title": "✏️ Class Activity",
+      "emoji": "✏️",
+      "bulletPoints": ["Step 1: ...", "Step 2: ..."],
+      "notes": "..."
+    },
+    {
+      "id": "slide-N-3",
+      "type": "guiding-questions",
+      "title": "❓ Guiding Questions",
+      "questions": ["Question 1?", "Question 2?"],
+      "notes": "..."
+    },
+    {
+      "id": "slide-N-2",
+      "type": "reflection",
+      "title": "💭 Reflection",
+      "questions": ["Reflection question 1?"],
+      "notes": "..."
+    },
+    {
+      "id": "slide-N-1",
+      "type": "summary",
+      "title": "📝 Summary",
+      "bulletPoints": ["Key takeaway 1", "Key takeaway 2"],
+      "notes": "..."
+    },
+    {
+      "id": "slide-N",
+      "type": "closing",
+      "title": "🙏 Thank You!",
+      "subtitle": "Any questions? Let's discuss!",
+      "notes": "..."
     }
   ]
 }`;
 
   return callOpenAIJSON<SlideContent[]>(
     {
-      systemMessage: "You are an expert instructional designer creating educational presentations. Always respond with valid JSON and follow Universal Design for Learning (UDL) principles.",
+      systemMessage: "You are an expert Caribbean instructional designer creating visually engaging educational presentations for OECS schools. Always respond with valid JSON. Follow Universal Design for Learning (UDL) principles. Create varied, impactful slides that keep students engaged.",
       prompt,
-      maxTokens: 4000,
-      timeout: 20000,
+      maxTokens: 6000,
+      timeout: 30000,
     },
     "slides",
   );
