@@ -18,16 +18,19 @@ import { youtubeLoader } from "@/lib/youtube-loader";
 import { extractVideoId } from "@/lib/youtube-utils";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
 import { InteractiveVideoAIGenerator } from "@/components/InteractiveVideoAIGenerator";
-import { 
-  ArrowLeft, 
-  Sparkles, 
-  Plus, 
+import { VideoPlayer } from "@/components/players/VideoPlayer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  ArrowLeft,
+  Sparkles,
+  Plus,
   Trash2,
   Globe,
   ChevronDown,
   Play,
   Save,
-  Settings
+  Settings,
+  Eye,
 } from "lucide-react";
 import type { H5pContent, InteractiveVideoData, VideoHotspot, QuizQuestion } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
@@ -55,6 +58,7 @@ export default function InteractiveVideoCreator() {
   const [showEnhancedAIModal, setShowEnhancedAIModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showTestInteractions, setShowTestInteractions] = useState(false);
   const [videoDuration, setVideoDuration] = useState(0);
   const previewPlayerRef = useRef<any>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -285,6 +289,18 @@ export default function InteractiveVideoCreator() {
               <Sparkles className="h-4 w-4 mr-1" />
               AI Generate Hotspots
             </Button>
+            {videoUrl && hotspots.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTestInteractions(true)}
+                data-testid="button-test-interactions"
+                className="cursor-pointer"
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                Test Interactions
+              </Button>
+            )}
             {contentId && isPublished && (
               <ShareToClassroomDialog
                 contentTitle={title}
@@ -809,6 +825,29 @@ export default function InteractiveVideoCreator() {
         gradeLevel={gradeLevel}
         ageRange={ageRange}
       />
+
+      {/* Test Interactions — full interactive player preview */}
+      <Dialog open={showTestInteractions} onOpenChange={setShowTestInteractions}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Test Interactions — {title || "Untitled"}
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              This is exactly what students will see. Hotspots will trigger as you watch. Progress is not saved during testing.
+            </p>
+          </DialogHeader>
+          <div className="p-6 pt-4">
+            {showTestInteractions && videoUrl && hotspots.length > 0 && (
+              <VideoPlayer
+                data={{ videoUrl, hotspots }}
+                contentId={`test-preview-${Date.now()}`}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
