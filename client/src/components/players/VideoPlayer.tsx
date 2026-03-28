@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, Check, X } from "lucide-react";
 import { youtubeLoader } from "@/lib/youtube-loader";
+import { extractVideoId } from "@/lib/youtube-utils";
 import type { InteractiveVideoData, VideoHotspot, QuizQuestion } from "@shared/schema";
 import { useProgressTracker } from "@/hooks/use-progress-tracker";
 
@@ -126,12 +127,7 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
     }
   }, [completedHotspots.size, highestProgress, isProgressInitialized, isAuthenticated]);
 
-  const getYouTubeVideoId = (url: string) => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
-    return match ? match[1] : null;
-  };
-
-  const videoId = getYouTubeVideoId(data.videoUrl);
+  const videoId = extractVideoId(data.videoUrl);
 
   useEffect(() => {
     if (!videoId) return;
@@ -199,17 +195,29 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
     }
   };
 
-  const checkForHotspots = (time: number) => {
-    // Don't check if there's already a hotspot showing
-    if (currentHotspot) return;
-    
-    // Find a hotspot that matches the current time and hasn't been completed
-    const hotspot = data.hotspots.find(
-      (h) => Math.abs(h.timestamp - time) < 0.5 && !completedHotspots.has(h.id)
-    );
+  const lastCheckedTimeRef = useRef<number>(-1);
 
-    if (hotspot) {
-      setCurrentHotspot(hotspot);
+  const checkForHotspots = (time: number) => {
+    if (currentHotspot) return;
+
+    // Find the earliest uncompleted hotspot whose timestamp falls between
+    // lastCheckedTime and now (or within 0.5s tolerance for the first check).
+    // Sorting ensures we trigger the earliest one first if multiple are close.
+    const candidates = data.hotspots
+      .filter(h => !completedHotspots.has(h.id))
+      .filter(h => {
+        if (lastCheckedTimeRef.current < 0) {
+          return Math.abs(h.timestamp - time) < 0.5;
+        }
+        // Hotspot timestamp is between last check and now (forward playback)
+        return h.timestamp > lastCheckedTimeRef.current - 0.2 && h.timestamp <= time + 0.3;
+      })
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    lastCheckedTimeRef.current = time;
+
+    if (candidates.length > 0) {
+      setCurrentHotspot(candidates[0]);
       playerRef.current?.pauseVideo();
       setIsPlaying(false);
     }
@@ -353,11 +361,12 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
     setShowFeedback(false);
     
     // Small delay before resuming to ensure state updates are processed
-    // This prevents the hotspot from being re-triggered immediately
     setTimeout(() => {
       if (playerRef.current) {
         // Seek slightly past the hotspot timestamp to avoid re-triggering
-        const seekTime = hotspotTimestamp + 1;
+        // Clamp to video duration to prevent seeking past end
+        const seekTime = Math.min(hotspotTimestamp + 1, duration > 0 ? duration - 0.5 : hotspotTimestamp + 1);
+        lastCheckedTimeRef.current = seekTime;
         playerRef.current.seekTo(seekTime, true);
         playerRef.current.playVideo();
       }
@@ -380,17 +389,28 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
 
         {/* Hotspot Overlay */}
         {currentHotspot && (
-          <div className="absolute inset-0 bg-black/80 flex items-center justify-center p-6 z-10">
-            <Card className="w-full max-w-2xl">
+          <div className="absolute inset-0 bg-black/80 flex items-center justify-center p-6 z-10" role="dialog" aria-label={`Interactive moment: ${currentHotspot.title}`}>
+            <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
               <CardContent className="pt-6">
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={currentHotspot.type === "question" || currentHotspot.type === "quiz" ? "default" : "outline"}>
-                      {currentHotspot.type === "quiz" ? "Quiz" : currentHotspot.type}
-                    </Badge>
-                    <span className="text-sm font-mono text-muted-foreground">
-                      {formatTime(currentHotspot.timestamp)}
-                    </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={currentHotspot.type === "question" || currentHotspot.type === "quiz" ? "default" : "outline"}>
+                        {currentHotspot.type === "quiz" ? "Multi-Question Quiz"
+                          : currentHotspot.type === "question" ? "Question"
+                          : currentHotspot.type === "navigation" ? "Navigation"
+                          : "Information"}
+                      </Badge>
+                      <span className="text-sm font-mono text-muted-foreground">
+                        {formatTime(currentHotspot.timestamp)}
+                      </span>
+                    </div>
+                    {/* Skip button for all types */}
+                    {(currentHotspot.type === "info" || currentHotspot.type === "navigation") && (
+                      <Button variant="ghost" size="sm" onClick={handleContinue} className="text-muted-foreground cursor-pointer">
+                        Skip <SkipForward className="h-3 w-3 ml-1" />
+                      </Button>
+                    )}
                   </div>
 
                   <h3 className="text-xl font-semibold">{currentHotspot.title}</h3>
@@ -464,10 +484,14 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
                                       <div className="flex items-center justify-between">
                                         <span>{option}</span>
                                         {quizShowFeedback && optIndex === question.correctAnswer && (
-                                          <Check className="h-4 w-4 text-green-600" />
+                                          <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                                            <Check className="h-4 w-4" /> Correct
+                                          </span>
                                         )}
                                         {quizShowFeedback && isSelected && !isCorrect && (
-                                          <X className="h-4 w-4 text-red-600" />
+                                          <span className="flex items-center gap-1 text-red-600 text-sm font-medium">
+                                            <X className="h-4 w-4" /> Incorrect
+                                          </span>
                                         )}
                                       </div>
                                     </button>
@@ -501,10 +525,14 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
                                       <div className="flex items-center justify-between">
                                         <span className="capitalize">{value}</span>
                                         {quizShowFeedback && value === String(question.correctAnswer) && (
-                                          <Check className="h-4 w-4 text-green-600" />
+                                          <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                                            <Check className="h-4 w-4" /> Correct
+                                          </span>
                                         )}
                                         {quizShowFeedback && isSelected && !isCorrect && (
-                                          <X className="h-4 w-4 text-red-600" />
+                                          <span className="flex items-center gap-1 text-red-600 text-sm font-medium">
+                                            <X className="h-4 w-4" /> Incorrect
+                                          </span>
                                         )}
                                       </div>
                                     </button>
@@ -589,8 +617,16 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
                           >
                             <div className="flex items-center justify-between">
                               <span>{option}</span>
-                              {showResult && isCorrect && <Check className="h-5 w-5 text-green-600" />}
-                              {showResult && isSelected && !isCorrect && <X className="h-5 w-5 text-red-600" />}
+                              {showResult && isCorrect && (
+                                <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                                  <Check className="h-5 w-5" /> Correct
+                                </span>
+                              )}
+                              {showResult && isSelected && !isCorrect && (
+                                <span className="flex items-center gap-1 text-red-600 text-sm font-medium">
+                                  <X className="h-5 w-5" /> Incorrect
+                                </span>
+                              )}
                             </div>
                           </button>
                         );
@@ -689,9 +725,17 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "ArrowLeft") {
+                    e.preventDefault();
                     handleSeek(Math.max(0, progressPercentage - 5));
                   } else if (e.key === "ArrowRight") {
+                    e.preventDefault();
                     handleSeek(Math.min(100, progressPercentage + 5));
+                  } else if (e.key === "Home") {
+                    e.preventDefault();
+                    handleSeek(0);
+                  } else if (e.key === "End") {
+                    e.preventDefault();
+                    handleSeek(100);
                   }
                 }}
                 data-testid="video-progress-bar"
@@ -777,41 +821,42 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
               </Badge>
             </div>
             <Progress value={(completedHotspots.size / data.hotspots.length) * 100} className="mb-4" />
-            <div className="space-y-2">
+            <ul className="space-y-2 list-none p-0 m-0" role="list" aria-label="Interactive moments">
               {data.hotspots
                 .sort((a, b) => a.timestamp - b.timestamp)
                 .map((hotspot) => {
                   const isCompleted = completedHotspots.has(hotspot.id);
                   return (
-                    <button
-                      key={hotspot.id}
-                      className={`w-full p-3 rounded-lg border cursor-pointer transition-all hover-elevate text-left ${
-                        isCompleted ? "border-green-600 bg-green-50 dark:bg-green-950" : "border-border"
-                      }`}
-                      onClick={() => jumpToHotspot(hotspot)}
-                      aria-label={`Jump to ${hotspot.type} at ${formatTime(hotspot.timestamp)}: ${hotspot.title}`}
-                      data-testid={`hotspot-item-${hotspot.id}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {isCompleted && <Check className="h-4 w-4 text-green-600" />}
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {formatTime(hotspot.timestamp)}
-                              </Badge>
-                              <span className="text-sm font-medium">{hotspot.title}</span>
+                    <li key={hotspot.id}>
+                      <button
+                        className={`w-full p-3 rounded-lg border cursor-pointer transition-all hover-elevate text-left ${
+                          isCompleted ? "border-green-600 bg-green-50 dark:bg-green-950" : "border-border"
+                        }`}
+                        onClick={() => jumpToHotspot(hotspot)}
+                        aria-label={`${isCompleted ? "Completed: " : ""}Jump to ${hotspot.type} at ${formatTime(hotspot.timestamp)}: ${hotspot.title}`}
+                        data-testid={`hotspot-item-${hotspot.id}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {isCompleted && <Check className="h-4 w-4 text-green-600" aria-hidden="true" />}
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  {formatTime(hotspot.timestamp)}
+                                </Badge>
+                                <span className="text-sm font-medium">{hotspot.title}</span>
+                              </div>
                             </div>
                           </div>
+                          <Badge variant={hotspot.type === "question" || hotspot.type === "quiz" ? "default" : "outline"}>
+                            {hotspot.type === "quiz" ? "quiz" : hotspot.type}
+                          </Badge>
                         </div>
-                        <Badge variant={hotspot.type === "question" ? "default" : "outline"}>
-                          {hotspot.type}
-                        </Badge>
-                      </div>
-                    </button>
+                      </button>
+                    </li>
                   );
                 })}
-            </div>
+            </ul>
           </CardContent>
         </Card>
       )}

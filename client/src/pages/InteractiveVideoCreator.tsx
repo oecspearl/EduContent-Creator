@@ -15,6 +15,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { youtubeLoader } from "@/lib/youtube-loader";
+import { extractVideoId } from "@/lib/youtube-utils";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
 import { InteractiveVideoAIGenerator } from "@/components/InteractiveVideoAIGenerator";
 import { 
@@ -194,10 +195,7 @@ export default function InteractiveVideoCreator() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const getYouTubeVideoId = (url: string) => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
-    return match ? match[1] : null;
-  };
+  const getYouTubeVideoId = extractVideoId;
 
   useEffect(() => {
     if (!showPreview || !videoUrl) return;
