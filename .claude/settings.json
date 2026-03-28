@@ -18,7 +18,8 @@
       "Bash(node -e \"try { const m = require\\(''lucide-react''\\); console.log\\(''Route'' in m ? ''has Route'' : ''NO Route''\\); console.log\\(''Waypoints'' in m ? ''has Waypoints'' : ''NO Waypoints''\\); console.log\\(''GitBranch'' in m ? ''has GitBranch'' : ''NO GitBranch''\\); console.log\\(''ListOrdered'' in m ? ''has ListOrdered'' : ''NO ListOrdered''\\); } catch\\(e\\) { console.log\\(e.message\\); }\")",
       "Bash(git fetch:*)",
       "Bash(git rebase:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(ls client/src/components/players/Presentation*)"
     ],
     "additionalDirectories": [
       "/Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/server"

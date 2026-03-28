@@ -4,7 +4,7 @@
  * background shapes, two-column layouts, and themed color palettes.
  */
 
-import { google } from 'googleapis';
+import { google, type drive_v3 } from 'googleapis';
 import type { Profile } from '@shared/schema';
 import { storage } from './storage';
 import { refreshGoogleToken, needsTokenRefresh } from './utils/token-manager';
@@ -43,6 +43,7 @@ import {
 } from './constants/slides';
 
 const slidesApi = google.slides('v1');
+const driveApi = google.drive('v3');
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -269,6 +270,25 @@ export async function createPresentation(
     presentationId,
     url: `https://docs.google.com/presentation/d/${presentationId}/edit`,
   };
+}
+
+// ─── Sharing ───────────────────────────────────────────────
+
+/** Make a presentation viewable by anyone with the link */
+async function makePubliclyViewable(auth: any, fileId: string): Promise<void> {
+  try {
+    await driveApi.permissions.create({
+      auth,
+      fileId,
+      requestBody: {
+        role: 'reader',
+        type: 'anyone',
+      },
+    });
+  } catch (error) {
+    // Non-fatal — the presentation still works, just requires permission
+    console.warn('Could not set public sharing on presentation:', error);
+  }
 }
 
 // ─── Validation ────────────────────────────────────────────
@@ -934,6 +954,9 @@ export async function addSlidesToPresentation(
       }
     }
   }
+
+  // Make presentation viewable by anyone with the link
+  await makePubliclyViewable(auth, presentationId);
 
   return {
     successCount: validatedSlides.length - failedSlides.length,

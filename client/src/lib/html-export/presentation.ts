@@ -16,16 +16,55 @@ export function generatePresentationHTML(data: any): string {
       slidesHTML += `<h3>${escapeHtml(slide.title)}</h3>`;
     }
 
+    // Subtitle (title and closing slides)
+    if (slide.subtitle) {
+      slidesHTML += `<p class="description">${escapeHtml(slide.subtitle)}</p>`;
+    }
+
+    // Metadata line (title slide)
+    const metaParts = [slide.teacherName, slide.institution, slide.subject, slide.gradeLevel, slide.date].filter(Boolean);
+    if (metaParts.length > 0) {
+      slidesHTML += `<p style="font-size: 0.9rem; color: #888; margin-top: 0.5rem;">${metaParts.map((p: string) => escapeHtml(p)).join('  •  ')}</p>`;
+    }
+
     // Slide content (can be HTML or plain text)
     if (slide.content) {
-      // Check if content is HTML (contains tags)
       if (slide.content.includes('<') && slide.content.includes('>')) {
-        // It's HTML, include it directly but sanitize
         slidesHTML += `<div class="slide-content">${slide.content}</div>`;
       } else {
-        // It's plain text, escape and format
         slidesHTML += `<div class="slide-content"><p>${escapeHtml(slide.content)}</p></div>`;
       }
+    }
+
+    // Vocabulary terms
+    if (slide.terms && Array.isArray(slide.terms) && slide.terms.length > 0) {
+      slidesHTML += `<div style="margin: 1.5rem 0;">`;
+      slide.terms.forEach((t: any) => {
+        slidesHTML += `<div style="padding: 0.75rem 1rem; margin: 0.5rem 0; background: #f0f7ff; border-left: 4px solid #4a90e2; border-radius: 4px;">`;
+        slidesHTML += `<strong>${escapeHtml(t.term)}</strong> — ${escapeHtml(t.definition)}`;
+        slidesHTML += `</div>`;
+      });
+      slidesHTML += `</div>`;
+    }
+
+    // Comparison (two columns)
+    if (slide.leftHeading || slide.rightHeading) {
+      slidesHTML += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 1.5rem 0;">`;
+      slidesHTML += `<div>`;
+      if (slide.leftHeading) slidesHTML += `<h4 style="color: #4a90e2;">${escapeHtml(slide.leftHeading)}</h4>`;
+      if (slide.leftPoints && Array.isArray(slide.leftPoints)) {
+        slidesHTML += `<ul class="bullet-points">`;
+        slide.leftPoints.forEach((p: string) => { slidesHTML += `<li>${escapeHtml(p)}</li>`; });
+        slidesHTML += `</ul>`;
+      }
+      slidesHTML += `</div><div style="border-left: 1px solid #ddd; padding-left: 2rem;">`;
+      if (slide.rightHeading) slidesHTML += `<h4 style="color: #4a90e2;">${escapeHtml(slide.rightHeading)}</h4>`;
+      if (slide.rightPoints && Array.isArray(slide.rightPoints)) {
+        slidesHTML += `<ul class="bullet-points">`;
+        slide.rightPoints.forEach((p: string) => { slidesHTML += `<li>${escapeHtml(p)}</li>`; });
+        slidesHTML += `</ul>`;
+      }
+      slidesHTML += `</div></div>`;
     }
 
     // Bullet points
@@ -39,7 +78,7 @@ export function generatePresentationHTML(data: any): string {
       slidesHTML += `</ul>`;
     }
 
-    // Questions (for guiding-questions slide type)
+    // Questions (for guiding-questions / reflection slide types)
     if (slide.questions && Array.isArray(slide.questions) && slide.questions.length > 0) {
       slidesHTML += `<div class="slide-questions">`;
       slidesHTML += `<h4>Questions:</h4>`;
@@ -53,12 +92,12 @@ export function generatePresentationHTML(data: any): string {
       slidesHTML += `</div>`;
     }
 
-    // Image (display after content)
+    // Image
     if (slide.imageUrl) {
       slidesHTML += generateImageHtml(slide.imageUrl, slide.imageAlt || slide.title || `Slide ${index + 1} image`);
     }
 
-    // Speaker notes (optional, shown in smaller text)
+    // Speaker notes
     if (slide.notes) {
       slidesHTML += `<div class="speaker-notes">`;
       slidesHTML += `<strong>Notes:</strong> ${escapeHtml(slide.notes)}`;
