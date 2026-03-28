@@ -9,6 +9,8 @@ import { CheckCircle2, XCircle, RotateCcw, GripVertical } from "lucide-react";
 import type { QuizData } from "@shared/schema";
 import { useProgressTracker } from "@/hooks/use-progress-tracker";
 import { ScreenReaderAnnouncer, useScreenReaderAnnounce } from "@/components/ScreenReaderAnnouncer";
+import { AIInsights } from "./AIInsights";
+import { QuestionInsight } from "./QuestionInsight";
 
 type QuizPlayerProps = {
   data: QuizData;
@@ -414,18 +416,31 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
                           : String(question.correctAnswer)}
                       </p>
                     )}
+                    <QuestionInsight
+                      question={question}
+                      studentAnswer={answers[index]}
+                      isCorrect={isCorrect(index)}
+                    />
                   </div>
                 </div>
               ))}
             </div>
           )}
+          {/* AI Study Insights (students only) */}
+          <AIInsights
+            questions={data.questions}
+            answers={answers}
+            score={score}
+            totalQuestions={data.questions.length}
+            checkCorrectness={checkAnswerCorrectness}
+          />
         </CardContent>
         <CardFooter className="justify-center">
           {data.settings.allowRetry && (
-            <Button 
+            <Button
               ref={restartButtonRef}
-              onClick={handleRestart} 
-              data-testid="button-restart" 
+              onClick={handleRestart}
+              data-testid="button-restart"
               aria-label="Restart the quiz"
             >
               <RotateCcw className="h-4 w-4 mr-2" />

@@ -1,5 +1,6 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Home,
   GraduationCap,
@@ -7,7 +8,12 @@ import {
   Users,
   HelpCircle,
   Settings,
-  X
+  X,
+  BookOpen,
+  Trophy,
+  ClipboardList,
+  MessageCircle,
+  Waypoints,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,11 +24,21 @@ type NavItem = {
   badge?: number;
 };
 
-const navItems: NavItem[] = [
+const teacherNavItems: NavItem[] = [
   { label: "Dashboard", icon: Home, path: "/dashboard" },
   { label: "My Classes", icon: GraduationCap, path: "/classes" },
+  { label: "Gradebook", icon: ClipboardList, path: "/gradebook" },
+  { label: "Learning Paths", icon: Waypoints, path: "/learning-paths" },
   { label: "Analytics", icon: BarChart3, path: "/analytics" },
+  { label: "Messages", icon: MessageCircle, path: "/messages" },
   { label: "Shared Resources", icon: Users, path: "/shared-resources" },
+  { label: "Help", icon: HelpCircle, path: "/help" },
+  { label: "Settings", icon: Settings, path: "/settings" },
+];
+
+const studentNavItems: NavItem[] = [
+  { label: "My Learning", icon: Home, path: "/dashboard" },
+  { label: "Messages", icon: MessageCircle, path: "/messages" },
   { label: "Help", icon: HelpCircle, path: "/help" },
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
@@ -33,6 +49,9 @@ type DashboardSidebarProps = {
 
 export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
   const [location, navigate] = useLocation();
+  const { user } = useAuth();
+  const isStudent = user?.role === "student";
+  const navItems = isStudent ? studentNavItems : teacherNavItems;
 
   const handleNavigate = (path: string) => {
     navigate(path);

@@ -37,7 +37,8 @@ import {
   TrendingUp,
   Eye,
   CheckCircle2,
-  Menu
+  Menu,
+  Copy
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { H5pContent, ContentType } from "@shared/schema";
@@ -279,6 +280,30 @@ export default function Dashboard() {
       toast({
         title: "Delete failed",
         description: error.message || "Failed to delete content. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: async (contentId: string) => {
+      await apiRequest("POST", `/api/content/${contentId}/duplicate`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return Array.isArray(queryKey) && queryKey[0] === "/api/content";
+        }
+      });
+      toast({
+        title: "Content duplicated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Duplicate failed",
+        description: error.message || "Failed to duplicate content. Please try again.",
         variant: "destructive",
       });
     },
@@ -743,6 +768,17 @@ export default function Dashboard() {
                               aria-label="Share content"
                             >
                               <Share2 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 cursor-pointer"
+                              onClick={() => duplicateMutation.mutate(content.id)}
+                              disabled={duplicateMutation.isPending}
+                              data-testid={`button-duplicate-${content.id}`}
+                              aria-label="Duplicate content"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
                             </Button>
                             <Button
                               variant="outline"

@@ -1,5 +1,6 @@
 import OpenAI from "openai";
-import type { AIGenerationRequest, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, H5pContent, PresentationGenerationRequest, SlideContent } from "@shared/schema";
+import type { AIGenerationRequest, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, PresentationGenerationRequest, SlideContent } from "@shared/schema";
+import { callOpenAIJSON } from "./utils/openai-helper";
 
 // This is using OpenAI's API, which points to OpenAI's API servers and requires your own API key.
 // Using gpt-4o as the default model (latest and most capable model as of 2024)
@@ -10,13 +11,16 @@ export function getOpenAIClient() {
     throw new Error("OPENAI_API_KEY is not set. Please configure it in your environment variables.");
   }
   if (!openai) {
-    openai = new OpenAI({ 
+    openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
-      timeout: 30000, // 30 second timeout for all requests
+      timeout: 30000,
     });
   }
   return openai;
 }
+
+const EDUCATOR_SYSTEM = (role: string) =>
+  `You are an expert educator creating ${role}. Always respond with valid JSON.`;
 
 export async function generateQuizQuestions(request: AIGenerationRequest): Promise<QuizQuestion[]> {
   const numberOfOptions = request.numberOfOptions || 4;
@@ -44,26 +48,10 @@ Respond in JSON format with an array of questions following this structure:
   ]
 }`;
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: "You are an expert educator creating quiz questions. Always respond with valid JSON." },
-      { role: "user", content: prompt },
-    ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4096,
-    temperature: 0.7,
-  }, {
-    timeout: 30000, // 30 second timeout
-  });
-
-  try {
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-    return result.questions || [];
-  } catch (parseError) {
-    console.error("Failed to parse OpenAI response for quiz questions:", parseError);
-    throw new Error("Received invalid response from AI. Please try again.");
-  }
+  return callOpenAIJSON<QuizQuestion[]>(
+    { systemMessage: EDUCATOR_SYSTEM("quiz questions"), prompt },
+    "questions",
+  );
 }
 
 export async function generateFlashcards(request: AIGenerationRequest): Promise<FlashcardData["cards"]> {
@@ -88,26 +76,10 @@ Respond in JSON format:
   ]
 }`;
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: "You are an expert educator creating flashcards. Always respond with valid JSON." },
-      { role: "user", content: prompt },
-    ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4096,
-    temperature: 0.7,
-  }, {
-    timeout: 30000, // 30 second timeout
-  });
-
-  try {
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-    return result.cards || [];
-  } catch (parseError) {
-    console.error("Failed to parse OpenAI response for flashcards:", parseError);
-    throw new Error("Received invalid response from AI. Please try again.");
-  }
+  return callOpenAIJSON<FlashcardData["cards"]>(
+    { systemMessage: EDUCATOR_SYSTEM("flashcards"), prompt },
+    "cards",
+  );
 }
 
 export async function generateVideoHotspots(
@@ -132,60 +104,13 @@ export async function generateVideoHotspots(
     }
   }
 
-  // Calculate intelligent timestamp distribution
-  const calculateTimestamps = (count: number, duration: number): number[] => {
-    if (count <= 0 || duration <= 0) return [];
-    
-    const timestamps: number[] = [];
-    const segments = count;
-    
-    // Use a distribution that focuses on key learning moments:
-    // - Introduction (first 10-15%)
-    // - Main content sections (distributed throughout middle 60-70%)
-    // - Summary/Conclusion (last 10-15%)
-    
-    if (count === 1) {
-      timestamps.push(Math.floor(duration * 0.5)); // Middle of video
-    } else if (count === 2) {
-      timestamps.push(Math.floor(duration * 0.3)); // Early
-      timestamps.push(Math.floor(duration * 0.7)); // Late
-    } else if (count === 3) {
-      timestamps.push(Math.floor(duration * 0.15)); // Introduction
-      timestamps.push(Math.floor(duration * 0.5)); // Middle
-      timestamps.push(Math.floor(duration * 0.85)); // Conclusion
-    } else {
-      // For 4+ hotspots, distribute intelligently
-      const introEnd = Math.floor(duration * 0.15);
-      const conclusionStart = Math.floor(duration * 0.85);
-      const middleStart = introEnd;
-      const middleEnd = conclusionStart;
-      const middleRange = middleEnd - middleStart;
-      
-      // First hotspot in introduction
-      timestamps.push(Math.floor(duration * 0.1));
-      
-      // Distribute remaining hotspots in middle section
-      const middleHotspots = count - 2; // -2 for intro and conclusion
-      for (let i = 1; i <= middleHotspots; i++) {
-        const position = middleStart + (middleRange * i / (middleHotspots + 1));
-        timestamps.push(Math.floor(position));
-      }
-      
-      // Last hotspot near conclusion
-      timestamps.push(Math.floor(duration * 0.9));
-    }
-    
-    return timestamps.sort((a, b) => a - b);
-  };
-
   const suggestedTimestamps = calculateTimestamps(request.numberOfItems, totalSeconds);
   const timestampGuidance = suggestedTimestamps.length > 0
     ? `\nSuggested timestamp distribution (in seconds): ${suggestedTimestamps.join(", ")}. Use these as a guide, but adjust based on the actual video content structure.`
     : "";
 
-  // Extract key information from description
   const description = videoMetadata?.videoDescription || "";
-  const descriptionPreview = description.length > 1000 
+  const descriptionPreview = description.length > 1000
     ? description.substring(0, 1000) + "... [truncated]"
     : description;
 
@@ -225,7 +150,7 @@ CONTEXT:
 ${request.additionalContext ? `\n- Additional Requirements: ${request.additionalContext}` : ""}${videoInfo}
 
 HOTSPOT REQUIREMENTS:
-1. **Type Distribution**: 
+1. **Type Distribution**:
    - ${Math.ceil(request.numberOfItems * 0.4)}-${Math.floor(request.numberOfItems * 0.5)} question hotspots (single question)
    - ${Math.max(1, Math.floor(request.numberOfItems * 0.2))}-${Math.ceil(request.numberOfItems * 0.3)} quiz hotspots (multiple questions - 2-4 questions each)
    - ${Math.floor(request.numberOfItems * 0.15)}-${Math.ceil(request.numberOfItems * 0.2)} information hotspots (provide context)
@@ -276,17 +201,15 @@ Respond in JSON format:
       "type": "question" | "quiz" | "info" | "navigation",
       "title": "Concise, descriptive title (max 50 chars)",
       "content": "Question text or information description (optional for quiz type)",
-      // For single question hotspots:
-      "options": ["option1", "option2", "option3", "option4"], // only for "question" type (3-4 options)
-      "correctAnswer": 0, // only for "question" type (0-based index)
-      // For quiz hotspots (multiple questions):
-      "questions": [ // only for "quiz" type
+      "options": ["option1", "option2", "option3", "option4"],
+      "correctAnswer": 0,
+      "questions": [
         {
           "id": "question-id-1",
           "type": "multiple-choice" | "true-false" | "fill-blank",
           "question": "Question text",
-          "options": ["option1", "option2", "option3", "option4"], // only for multiple-choice
-          "correctAnswer": 0 | "true" | "false" | "answer text", // index for multiple-choice, "true"/"false" for true-false, text for fill-blank
+          "options": ["option1", "option2", "option3", "option4"],
+          "correctAnswer": 0,
           "explanation": "Optional explanation for the answer"
         }
       ]
@@ -296,32 +219,49 @@ Respond in JSON format:
 
 IMPORTANT: Ensure all timestamps are valid (0 to ${totalSeconds} seconds) and hotspots are distributed throughout the video duration.`;
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: "You are an expert educator creating interactive video content. Always respond with valid JSON. Ensure all timestamps are within the video duration." },
-      { role: "user", content: prompt },
-    ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4096,
-    temperature: 0.7,
-  }, {
-    timeout: 30000, // 30 second timeout
-  });
+  const hotspots = await callOpenAIJSON<VideoHotspot[]>(
+    {
+      systemMessage: "You are an expert educator creating interactive video content. Always respond with valid JSON. Ensure all timestamps are within the video duration.",
+      prompt,
+    },
+    "hotspots",
+  );
 
-  try {
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-    const hotspots = result.hotspots || [];
-    
-    // Validate and clamp timestamps to video duration
-    return hotspots.map((hotspot: VideoHotspot) => ({
-      ...hotspot,
-      timestamp: Math.min(Math.max(0, hotspot.timestamp), totalSeconds),
-    }));
-  } catch (parseError) {
-    console.error("Failed to parse OpenAI response for video hotspots:", parseError);
-    throw new Error("Received invalid response from AI. Please try again.");
+  // Validate and clamp timestamps to video duration
+  return hotspots.map((hotspot: VideoHotspot) => ({
+    ...hotspot,
+    timestamp: Math.min(Math.max(0, hotspot.timestamp), totalSeconds),
+  }));
+}
+
+function calculateTimestamps(count: number, duration: number): number[] {
+  if (count <= 0 || duration <= 0) return [];
+
+  const timestamps: number[] = [];
+
+  if (count === 1) {
+    timestamps.push(Math.floor(duration * 0.5));
+  } else if (count === 2) {
+    timestamps.push(Math.floor(duration * 0.3));
+    timestamps.push(Math.floor(duration * 0.7));
+  } else if (count === 3) {
+    timestamps.push(Math.floor(duration * 0.15));
+    timestamps.push(Math.floor(duration * 0.5));
+    timestamps.push(Math.floor(duration * 0.85));
+  } else {
+    const introEnd = Math.floor(duration * 0.15);
+    const conclusionStart = Math.floor(duration * 0.85);
+    const middleRange = conclusionStart - introEnd;
+
+    timestamps.push(Math.floor(duration * 0.1));
+    const middleHotspots = count - 2;
+    for (let i = 1; i <= middleHotspots; i++) {
+      timestamps.push(Math.floor(introEnd + (middleRange * i / (middleHotspots + 1))));
+    }
+    timestamps.push(Math.floor(duration * 0.9));
   }
+
+  return timestamps.sort((a, b) => a - b);
 }
 
 export async function generateImageHotspots(request: AIGenerationRequest): Promise<ImageHotspot[]> {
@@ -347,26 +287,10 @@ Respond in JSON format:
   ]
 }`;
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: "You are an expert educator creating interactive image content. Always respond with valid JSON." },
-      { role: "user", content: prompt },
-    ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4096,
-    temperature: 0.7,
-  }, {
-    timeout: 30000, // 30 second timeout
-  });
-
-  try {
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-    return result.hotspots || [];
-  } catch (parseError) {
-    console.error("Failed to parse OpenAI response for image hotspots:", parseError);
-    throw new Error("Received invalid response from AI. Please try again.");
-  }
+  return callOpenAIJSON<ImageHotspot[]>(
+    { systemMessage: EDUCATOR_SYSTEM("interactive image content"), prompt },
+    "hotspots",
+  );
 }
 
 export async function generateDragDropItems(request: AIGenerationRequest): Promise<{ zones: DragAndDropData["zones"], items: DragAndDropData["items"] }> {
@@ -396,26 +320,9 @@ Respond in JSON format:
   ]
 }`;
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: "You are an expert educator creating interactive drag-and-drop activities. Always respond with valid JSON." },
-      { role: "user", content: prompt },
-    ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4096,
-    temperature: 0.7,
-  }, {
-    timeout: 30000, // 30 second timeout
-  });
-
-  try {
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-    return { zones: result.zones || [], items: result.items || [] };
-  } catch (parseError) {
-    console.error("Failed to parse OpenAI response for drag-drop items:", parseError);
-    throw new Error("Received invalid response from AI. Please try again.");
-  }
+  return callOpenAIJSON<{ zones: DragAndDropData["zones"]; items: DragAndDropData["items"] }>(
+    { systemMessage: EDUCATOR_SYSTEM("interactive drag-and-drop activities"), prompt },
+  );
 }
 
 export async function generateFillBlanksBlanks(request: AIGenerationRequest): Promise<{ text: string, blanks: FillInBlanksData["blanks"] }> {
@@ -441,26 +348,9 @@ Respond in JSON format:
   ]
 }`;
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: "You are an expert educator creating fill-in-the-blanks exercises. Always respond with valid JSON." },
-      { role: "user", content: prompt },
-    ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4096,
-    temperature: 0.7,
-  }, {
-    timeout: 30000, // 30 second timeout
-  });
-
-  try {
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-    return { text: result.text || "", blanks: result.blanks || [] };
-  } catch (parseError) {
-    console.error("Failed to parse OpenAI response for fill-blanks:", parseError);
-    throw new Error("Received invalid response from AI. Please try again.");
-  }
+  return callOpenAIJSON<{ text: string; blanks: FillInBlanksData["blanks"] }>(
+    { systemMessage: EDUCATOR_SYSTEM("fill-in-the-blanks exercises"), prompt },
+  );
 }
 
 export async function generateMemoryGameCards(request: AIGenerationRequest): Promise<MemoryGameData["cards"]> {
@@ -490,26 +380,10 @@ Respond in JSON format:
   ]
 }`;
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: "You are an expert educator creating memory game cards. Always respond with valid JSON." },
-      { role: "user", content: prompt },
-    ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4096,
-    temperature: 0.7,
-  }, {
-    timeout: 30000, // 30 second timeout
-  });
-
-  try {
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-    return result.cards || [];
-  } catch (parseError) {
-    console.error("Failed to parse OpenAI response for memory game cards:", parseError);
-    throw new Error("Received invalid response from AI. Please try again.");
-  }
+  return callOpenAIJSON<MemoryGameData["cards"]>(
+    { systemMessage: EDUCATOR_SYSTEM("memory game cards"), prompt },
+    "cards",
+  );
 }
 
 export async function generateInteractiveBookPages(request: AIGenerationRequest): Promise<InteractiveBookData["pages"]> {
@@ -533,26 +407,10 @@ Respond in JSON format:
   ]
 }`;
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: "You are an expert educator creating interactive educational books. Always respond with valid JSON." },
-      { role: "user", content: prompt },
-    ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4096,
-    temperature: 0.7,
-  }, {
-    timeout: 30000, // 30 second timeout
-  });
-
-  try {
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-    return result.pages || [];
-  } catch (parseError) {
-    console.error("Failed to parse OpenAI response for interactive book pages:", parseError);
-    throw new Error("Received invalid response from AI. Please try again.");
-  }
+  return callOpenAIJSON<InteractiveBookData["pages"]>(
+    { systemMessage: EDUCATOR_SYSTEM("interactive educational books"), prompt },
+    "pages",
+  );
 }
 
 export async function generateVideoFinderPedagogy(params: {
@@ -594,38 +452,22 @@ Respond in JSON format:
   "guidingQuestions": ["question 1", "question 2", "question 3", "question 4"]
 }`;
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: "You are an expert educator creating video viewing guides. Always respond with valid JSON." },
-      { role: "user", content: prompt },
-    ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 2048,
-    temperature: 0.7,
-  }, {
-    timeout: 30000, // 30 second timeout
-  });
-
-  try {
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-    return {
-      viewingInstructions: result.viewingInstructions || "",
-      guidingQuestions: result.guidingQuestions || [],
-    };
-  } catch (parseError) {
-    console.error("Failed to parse OpenAI response:", parseError);
-    throw new Error("Received invalid response from AI. Please try again.");
-  }
+  const result = await callOpenAIJSON<{ viewingInstructions: string; guidingQuestions: string[] }>(
+    { systemMessage: EDUCATOR_SYSTEM("video viewing guides"), prompt, maxTokens: 2048 },
+  );
+  return {
+    viewingInstructions: result.viewingInstructions || "",
+    guidingQuestions: result.guidingQuestions || [],
+  };
 }
 
 export async function generatePresentation(request: PresentationGenerationRequest): Promise<SlideContent[]> {
   const learningOutcomesText = request.learningOutcomes.map((o, i) => `${i + 1}. ${o}`).join('\n');
-  
-  const customInstructionsSection = request.customInstructions 
+
+  const customInstructionsSection = request.customInstructions
     ? `\n\nAdditional Teacher Instructions:\n${request.customInstructions}\n\nPlease carefully follow these custom instructions from the teacher when creating the presentation.`
     : '';
-  
+
   const prompt = `Create a pedagogically sound presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
 
 Learning Outcomes:
@@ -667,33 +509,22 @@ Respond in JSON format:
       "type": "title" | "content" | "guiding-questions" | "reflection" | "image",
       "title": "slide title",
       "content": "main text content (optional)",
-      "bulletPoints": ["point 1", "point 2"], // for content slides
-      "imageUrl": "concise search query for stock photo", // INCLUDE FOR MOST SLIDES - short query like "happy students learning"
+      "bulletPoints": ["point 1", "point 2"],
+      "imageUrl": "concise search query for stock photo",
       "imageAlt": "detailed accessibility description",
-      "questions": ["question 1", "question 2"], // for question slides
+      "questions": ["question 1", "question 2"],
       "notes": "speaker notes with pedagogical guidance"
     }
   ]
 }`;
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: "gpt-4o", // Use gpt-4o instead of gpt-5 (which may not exist or be slower)
-    messages: [
-      { role: "system", content: "You are an expert instructional designer creating educational presentations. Always respond with valid JSON and follow Universal Design for Learning (UDL) principles." },
-      { role: "user", content: prompt },
-    ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4000, // Reduced from 8000 to speed up generation
-    temperature: 0.7,
-  }, {
-    timeout: 20000, // 20 second timeout for OpenAI API call
-  });
-
-  try {
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-    return result.slides || [];
-  } catch (parseError) {
-    console.error("Failed to parse OpenAI response:", parseError);
-    throw new Error("Received invalid response from AI. Please try again.");
-  }
+  return callOpenAIJSON<SlideContent[]>(
+    {
+      systemMessage: "You are an expert instructional designer creating educational presentations. Always respond with valid JSON and follow Universal Design for Learning (UDL) principles.",
+      prompt,
+      maxTokens: 4000,
+      timeout: 20000,
+    },
+    "slides",
+  );
 }
