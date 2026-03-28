@@ -249,11 +249,11 @@ export default function InteractiveVideoCreator() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Toolbar */}
+      {/* Header */}
       <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back" className="cursor-pointer">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
@@ -261,52 +261,19 @@ export default function InteractiveVideoCreator() {
               {isSaving && <Badge variant="outline">Saving...</Badge>}
             </div>
           </div>
-
-      {/* Breadcrumbs */}
-      <div className="bg-background border-b">
-        <div className="max-w-7xl mx-auto px-6 py-3">
-          <Breadcrumbs items={breadcrumbs} />
-        </div>
-      </div>
           <div className="flex items-center gap-2">
             {!autosave && (
-              <Button 
-                variant="default" 
-                size="sm" 
+              <Button
+                variant="default"
+                size="sm"
                 onClick={handleManualSave}
                 disabled={isSaving || !title || !videoUrl}
                 data-testid="button-save"
+                className="cursor-pointer"
               >
                 <Save className="h-4 w-4 mr-1" />
                 {isSaving ? "Saving..." : "Save"}
               </Button>
-            )}
-            <Button variant="outline" size="sm" onClick={() => setShowEnhancedAIModal(true)} data-testid="button-ai-generate-enhanced">
-              <Sparkles className="h-4 w-4 mr-1" />
-              AI Generate (YouTube Search)
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate">
-              <Sparkles className="h-4 w-4 mr-1" />
-              AI Generate Hotspots
-            </Button>
-            {videoUrl && hotspots.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowTestInteractions(true)}
-                data-testid="button-test-interactions"
-                className="cursor-pointer"
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                Test Interactions
-              </Button>
-            )}
-            {contentId && isPublished && (
-              <ShareToClassroomDialog
-                contentTitle={title}
-                contentDescription={description}
-                materialLink={`${window.location.origin}/public/${contentId}`}
-              />
             )}
             <Button
               variant={isPublished ? "outline" : "default"}
@@ -314,11 +281,52 @@ export default function InteractiveVideoCreator() {
               onClick={handlePublish}
               disabled={!title || !videoUrl}
               data-testid="button-publish"
+              className="cursor-pointer"
             >
               <Globe className="h-4 w-4 mr-1" />
               {isPublished ? "Unpublish" : "Publish"}
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Breadcrumbs */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <Breadcrumbs items={breadcrumbs} />
+        </div>
+      </div>
+
+      {/* Sub-toolbar — actions */}
+      <div className="bg-muted/30 border-b">
+        <div className="max-w-7xl mx-auto px-6 py-2 flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => setShowEnhancedAIModal(true)} data-testid="button-ai-generate-enhanced" className="cursor-pointer">
+            <Sparkles className="h-4 w-4 mr-1" />
+            AI Generate (YouTube Search)
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate" className="cursor-pointer">
+            <Sparkles className="h-4 w-4 mr-1" />
+            AI Generate Hotspots
+          </Button>
+          {videoUrl && hotspots.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTestInteractions(true)}
+              data-testid="button-test-interactions"
+              className="cursor-pointer"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              Test Interactions
+            </Button>
+          )}
+          {contentId && isPublished && (
+            <ShareToClassroomDialog
+              contentTitle={title}
+              contentDescription={description}
+              materialLink={`${window.location.origin}/public/${contentId}`}
+            />
+          )}
         </div>
       </div>
 
