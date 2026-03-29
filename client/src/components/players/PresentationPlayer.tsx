@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, LayoutGrid, Presentation, ExternalLink } fro
 import type { PresentationData, SlideContent } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { useProgressTracker } from "@/hooks/use-progress-tracker";
+import { useAuth } from "@/hooks/useAuth";
 
 interface PresentationPlayerProps {
   data: PresentationData;
@@ -23,6 +24,8 @@ const colorSchemes = {
 export default function PresentationPlayer({ data, contentId }: PresentationPlayerProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [viewMode, setViewMode] = useState<"presentation" | "grid">("presentation");
+  const { user } = useAuth();
+  const isStudent = user?.role === "student";
   const viewedSlidesRef = useRef<Set<number>>(new Set([0]));
   const { updateProgress, isAuthenticated } = useProgressTracker(contentId || "");
 
@@ -332,7 +335,7 @@ export default function PresentationPlayer({ data, contentId }: PresentationPlay
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">All Slides ({data.slides.length})</h3>
           <div className="flex gap-2">
-            {data.presentationUrl && (
+            {!isStudent && data.presentationUrl && (
               <>
                 <ShareToClassroomDialog contentTitle={data.topic} contentDescription={`Presentation about ${data.topic}`} materialLink={data.presentationUrl} />
                 <Button onClick={() => window.open(data.presentationUrl, '_blank')} variant="outline" size="sm">
@@ -361,7 +364,7 @@ export default function PresentationPlayer({ data, contentId }: PresentationPlay
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">Slide {currentSlideIndex + 1} of {data.slides.length}</div>
         <div className="flex gap-2">
-          {data.presentationUrl && (
+          {!isStudent && data.presentationUrl && (
             <>
               <ShareToClassroomDialog contentTitle={data.topic} contentDescription={`Presentation about ${data.topic}`} materialLink={data.presentationUrl} />
               <Button onClick={() => window.open(data.presentationUrl, '_blank')} variant="outline" size="sm">

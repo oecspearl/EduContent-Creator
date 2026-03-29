@@ -87,19 +87,21 @@ export default function PreviewPage() {
               {content.description && <p className="text-sm text-muted-foreground">{content.description}</p>}
             </div>
           </div>
-          <div className="flex gap-2">
-            {content.isPublished && (
-              <ShareToClassroomDialog
-                contentTitle={content.title}
-                contentDescription={content.description || ""}
-                materialLink={`${window.location.origin}/public/${content.id}`}
-              />
-            )}
-            <Button variant="outline" size="sm" onClick={() => navigate(`/share/${content.id}`)} data-testid="button-share">
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-          </div>
+          {user?.role !== "student" && (
+            <div className="flex gap-2">
+              {content.isPublished && (
+                <ShareToClassroomDialog
+                  contentTitle={content.title}
+                  contentDescription={content.description || ""}
+                  materialLink={`${window.location.origin}/public/${content.id}`}
+                />
+              )}
+              <Button variant="outline" size="sm" onClick={() => navigate(`/share/${content.id}`)} data-testid="button-share">
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
