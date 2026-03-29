@@ -35,6 +35,7 @@ import AnalyticsPage from "@/pages/AnalyticsPage";
 import ClassesPage from "@/pages/ClassesPage";
 import GradebookPage from "@/pages/GradebookPage";
 import LearningPathsPage from "@/pages/LearningPathsPage";
+import StudentLearningPaths from "@/pages/StudentLearningPaths";
 import MessagesPage from "@/pages/MessagesPage";
 import ParentViewPage from "@/pages/ParentViewPage";
 import SettingsPage from "@/pages/SettingsPage";
@@ -233,6 +234,9 @@ function Router() {
       </Route>
 
       {/* Accessible to all authenticated users */}
+      <Route path="/my-learning-paths">
+        <ProtectedRoute component={StudentLearningPaths} />
+      </Route>
       <Route path="/messages">
         <ProtectedRoute component={MessagesPage} />
       </Route>

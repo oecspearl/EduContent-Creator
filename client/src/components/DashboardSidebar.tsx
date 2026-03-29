@@ -38,6 +38,7 @@ const teacherNavItems: NavItem[] = [
 
 const studentNavItems: NavItem[] = [
   { label: "My Learning", icon: Home, path: "/dashboard" },
+  { label: "Learning Paths", icon: Waypoints, path: "/my-learning-paths" },
   { label: "Messages", icon: MessageCircle, path: "/messages" },
   { label: "Help", icon: HelpCircle, path: "/help" },
   { label: "Settings", icon: Settings, path: "/settings" },

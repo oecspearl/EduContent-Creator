@@ -1,6 +1,6 @@
 import { db } from "../../db";
-import { learningPaths, learningPathItems, h5pContent, learnerProgress } from "@shared/schema";
-import { eq, asc, desc } from "drizzle-orm";
+import { learningPaths, learningPathItems, h5pContent, learnerProgress, classEnrollments } from "@shared/schema";
+import { eq, asc, desc, inArray } from "drizzle-orm";
 import { z } from "zod";
 import type { RouteContext } from "./types";
 
@@ -130,6 +130,55 @@ export function registerLearningPathRoutes({ app, storage, requireAuth, requireT
     } catch (error: any) {
       console.error("Get path progress error:", error);
       res.status(500).json({ message: "Failed to fetch path progress" });
+    }
+  });
+
+  // Student: list learning paths for my enrolled classes
+  app.get("/api/student/learning-paths", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId!;
+
+      // Get all class IDs the student is enrolled in
+      const enrollments = await db.select({ classId: classEnrollments.classId })
+        .from(classEnrollments)
+        .where(eq(classEnrollments.userId, userId));
+
+      const classIds = enrollments.map(e => e.classId);
+      if (classIds.length === 0) return res.json([]);
+
+      // Get learning paths assigned to those classes
+      const paths = await db.select().from(learningPaths)
+        .where(inArray(learningPaths.classId, classIds))
+        .orderBy(desc(learningPaths.createdAt));
+
+      // Enrich each path with item count and student's progress
+      const enriched = await Promise.all(
+        paths.map(async (path) => {
+          const items = await db.select({ contentId: learningPathItems.contentId })
+            .from(learningPathItems)
+            .where(eq(learningPathItems.pathId, path.id));
+
+          let completedCount = 0;
+          for (const item of items) {
+            const p = await storage.getLearnerProgress(userId, item.contentId);
+            if (p && p.completionPercentage >= 100) completedCount++;
+          }
+
+          return {
+            id: path.id,
+            name: path.name,
+            description: path.description,
+            totalItems: items.length,
+            completedItems: completedCount,
+            progressPercentage: items.length > 0 ? Math.round((completedCount / items.length) * 100) : 0,
+          };
+        }),
+      );
+
+      res.json(enriched);
+    } catch (error: any) {
+      console.error("Student learning paths error:", error);
+      res.status(500).json({ message: "Failed to fetch learning paths" });
     }
   });
 
