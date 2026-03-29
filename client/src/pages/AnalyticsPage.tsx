@@ -47,6 +47,8 @@ import {
   Download,
   PieChart,
   AlertCircle,
+  Search,
+  Presentation,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
@@ -73,6 +75,8 @@ const contentTypeConfig: Record<string, { icon: typeof FileQuestion; label: stri
   "fill-blanks": { icon: PenTool, label: "Fill in the Blanks", color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300" },
   "memory-game": { icon: Brain, label: "Memory Game", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300" },
   "interactive-book": { icon: BookOpenCheck, label: "Interactive Book", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300" },
+  "video-finder": { icon: Search, label: "Video Finder", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300" },
+  presentation: { icon: Presentation, label: "Presentation", color: "bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300" },
 };
 
 export default function AnalyticsPage() {
@@ -358,7 +362,7 @@ export default function AnalyticsPage() {
                       </TableHeader>
                       <TableBody>
                         {analytics.map((item) => {
-                          const config = contentTypeConfig[item.type] || contentTypeConfig.quiz;
+                          const config = contentTypeConfig[item.type] || { icon: Activity, label: item.type || "Unknown", color: "bg-muted text-muted-foreground" };
                           const Icon = config.icon;
                           return (
                             <TableRow key={item.contentId} data-testid={`row-analytics-${item.contentId}`} className="border-border/40">
@@ -397,31 +401,17 @@ export default function AnalyticsPage() {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex items-center gap-2 justify-end">
-                                  {item.type === "quiz" && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        setSelectedContentId(item.contentId);
-                                        setAnalyticsTab("overview");
-                                      }}
-                                      data-testid={`button-view-analytics-${item.contentId}`}
-                                    >
-                                      <BarChart3 className="h-4 w-4 mr-2" />
-                                      Analytics
-                                    </Button>
-                                  )}
                                   <Button
-                                    variant="ghost"
+                                    variant="outline"
                                     size="sm"
                                     onClick={() => {
                                       setSelectedContentId(item.contentId);
                                       setAnalyticsTab("overview");
                                     }}
-                                    data-testid={`button-view-learners-${item.contentId}`}
+                                    data-testid={`button-view-analytics-${item.contentId}`}
                                   >
-                                    <Users className="h-4 w-4 mr-2" />
-                                    View Learners
+                                    <BarChart3 className="h-4 w-4 mr-2" />
+                                    Analytics
                                   </Button>
                                 </div>
                               </TableCell>
@@ -451,7 +441,7 @@ export default function AnalyticsPage() {
               <div>
                 <DialogTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  {selectedContent?.type === "quiz" ? "Quiz Analytics" : "Learner Performance"}
+                  {selectedContent ? `${(contentTypeConfig[selectedContent.type]?.label || selectedContent.type)} Analytics` : "Analytics"}
                 </DialogTitle>
                 <DialogDescription className="mt-1">
                   {selectedContent && (
@@ -459,7 +449,7 @@ export default function AnalyticsPage() {
                   )}
                 </DialogDescription>
               </div>
-              {selectedContent?.type === "quiz" && (
+              {selectedContent && (
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -474,7 +464,7 @@ export default function AnalyticsPage() {
                           const url = window.URL.createObjectURL(blob);
                           const a = document.createElement('a');
                           a.href = url;
-                          a.download = `quiz-results-${selectedContentId}.csv`;
+                          a.download = `results-${selectedContentId}.csv`;
                           document.body.appendChild(a);
                           a.click();
                           window.URL.revokeObjectURL(url);
@@ -501,7 +491,7 @@ export default function AnalyticsPage() {
                           const url = window.URL.createObjectURL(blob);
                           const a = document.createElement('a');
                           a.href = url;
-                          a.download = `quiz-results-${selectedContentId}.json`;
+                          a.download = `results-${selectedContentId}.json`;
                           document.body.appendChild(a);
                           a.click();
                           window.URL.revokeObjectURL(url);
@@ -520,14 +510,20 @@ export default function AnalyticsPage() {
             </div>
           </DialogHeader>
 
-          {selectedContent?.type === "quiz" ? (
+          {selectedContent ? (
             <Tabs value={analyticsTab} onValueChange={(v) => setAnalyticsTab(v as any)} className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="overview">Learners</TabsTrigger>
-                <TabsTrigger value="questions">Questions</TabsTrigger>
-                <TabsTrigger value="performance">Performance</TabsTrigger>
-                <TabsTrigger value="distribution">Score Distribution</TabsTrigger>
-              </TabsList>
+              {selectedContent.type === "quiz" ? (
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="overview">Learners</TabsTrigger>
+                  <TabsTrigger value="questions">Questions</TabsTrigger>
+                  <TabsTrigger value="performance">Performance</TabsTrigger>
+                  <TabsTrigger value="distribution">Score Distribution</TabsTrigger>
+                </TabsList>
+              ) : (
+                <TabsList className="grid w-full grid-cols-1 max-w-[200px]">
+                  <TabsTrigger value="overview">Learners</TabsTrigger>
+                </TabsList>
+              )}
 
               <TabsContent value="overview" className="mt-6">
 
@@ -936,110 +932,7 @@ export default function AnalyticsPage() {
                 )}
               </TabsContent>
             </Tabs>
-          ) : (
-            // Non-quiz content - show learners only
-            <>
-              {isLoadingLearners ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map(i => (
-                    <Skeleton key={i} className="h-20" />
-                  ))}
-                </div>
-              ) : !learners || learners.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No Learner Data</h3>
-                  <p className="text-muted-foreground">
-                    No authenticated users have interacted with this content yet
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {learners.map((learner, idx) => (
-                    <Card key={learner.userId} data-testid={`card-learner-${idx}`}>
-                      <CardContent className="pt-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-12 w-12">
-                              <AvatarFallback className="bg-primary text-primary-foreground">
-                                {getInitials(learner.displayName)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <h4 className="font-semibold text-foreground" data-testid={`text-learner-name-${idx}`}>
-                                {learner.displayName}
-                              </h4>
-                              <p className="text-sm text-muted-foreground" data-testid={`text-learner-email-${idx}`}>
-                                {learner.email}
-                              </p>
-                              {learner.role && (
-                                <Badge variant="outline" className="mt-1">{learner.role}</Badge>
-                              )}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                              <Clock className="h-3 w-3" />
-                              Last accessed: {format(new Date(learner.lastAccessedAt), "MMM d, yyyy")}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              First accessed: {format(new Date(learner.firstAccessedAt), "MMM d, yyyy")}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="bg-muted rounded-lg p-3">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Target className="h-4 w-4 text-primary" />
-                              <span className="text-sm font-medium">Completion</span>
-                            </div>
-                            <div className="text-2xl font-bold" data-testid={`text-learner-completion-${idx}`}>
-                              {learner.completionPercentage.toFixed(1)}%
-                            </div>
-                            {learner.completedAt && (
-                              <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                                <CheckCircle2 className="h-3 w-3" />
-                                Completed {format(new Date(learner.completedAt), "MMM d")}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="bg-muted rounded-lg p-3">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Activity className="h-4 w-4 text-primary" />
-                              <span className="text-sm font-medium">Interactions</span>
-                            </div>
-                            <div className="text-2xl font-bold" data-testid={`text-learner-interactions-${idx}`}>
-                              {learner.totalInteractions}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Total engagement events
-                            </div>
-                          </div>
-
-                          {learner.quizAttempts && learner.quizAttempts.length > 0 && (
-                            <div className="bg-muted rounded-lg p-3">
-                              <div className="flex items-center gap-2 mb-2">
-                                <FileQuestion className="h-4 w-4 text-primary" />
-                                <span className="text-sm font-medium">Quiz Attempts</span>
-                              </div>
-                              <div className="text-2xl font-bold" data-testid={`text-learner-quiz-attempts-${idx}`}>
-                                {learner.quizAttempts.length}
-                              </div>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                Best: {Math.max(...learner.quizAttempts.map((a: any) => parseFloat(a.percentage)))}%
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>
