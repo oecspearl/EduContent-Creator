@@ -2,14 +2,26 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ExternalLink, Play, Calendar, Search as SearchIcon, BookOpen, HelpCircle } from "lucide-react";
 import type { VideoFinderData } from "@shared/schema";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useProgressTracker } from "@/hooks/use-progress-tracker";
 
 interface VideoFinderPlayerProps {
   data: VideoFinderData;
+  contentId?: string;
 }
 
-export function VideoFinderPlayer({ data }: VideoFinderPlayerProps) {
+export function VideoFinderPlayer({ data, contentId }: VideoFinderPlayerProps) {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const viewedVideosRef = useRef<Set<string>>(new Set());
+  const { updateProgress, isAuthenticated } = useProgressTracker(contentId || "");
+
+  // Track video views for progress
+  useEffect(() => {
+    if (!contentId || !isAuthenticated || !selectedVideo || !data.searchResults?.length) return;
+    viewedVideosRef.current.add(selectedVideo);
+    const pct = Math.round((viewedVideosRef.current.size / data.searchResults.length) * 100);
+    updateProgress(pct);
+  }, [selectedVideo, contentId, isAuthenticated]);
 
   const formatDuration = (duration: string) => {
     // Convert ISO 8601 duration to readable format

@@ -19,7 +19,11 @@
       "Bash(git fetch:*)",
       "Bash(git rebase:*)",
       "Bash(git stash:*)",
-      "Bash(ls client/src/components/players/Presentation*)"
+      "Bash(ls client/src/components/players/Presentation*)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/client/src/components/players/**)",
+      "Bash(done)"
     ],
     "additionalDirectories": [
       "/Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/server"

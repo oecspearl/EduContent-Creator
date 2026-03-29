@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
-import { ArrowLeft, Share2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useProgressTracker } from "@/hooks/use-progress-tracker";
+import { ArrowLeft, Share2, CheckCircle2 } from "lucide-react";
 import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, VideoFinderData, PresentationData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { QuizPlayer } from "@/components/players/QuizPlayer";
@@ -22,12 +25,23 @@ export default function PreviewPage() {
   const params = useParams();
   const [_, navigate] = useLocation();
   const contentId = params.id;
+  const { user } = useAuth();
+  const { progress, updateProgress, isAuthenticated } = useProgressTracker(contentId || "");
+  const [markedComplete, setMarkedComplete] = useState(false);
 
   const { data: content, isLoading } = useQuery<H5pContent>({
     queryKey: ["/api/content", contentId],
   });
 
   const breadcrumbs = useBreadcrumbs(contentId);
+
+  const isComplete = markedComplete || (progress?.completionPercentage ?? 0) >= 100;
+
+  const handleMarkComplete = () => {
+    if (!contentId || !isAuthenticated) return;
+    updateProgress(100);
+    setMarkedComplete(true);
+  };
 
   if (isLoading) {
     return (
@@ -106,8 +120,29 @@ export default function PreviewPage() {
         {content.type === "fill-blanks" && <FillBlanksPlayer data={content.data as FillInBlanksData} contentId={content.id} />}
         {content.type === "memory-game" && <MemoryGamePlayer data={content.data as MemoryGameData} contentId={content.id} />}
         {content.type === "interactive-book" && <InteractiveBookPlayer data={content.data as InteractiveBookData} contentId={content.id} />}
-        {content.type === "video-finder" && <VideoFinderPlayer data={content.data as VideoFinderData} />}
-        {content.type === "presentation" && <PresentationPlayer data={content.data as PresentationData} />}
+        {content.type === "video-finder" && <VideoFinderPlayer data={content.data as VideoFinderData} contentId={content.id} />}
+        {content.type === "presentation" && <PresentationPlayer data={content.data as PresentationData} contentId={content.id} />}
+
+        {/* Mark as Complete button — for students, as a fallback for all content types */}
+        {user?.role === "student" && isAuthenticated && contentId && (
+          <div className="mt-8 text-center border-t pt-6">
+            {isComplete ? (
+              <div className="flex items-center justify-center gap-2 text-green-600">
+                <CheckCircle2 className="h-5 w-5" />
+                <span className="font-medium">Marked as complete</span>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                className="cursor-pointer gap-2"
+                onClick={handleMarkComplete}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Mark as Complete
+              </Button>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, LayoutGrid, Presentation, ExternalLink } from "lucide-react";
 import type { PresentationData, SlideContent } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
+import { useProgressTracker } from "@/hooks/use-progress-tracker";
 
 interface PresentationPlayerProps {
   data: PresentationData;
+  contentId?: string;
 }
 
 const colorSchemes = {
@@ -18,9 +20,19 @@ const colorSchemes = {
   red: { bg: "bg-red-50 dark:bg-red-950", accent: "bg-red-600", text: "text-red-900 dark:text-red-100", border: "border-red-200 dark:border-red-800", muted: "text-red-600/70 dark:text-red-400/70" },
 };
 
-export default function PresentationPlayer({ data }: PresentationPlayerProps) {
+export default function PresentationPlayer({ data, contentId }: PresentationPlayerProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [viewMode, setViewMode] = useState<"presentation" | "grid">("presentation");
+  const viewedSlidesRef = useRef<Set<number>>(new Set([0]));
+  const { updateProgress, isAuthenticated } = useProgressTracker(contentId || "");
+
+  // Track slide views for progress
+  useEffect(() => {
+    if (!contentId || !isAuthenticated || !data.slides?.length) return;
+    viewedSlidesRef.current.add(currentSlideIndex);
+    const pct = Math.round((viewedSlidesRef.current.size / data.slides.length) * 100);
+    updateProgress(pct);
+  }, [currentSlideIndex, contentId, isAuthenticated]);
 
   if (!data || !data.slides || !Array.isArray(data.slides) || data.slides.length === 0) {
     return (
