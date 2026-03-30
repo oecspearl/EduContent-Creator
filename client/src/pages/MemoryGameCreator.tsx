@@ -382,74 +382,91 @@ export default function MemoryGameCreator() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b">
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back" className="cursor-pointer">
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold">Memory Game</h1>
-              <p className="text-sm text-muted-foreground">
-                {isSaving ? "Saving..." : isEditing ? "Editing game" : "Create new game"}
-              </p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-semibold">Memory Game</h1>
+              {isSaving && <span className="text-sm text-muted-foreground">Saving...</span>}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {contentId && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (!content) return;
-                  const html = generateHTMLExport(content, content.data);
-                  downloadHTML(html, title || "memory-game");
-                  toast({
-                    title: "Download started",
-                    description: "Your memory game is being downloaded as HTML.",
-                  });
-                }}
-                disabled={!contentId || !content}
-                data-testid="button-download-html"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download HTML
-              </Button>
-            )}
             {!autosave && (
-              <Button 
-                variant="default" 
-                size="sm" 
+              <Button
+                variant="default"
+                size="sm"
                 onClick={handleManualSave}
                 disabled={isSaving || !title || cards.length === 0}
                 data-testid="button-save"
+                className="cursor-pointer"
               >
                 <Save className="h-4 w-4 mr-1" />
                 {isSaving ? "Saving..." : "Save"}
               </Button>
             )}
-            <Button variant="outline" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate">
-              <Sparkles className="h-4 w-4 mr-2" />
-              AI Generate
-            </Button>
-            {contentId && isPublished && (
-              <ShareToClassroomDialog
-                contentTitle={title}
-                contentDescription={description}
-                materialLink={`${window.location.origin}/public/${contentId}`}
-              />
-            )}
             <Button
               variant={isPublished ? "default" : "outline"}
+              size="sm"
               onClick={() => {
                 setIsPublished(!isPublished);
                 saveMutation.mutate(!isPublished);
               }}
               data-testid="button-publish"
+              className="cursor-pointer"
             >
-              <Globe className="h-4 w-4 mr-2" />
+              <Globe className="h-4 w-4 mr-1" />
               {isPublished ? "Published" : "Publish"}
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Breadcrumbs */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <Breadcrumbs items={breadcrumbs} />
+        </div>
+      </div>
+
+      {/* Sub-toolbar — actions */}
+      <div className="bg-muted/30 border-b">
+        <div className="max-w-7xl mx-auto px-6 py-2 flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate" className="cursor-pointer">
+            <Sparkles className="h-4 w-4 mr-1" />
+            AI Generate
+          </Button>
+          {contentId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (!content) return;
+                const html = generateHTMLExport(content, content.data);
+                downloadHTML(html, title || "memory-game");
+                toast({
+                  title: "Download started",
+                  description: "Your memory game is being downloaded as HTML.",
+                });
+              }}
+              disabled={!contentId || !content}
+              data-testid="button-download-html"
+              className="cursor-pointer"
+            >
+              <Download className="h-4 w-4 mr-1" />
+              Download HTML
+            </Button>
+          )}
+          {contentId && isPublished && (
+            <ShareToClassroomDialog
+              contentTitle={title}
+              contentDescription={description}
+              materialLink={`${window.location.origin}/public/${contentId}`}
+            />
+          )}
         </div>
       </div>
 

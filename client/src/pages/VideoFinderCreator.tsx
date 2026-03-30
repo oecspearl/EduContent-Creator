@@ -328,60 +328,71 @@ export default function VideoFinderCreator() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/dashboard")}
-                data-testid="button-back"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <h1 className="text-2xl font-bold text-foreground">
-                {isEditing ? "Edit" : "Create"} Video Finder
-              </h1>
-            </div>
+      <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b">
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} data-testid="button-back" className="cursor-pointer">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
             <div className="flex items-center gap-2">
-              {!autosave && (
-                <Button
-                  variant="default"
-                  onClick={handleManualSave}
-                  disabled={isSaving || !title}
-                  data-testid="button-save"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {isSaving ? "Saving..." : "Save"}
-                </Button>
-              )}
-              {contentId && isPublished && (
-                <ShareToClassroomDialog
-                  contentTitle={title}
-                  contentDescription={description}
-                  materialLink={`${window.location.origin}/public/${contentId}`}
-                />
-              )}
-              {isPublished ? (
-                <Button variant="default" disabled data-testid="button-published">
-                  <Globe className="mr-2 h-4 w-4" />
-                  Published
-                </Button>
-              ) : (
-                <Button
-                  onClick={handlePublish}
-                  disabled={isSaving || !title || searchResults.length === 0}
-                  data-testid="button-publish"
-                >
-                  <Globe className="mr-2 h-4 w-4" />
-                  Publish
-                </Button>
-              )}
+              <h1 className="text-lg font-semibold">{isEditing ? "Edit" : "Create"} Video Finder</h1>
+              {isSaving && <span className="text-sm text-muted-foreground">Saving...</span>}
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            {!autosave && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleManualSave}
+                disabled={isSaving || !title}
+                data-testid="button-save"
+                className="cursor-pointer"
+              >
+                <Save className="h-4 w-4 mr-1" />
+                {isSaving ? "Saving..." : "Save"}
+              </Button>
+            )}
+            {isPublished ? (
+              <Button variant="default" size="sm" disabled data-testid="button-published">
+                <Globe className="h-4 w-4 mr-1" />
+                Published
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handlePublish}
+                disabled={isSaving || !title || searchResults.length === 0}
+                data-testid="button-publish"
+                className="cursor-pointer"
+              >
+                <Globe className="h-4 w-4 mr-1" />
+                Publish
+              </Button>
+            )}
+          </div>
         </div>
-      </header>
+      </div>
+
+      {/* Breadcrumbs */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <Breadcrumbs items={breadcrumbs} />
+        </div>
+      </div>
+
+      {/* Sub-toolbar — actions */}
+      <div className="bg-muted/30 border-b">
+        <div className="max-w-7xl mx-auto px-6 py-2 flex items-center gap-2 flex-wrap">
+          {contentId && isPublished && (
+            <ShareToClassroomDialog
+              contentTitle={title}
+              contentDescription={description}
+              materialLink={`${window.location.origin}/public/${contentId}`}
+            />
+          )}
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

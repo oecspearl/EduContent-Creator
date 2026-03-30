@@ -190,7 +190,7 @@ export default function FlashcardCreator() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Toolbar */}
+      {/* Header bar */}
       <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -202,18 +202,11 @@ export default function FlashcardCreator() {
               {isSaving && <Badge variant="outline">Saving...</Badge>}
             </div>
           </div>
-
-      {/* Breadcrumbs */}
-      <div className="bg-background border-b">
-        <div className="max-w-7xl mx-auto px-6 py-3">
-          <Breadcrumbs items={breadcrumbs} />
-        </div>
-      </div>
           <div className="flex items-center gap-2">
             {!autosave && (
-              <Button 
-                variant="default" 
-                size="sm" 
+              <Button
+                variant="default"
+                size="sm"
                 onClick={handleManualSave}
                 disabled={isSaving || !title || cards.length === 0}
                 data-testid="button-save"
@@ -221,41 +214,6 @@ export default function FlashcardCreator() {
                 <Save className="h-4 w-4 mr-1" />
                 {isSaving ? "Saving..." : "Save"}
               </Button>
-            )}
-            <Button variant="outline" size="sm" onClick={() => setShowSettings(!showSettings)} data-testid="button-settings">
-              <Settings className="h-4 w-4 mr-1" />
-              Settings
-            </Button>
-            {contentId && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (!content) return;
-                  const html = generateHTMLExport(content, content.data);
-                  downloadHTML(html, title || "flashcards");
-                  toast({
-                    title: "Download started",
-                    description: "Your flashcards are being downloaded as HTML.",
-                  });
-                }}
-                disabled={!contentId || !content}
-                data-testid="button-download-html"
-              >
-                <Download className="h-4 w-4 mr-1" />
-                Download HTML
-              </Button>
-            )}
-            <Button variant="outline" size="sm" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate">
-              <Sparkles className="h-4 w-4 mr-1" />
-              AI Generate
-            </Button>
-            {contentId && isPublished && (
-              <ShareToClassroomDialog
-                contentTitle={title}
-                contentDescription={description}
-                materialLink={`${window.location.origin}/public/${contentId}`}
-              />
             )}
             <Button
               variant={isPublished ? "outline" : "default"}
@@ -268,6 +226,54 @@ export default function FlashcardCreator() {
               {isPublished ? "Unpublish" : "Publish"}
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Breadcrumbs */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <Breadcrumbs items={breadcrumbs} />
+        </div>
+      </div>
+
+      {/* Sub-toolbar */}
+      <div className="bg-muted/30 border-b">
+        <div className="max-w-7xl mx-auto px-6 py-2 flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => setShowSettings(!showSettings)} data-testid="button-settings">
+            <Settings className="h-4 w-4 mr-1" />
+            Settings
+          </Button>
+          {contentId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (!content) return;
+                const html = generateHTMLExport(content, content.data);
+                downloadHTML(html, title || "flashcards");
+                toast({
+                  title: "Download started",
+                  description: "Your flashcards are being downloaded as HTML.",
+                });
+              }}
+              disabled={!contentId || !content}
+              data-testid="button-download-html"
+            >
+              <Download className="h-4 w-4 mr-1" />
+              Download HTML
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setShowAIModal(true)} data-testid="button-ai-generate">
+            <Sparkles className="h-4 w-4 mr-1" />
+            AI Generate
+          </Button>
+          {contentId && isPublished && (
+            <ShareToClassroomDialog
+              contentTitle={title}
+              contentDescription={description}
+              materialLink={`${window.location.origin}/public/${contentId}`}
+            />
+          )}
         </div>
       </div>
 

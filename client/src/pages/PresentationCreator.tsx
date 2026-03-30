@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation, Link } from "wouter";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,8 +38,9 @@ export default function PresentationCreator() {
   const { toast } = useToast();
   const { user } = useAuth();
   
+  const breadcrumbs = useBreadcrumbs(contentId);
   const isEditing = !!contentId;
-  
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [subject, setSubject] = useState("");
@@ -647,22 +650,66 @@ export default function PresentationCreator() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="icon" data-testid="button-back">
-              <ArrowLeft className="h-4 w-4" />
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b">
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard">
+              <Button variant="ghost" size="icon" data-testid="button-back" className="cursor-pointer">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-semibold">
+                {isEditing ? "Edit Presentation" : "Create Presentation"}
+              </h1>
+              {isSaving && <span className="text-sm text-muted-foreground">Saving...</span>}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {!autosave && (
+              <Button
+                size="sm"
+                onClick={handleManualSave}
+                disabled={isSaving || !title || slides.length === 0}
+                data-testid="button-save"
+                className="cursor-pointer"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                {isSaving ? "Saving..." : "Save"}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              onClick={handlePublish}
+              disabled={isSaving || !title || slides.length === 0}
+              variant="default"
+              data-testid="button-publish"
+              className="cursor-pointer"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              <Globe className="h-4 w-4 mr-1" />
+              Publish
             </Button>
-          </Link>
-          <h1 className="text-3xl font-bold">
-            {isEditing ? "Edit Presentation" : "Create Presentation"}
-          </h1>
+          </div>
         </div>
-        <div className="flex gap-2">
+      </div>
+
+      {/* Breadcrumbs */}
+      <div className="bg-background border-b">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <Breadcrumbs items={breadcrumbs} />
+        </div>
+      </div>
+
+      {/* Sub-toolbar — actions */}
+      <div className="bg-muted/30 border-b">
+        <div className="max-w-7xl mx-auto px-6 py-2 flex items-center gap-2 flex-wrap">
           {contentId && (
             <Button
               variant="outline"
+              size="sm"
               onClick={() => {
                 if (!content) return;
                 const html = generateHTMLExport(content, content.data);
@@ -674,8 +721,9 @@ export default function PresentationCreator() {
               }}
               disabled={!contentId || !content}
               data-testid="button-download-html"
+              className="cursor-pointer"
             >
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4 mr-1" />
               Download HTML
             </Button>
           )}
@@ -686,29 +734,10 @@ export default function PresentationCreator() {
               materialLink={presentationUrl}
             />
           )}
-          {!autosave && (
-            <Button
-              onClick={handleManualSave}
-              disabled={isSaving || !title || slides.length === 0}
-              data-testid="button-save"
-            >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-              {isSaving ? "Saving..." : "Save"}
-            </Button>
-          )}
-          <Button
-            onClick={handlePublish}
-            disabled={isSaving || !title || slides.length === 0}
-            variant="default"
-            data-testid="button-publish"
-          >
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            <Globe className="h-4 w-4 mr-2" />
-            Publish
-          </Button>
         </div>
       </div>
 
+      <div className="max-w-7xl mx-auto px-6 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-6">
           <Card>
@@ -1345,6 +1374,7 @@ export default function PresentationCreator() {
             </CardContent>
           </Card>
         </div>
+      </div>
       </div>
     </div>
   );
