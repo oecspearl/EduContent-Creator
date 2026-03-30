@@ -512,7 +512,7 @@ export default function AnalyticsPage() {
 
           {selectedContent ? (
             <Tabs value={analyticsTab} onValueChange={(v) => setAnalyticsTab(v as any)} className="w-full">
-              {selectedContent.type === "quiz" ? (
+              {(selectedContent.type === "quiz" || selectedContent.type === "interactive-video") ? (
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="overview">Learners</TabsTrigger>
                   <TabsTrigger value="questions">Questions</TabsTrigger>

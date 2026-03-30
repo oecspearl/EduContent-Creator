@@ -32,7 +32,7 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
-  const { progress: savedProgress, isProgressFetched, updateProgress, logInteraction, isAuthenticated } = useProgressTracker(contentId);
+  const { progress: savedProgress, isProgressFetched, updateProgress, saveQuizAttempt, logInteraction, isAuthenticated } = useProgressTracker(contentId);
   const [highestProgress, setHighestProgress] = useState<number>(0);
   const [isProgressInitialized, setIsProgressInitialized] = useState(false);
   const pendingMilestoneRef = useRef<number | null>(null);
@@ -305,43 +305,53 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
     const hotspotTimestamp = currentHotspot.timestamp;
     const hotspotType = currentHotspot.type;
     
-    // Log hotspot interaction
+    // Log hotspot interaction + save quiz attempt for grading
     if (hotspotType === "question") {
+      const isCorrect = currentHotspot.correctAnswer === selectedAnswer;
       logInteraction("hotspot_completed", {
-        hotspotId: hotspotId,
-        hotspotType: hotspotType,
-        timestamp: hotspotTimestamp,
-        selectedAnswer,
-        isCorrect: currentHotspot.correctAnswer === selectedAnswer,
+        hotspotId, hotspotType, timestamp: hotspotTimestamp,
+        selectedAnswer, isCorrect,
       });
+
+      // Save as quiz attempt so it appears in analytics and gradebook
+      // skipProgressUpdate=true because the video manages its own progress via hotspot completion
+      if (selectedAnswer !== null) {
+        saveQuizAttempt(isCorrect ? 1 : 0, 1, [{
+          questionId: hotspotId,
+          answer: selectedAnswer,
+          isCorrect,
+        }], true);
+      }
     } else if (hotspotType === "quiz" && currentHotspot.questions) {
-      // Calculate quiz score
       const totalQuestions = currentHotspot.questions.length;
-      const correctAnswers = currentHotspot.questions.filter((q, idx) => {
+      const answersData = currentHotspot.questions.map((q) => {
         const userAnswer = quizAnswers[q.id];
-        if (q.type === "multiple-choice") {
-          return userAnswer === q.correctAnswer;
-        } else if (q.type === "true-false") {
-          return userAnswer === q.correctAnswer;
-        } else if (q.type === "fill-blank") {
-          return String(userAnswer).toLowerCase().trim() === String(q.correctAnswer).toLowerCase().trim();
+        let isCorrect = false;
+        if (q.type === "fill-blank") {
+          isCorrect = String(userAnswer).toLowerCase().trim() === String(q.correctAnswer).toLowerCase().trim();
+        } else {
+          isCorrect = userAnswer === q.correctAnswer;
         }
-        return false;
-      }).length;
-      
+        return {
+          questionId: q.id,
+          answer: userAnswer as string | number | boolean,
+          isCorrect,
+        };
+      });
+      const correctAnswers = answersData.filter(a => a.isCorrect).length;
+
       logInteraction("hotspot_completed", {
-        hotspotId: hotspotId,
-        hotspotType: hotspotType,
-        timestamp: hotspotTimestamp,
-        quizScore: correctAnswers,
-        quizTotal: totalQuestions,
+        hotspotId, hotspotType, timestamp: hotspotTimestamp,
+        quizScore: correctAnswers, quizTotal: totalQuestions,
         answers: quizAnswers,
       });
+
+      // Save as quiz attempt so it appears in analytics and gradebook
+      // skipProgressUpdate=true because the video manages its own progress via hotspot completion
+      saveQuizAttempt(correctAnswers, totalQuestions, answersData, true);
     } else {
       logInteraction("hotspot_completed", {
-        hotspotId: hotspotId,
-        hotspotType: hotspotType,
-        timestamp: hotspotTimestamp,
+        hotspotId, hotspotType, timestamp: hotspotTimestamp,
       });
     }
     

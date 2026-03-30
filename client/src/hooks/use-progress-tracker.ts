@@ -74,16 +74,20 @@ export function useProgressTracker(contentId: string) {
   });
 
   // Save quiz attempt mutation
+  const skipProgressOnQuizRef = { current: false };
   const saveQuizAttemptMutation = useMutation({
     mutationFn: async ({
       score,
       totalQuestions,
       answers,
+      skipProgressUpdate,
     }: {
       score: number;
       totalQuestions: number;
       answers: Array<{ questionId: string; answer: string | number | boolean; isCorrect: boolean }>;
+      skipProgressUpdate?: boolean;
     }) => {
+      skipProgressOnQuizRef.current = !!skipProgressUpdate;
       return await apiRequest("POST", `/api/quiz-attempts`, {
         contentId,
         score,
@@ -93,8 +97,10 @@ export function useProgressTracker(contentId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quiz-attempts", contentId] });
-      // Also update progress to 100%
-      updateProgressMutation.mutate({ completionPercentage: 100 });
+      // Update progress to 100% unless the caller opts out (e.g., interactive video hotspots)
+      if (!skipProgressOnQuizRef.current) {
+        updateProgressMutation.mutate({ completionPercentage: 100 });
+      }
     },
     onError: (error: any) => {
       console.error("Failed to save quiz attempt:", error);
@@ -130,10 +136,11 @@ export function useProgressTracker(contentId: string) {
     saveQuizAttempt: (
       score: number,
       totalQuestions: number,
-      answers: Array<{ questionId: string; answer: string | number | boolean; isCorrect: boolean }>
+      answers: Array<{ questionId: string; answer: string | number | boolean; isCorrect: boolean }>,
+      skipProgressUpdate?: boolean
     ) => {
       if (!isAuthenticated) return;
-      saveQuizAttemptMutation.mutate({ score, totalQuestions, answers });
+      saveQuizAttemptMutation.mutate({ score, totalQuestions, answers, skipProgressUpdate });
     },
     logInteraction: (eventType: string, eventData?: Record<string, any>) => {
       if (!isAuthenticated) return;
