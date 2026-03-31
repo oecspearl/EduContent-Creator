@@ -1,35 +1,19 @@
-import { useState, useEffect } from "react";
-import { useParams, useLocation } from "wouter";
+import { useState, useCallback } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
-import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
 import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Download, Save } from "lucide-react";
-import type { H5pContent, DragAndDropData } from "@shared/schema";
+import type { DragAndDropData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
 import { ContentMetadataFields } from "@/components/ContentMetadataFields";
+import { useContentEditor } from "@/hooks/useContentEditor";
 
 export default function DragDropCreator() {
-  const params = useParams();
-  const [_, navigate] = useLocation();
-  const { toast } = useToast();
-  const contentId = params.id;
-  const breadcrumbs = useBreadcrumbs(contentId);
-  const isEditing = !!contentId;
-
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [subject, setSubject] = useState("");
-  const [gradeLevel, setGradeLevel] = useState("");
-  const [ageRange, setAgeRange] = useState("");
   const [items, setItems] = useState<DragAndDropData["items"]>([]);
   const [zones, setZones] = useState<DragAndDropData["zones"]>([]);
   const [settings, setSettings] = useState({
@@ -37,80 +21,21 @@ export default function DragDropCreator() {
     instantFeedback: true,
     allowRetry: true,
   });
-  const [isPublished, setIsPublished] = useState(false);
-  const [isPublic, setIsPublic] = useState(false);
-  const [autosave, setAutosave] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
-  const { data: content } = useQuery<H5pContent>({
-    queryKey: ["/api/content", contentId],
-    enabled: isEditing,
-  });
-
-  useEffect(() => {
-    if (content && content.type === "drag-drop") {
-      setTitle(content.title);
-      setDescription(content.description || "");
-      setSubject(content.subject || "");
-      setGradeLevel(content.gradeLevel || "");
-      setAgeRange(content.ageRange || "");
+  const editor = useContentEditor<DragAndDropData>({
+    contentType: "drag-drop",
+    contentLabel: "Drag & Drop activity",
+    buildData: useCallback(() => ({ items, zones, settings }), [items, zones, settings]),
+    populateFromContent: useCallback((content) => {
       const data = content.data as DragAndDropData;
       setItems(data.items || []);
       setZones(data.zones || []);
-      setSettings(data.settings || settings);
-      setIsPublished(content.isPublished);
-      setIsPublic(content.isPublic || false);
-    }
-  }, [content]);
-
-  const saveMutation = useMutation({
-    mutationFn: async (publish: boolean = false) => {
-      const data: DragAndDropData = { items, zones, settings };
-      
-      if (isEditing) {
-        const response = await apiRequest("PUT", `/api/content/${contentId}`, {
-          title, description, subject, gradeLevel, ageRange, data, isPublished: publish, isPublic,
-        });
-        return await response.json();
-      } else {
-        const response = await apiRequest("POST", "/api/content", {
-          title, description, subject, gradeLevel, ageRange, type: "drag-drop", data, isPublished: publish, isPublic,
-        });
-        return await response.json();
-      }
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
-      if (!isEditing) navigate(`/create/drag-drop/${data.id}`);
-      toast({ title: "Saved!", description: "Drag & Drop activity saved successfully." });
-      setIsSaving(false);
-    },
+      setSettings(data.settings || { showZoneLabels: true, instantFeedback: true, allowRetry: true });
+    }, []),
+    canSave: useCallback(() => items.length > 0 && zones.length > 0, [items.length, zones.length]),
+    autosaveDeps: [items, zones, settings],
   });
-
-  useEffect(() => {
-    if (!autosave) return; // Skip autosave if disabled
-    if (!title || items.length === 0 || zones.length === 0) return;
-    const timer = setTimeout(() => {
-      setIsSaving(true);
-      saveMutation.mutate(isPublished);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [title, description, items, zones, settings, isPublic, autosave, isPublished]);
-  
-  const handleManualSave = () => {
-    if (!title || items.length === 0 || zones.length === 0) {
-      toast({
-        title: "Cannot save",
-        description: "Please add a title, at least one item, and one zone.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setIsSaving(true);
-    saveMutation.mutate(isPublished);
-  };
 
   const addZone = () => {
     setZones([...zones, {
@@ -140,40 +65,37 @@ export default function DragDropCreator() {
       <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back" className="cursor-pointer">
+            <Button variant="ghost" size="icon" onClick={() => editor.navigate("/dashboard")} data-testid="button-back" className="cursor-pointer">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold">Drag & Drop Activity</h1>
-              {isSaving && <span className="text-sm text-muted-foreground">Saving...</span>}
+              {editor.isSaving && <span className="text-sm text-muted-foreground">Saving...</span>}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!autosave && (
+            {!editor.autosave && (
               <Button
                 variant="default"
                 size="sm"
-                onClick={handleManualSave}
-                disabled={isSaving || !title || items.length === 0 || zones.length === 0}
+                onClick={editor.handleManualSave}
+                disabled={editor.isSaving || !editor.title || items.length === 0 || zones.length === 0}
                 data-testid="button-save"
                 className="cursor-pointer"
               >
                 <Save className="h-4 w-4 mr-1" />
-                {isSaving ? "Saving..." : "Save"}
+                {editor.isSaving ? "Saving..." : "Save"}
               </Button>
             )}
             <Button
-              variant={isPublished ? "default" : "outline"}
+              variant={editor.isPublished ? "default" : "outline"}
               size="sm"
-              onClick={() => {
-                setIsPublished(!isPublished);
-                saveMutation.mutate(!isPublished);
-              }}
+              onClick={editor.handlePublish}
               data-testid="button-publish"
               className="cursor-pointer"
             >
               <Globe className="h-4 w-4 mr-1" />
-              {isPublished ? "Published" : "Publish"}
+              {editor.isPublished ? "Published" : "Publish"}
             </Button>
           </div>
         </div>
@@ -182,7 +104,7 @@ export default function DragDropCreator() {
       {/* Breadcrumbs */}
       <div className="bg-background border-b">
         <div className="max-w-7xl mx-auto px-6 py-3">
-          <Breadcrumbs items={breadcrumbs} />
+          <Breadcrumbs items={editor.breadcrumbs} />
         </div>
       </div>
 
@@ -193,20 +115,20 @@ export default function DragDropCreator() {
             <Sparkles className="h-4 w-4 mr-1" />
             AI Generate
           </Button>
-          {contentId && (
+          {editor.contentId && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
-                if (!content) return;
-                const html = generateHTMLExport(content, content.data);
-                downloadHTML(html, title || "drag-drop");
-                toast({
+                if (!editor.content) return;
+                const html = generateHTMLExport(editor.content, editor.content.data);
+                downloadHTML(html, editor.title || "drag-drop");
+                editor.toast({
                   title: "Download started",
                   description: "Your drag and drop activity is being downloaded as HTML.",
                 });
               }}
-              disabled={!contentId || !content}
+              disabled={!editor.contentId || !editor.content}
               data-testid="button-download-html"
               className="cursor-pointer"
             >
@@ -214,11 +136,11 @@ export default function DragDropCreator() {
               Download HTML
             </Button>
           )}
-          {contentId && isPublished && (
+          {editor.contentId && editor.isPublished && (
             <ShareToClassroomDialog
-              contentTitle={title}
-              contentDescription={description}
-              materialLink={`${window.location.origin}/public/${contentId}`}
+              contentTitle={editor.title}
+              contentDescription={editor.description}
+              materialLink={`${window.location.origin}/public/${editor.contentId}`}
             />
           )}
         </div>
@@ -235,8 +157,8 @@ export default function DragDropCreator() {
                 <Label htmlFor="title">Title</Label>
                 <Input
                   id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  value={editor.title}
+                  onChange={(e) => editor.setTitle(e.target.value)}
                   placeholder="Enter activity title"
                   data-testid="input-title"
                 />
@@ -245,19 +167,19 @@ export default function DragDropCreator() {
                 <Label htmlFor="description">Description</Label>
                 <Input
                   id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  value={editor.description}
+                  onChange={(e) => editor.setDescription(e.target.value)}
                   placeholder="Enter activity description"
                   data-testid="input-description"
                 />
               </div>
               <ContentMetadataFields
-                subject={subject}
-                gradeLevel={gradeLevel}
-                ageRange={ageRange}
-                onSubjectChange={setSubject}
-                onGradeLevelChange={setGradeLevel}
-                onAgeRangeChange={setAgeRange}
+                subject={editor.subject}
+                gradeLevel={editor.gradeLevel}
+                ageRange={editor.ageRange}
+                onSubjectChange={editor.setSubject}
+                onGradeLevelChange={editor.setGradeLevel}
+                onAgeRangeChange={editor.setAgeRange}
               />
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div className="space-y-0.5">
@@ -268,13 +190,8 @@ export default function DragDropCreator() {
                 </div>
                 <Switch
                   id="isPublic"
-                  checked={isPublic}
-                  onCheckedChange={(checked) => {
-                    setIsPublic(checked);
-                    if (checked) {
-                      setIsPublished(true);
-                    }
-                  }}
+                  checked={editor.isPublic}
+                  onCheckedChange={editor.setIsPublicWithAutoPublish}
                   data-testid="switch-public"
                 />
               </div>
@@ -404,8 +321,8 @@ export default function DragDropCreator() {
                 </div>
                 <Switch
                   id="autosave"
-                  checked={autosave}
-                  onCheckedChange={setAutosave}
+                  checked={editor.autosave}
+                  onCheckedChange={editor.setAutosave}
                   data-testid="switch-autosave"
                 />
               </div>
@@ -438,13 +355,12 @@ export default function DragDropCreator() {
         </div>
       </div>
 
-      {showAIModal && (
-        <AIGenerationModal
-          contentType="drag-drop"
-          onClose={() => setShowAIModal(false)}
-          onGenerated={handleAIGenerated}
-        />
-      )}
+      <AIGenerationModal
+        open={showAIModal}
+        onOpenChange={setShowAIModal}
+        contentType="drag-drop"
+        onGenerated={handleAIGenerated}
+      />
     </div>
   );
 }

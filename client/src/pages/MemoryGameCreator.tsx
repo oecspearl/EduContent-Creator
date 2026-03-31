@@ -1,8 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams, useLocation } from "wouter";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useContentEditor } from "@/hooks/useContentEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,12 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
 import { ImageGeneratorDialog } from "@/components/ImageGeneratorDialog";
 import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Image as ImageIcon, Upload, X, Download, Save } from "lucide-react";
-import type { H5pContent, MemoryGameData, MemoryCard } from "@shared/schema";
+import type { MemoryGameData, MemoryCard } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
 import { ContentMetadataFields } from "@/components/ContentMetadataFields";
@@ -94,7 +90,7 @@ function CardPairEditor({
             </Button>
           </div>
         </div>
-        
+
         {card.type === "text" ? (
           <Input
             value={card.content}
@@ -225,18 +221,6 @@ function CardPairEditor({
 }
 
 export default function MemoryGameCreator() {
-  const params = useParams();
-  const [_, navigate] = useLocation();
-  const { toast } = useToast();
-  const contentId = params.id;
-  const breadcrumbs = useBreadcrumbs(contentId);
-  const isEditing = !!contentId;
-
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [subject, setSubject] = useState("");
-  const [gradeLevel, setGradeLevel] = useState("");
-  const [ageRange, setAgeRange] = useState("");
   const [cards, setCards] = useState<MemoryGameData["cards"]>([]);
   const [settings, setSettings] = useState({
     rows: 4,
@@ -244,79 +228,20 @@ export default function MemoryGameCreator() {
     showTimer: true,
     showMoves: true,
   });
-  const [isPublished, setIsPublished] = useState(false);
-  const [isPublic, setIsPublic] = useState(false);
-  const [autosave, setAutosave] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
-  const { data: content } = useQuery<H5pContent>({
-    queryKey: ["/api/content", contentId],
-    enabled: isEditing,
-  });
-
-  useEffect(() => {
-    if (content && content.type === "memory-game") {
-      setTitle(content.title);
-      setDescription(content.description || "");
-      setSubject(content.subject || "");
-      setGradeLevel(content.gradeLevel || "");
-      setAgeRange(content.ageRange || "");
+  const editor = useContentEditor<MemoryGameData>({
+    contentType: "memory-game",
+    contentLabel: "Memory Game",
+    buildData: useCallback(() => ({ cards, settings }), [cards, settings]),
+    populateFromContent: useCallback((content) => {
       const data = content.data as MemoryGameData;
       setCards(data.cards || []);
-      setSettings(data.settings || settings);
-      setIsPublished(content.isPublished);
-      setIsPublic(content.isPublic || false);
-    }
-  }, [content]);
-
-  const saveMutation = useMutation({
-    mutationFn: async (publish: boolean = false) => {
-      const data: MemoryGameData = { cards, settings };
-      
-      if (isEditing) {
-        const response = await apiRequest("PUT", `/api/content/${contentId}`, {
-          title, description, subject, gradeLevel, ageRange, data, isPublished: publish, isPublic,
-        });
-        return await response.json();
-      } else {
-        const response = await apiRequest("POST", "/api/content", {
-          title, description, subject, gradeLevel, ageRange, type: "memory-game", data, isPublished: publish, isPublic,
-        });
-        return await response.json();
-      }
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
-      if (!isEditing) navigate(`/create/memory-game/${data.id}`);
-      toast({ title: "Saved!", description: "Memory Game saved successfully." });
-      setIsSaving(false);
-    },
+      setSettings(data.settings || { rows: 4, columns: 4, showTimer: true, showMoves: true });
+    }, []),
+    canSave: useCallback(() => cards.length > 0, [cards.length]),
+    autosaveDeps: [cards, settings],
   });
-
-  useEffect(() => {
-    if (!autosave) return; // Skip autosave if disabled
-    if (!title || cards.length === 0) return;
-    const timer = setTimeout(() => {
-      setIsSaving(true);
-      saveMutation.mutate(isPublished);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [title, description, cards, settings, isPublic, autosave, isPublished]);
-  
-  const handleManualSave = () => {
-    if (!title || cards.length === 0) {
-      toast({
-        title: "Cannot save",
-        description: "Please add a title and at least one card pair.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setIsSaving(true);
-    saveMutation.mutate(isPublished);
-  };
 
   const addPair = () => {
     const matchId = Date.now().toString();
@@ -331,8 +256,8 @@ export default function MemoryGameCreator() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const imageUrl = e.target?.result as string;
-      const updated = cards.map(c => 
-        c.id === cardId 
+      const updated = cards.map(c =>
+        c.id === cardId
           ? { ...c, type: "image" as const, imageUrl, content: "" }
           : c
       );
@@ -342,8 +267,8 @@ export default function MemoryGameCreator() {
   };
 
   const handleImageUrl = (cardId: string, url: string) => {
-    const updated = cards.map(c => 
-      c.id === cardId 
+    const updated = cards.map(c =>
+      c.id === cardId
         ? { ...c, type: "image" as const, imageUrl: url, content: "" }
         : c
     );
@@ -351,8 +276,8 @@ export default function MemoryGameCreator() {
   };
 
   const handleImageGenerated = (cardId: string, imageUrl: string) => {
-    const updated = cards.map(c => 
-      c.id === cardId 
+    const updated = cards.map(c =>
+      c.id === cardId
         ? { ...c, type: "image" as const, imageUrl, content: "" }
         : c
     );
@@ -360,8 +285,8 @@ export default function MemoryGameCreator() {
   };
 
   const removeImage = (cardId: string) => {
-    const updated = cards.map(c => 
-      c.id === cardId 
+    const updated = cards.map(c =>
+      c.id === cardId
         ? { ...c, type: "text" as const, imageUrl: undefined, content: "" }
         : c
     );
@@ -386,40 +311,37 @@ export default function MemoryGameCreator() {
       <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back" className="cursor-pointer">
+            <Button variant="ghost" size="icon" onClick={() => editor.navigate("/dashboard")} data-testid="button-back" className="cursor-pointer">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold">Memory Game</h1>
-              {isSaving && <span className="text-sm text-muted-foreground">Saving...</span>}
+              {editor.isSaving && <span className="text-sm text-muted-foreground">Saving...</span>}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!autosave && (
+            {!editor.autosave && (
               <Button
                 variant="default"
                 size="sm"
-                onClick={handleManualSave}
-                disabled={isSaving || !title || cards.length === 0}
+                onClick={editor.handleManualSave}
+                disabled={editor.isSaving || !editor.title || cards.length === 0}
                 data-testid="button-save"
                 className="cursor-pointer"
               >
                 <Save className="h-4 w-4 mr-1" />
-                {isSaving ? "Saving..." : "Save"}
+                {editor.isSaving ? "Saving..." : "Save"}
               </Button>
             )}
             <Button
-              variant={isPublished ? "default" : "outline"}
+              variant={editor.isPublished ? "default" : "outline"}
               size="sm"
-              onClick={() => {
-                setIsPublished(!isPublished);
-                saveMutation.mutate(!isPublished);
-              }}
+              onClick={editor.handlePublish}
               data-testid="button-publish"
               className="cursor-pointer"
             >
               <Globe className="h-4 w-4 mr-1" />
-              {isPublished ? "Published" : "Publish"}
+              {editor.isPublished ? "Published" : "Publish"}
             </Button>
           </div>
         </div>
@@ -428,7 +350,7 @@ export default function MemoryGameCreator() {
       {/* Breadcrumbs */}
       <div className="bg-background border-b">
         <div className="max-w-7xl mx-auto px-6 py-3">
-          <Breadcrumbs items={breadcrumbs} />
+          <Breadcrumbs items={editor.breadcrumbs} />
         </div>
       </div>
 
@@ -439,20 +361,20 @@ export default function MemoryGameCreator() {
             <Sparkles className="h-4 w-4 mr-1" />
             AI Generate
           </Button>
-          {contentId && (
+          {editor.contentId && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
-                if (!content) return;
-                const html = generateHTMLExport(content, content.data);
-                downloadHTML(html, title || "memory-game");
-                toast({
+                if (!editor.content) return;
+                const html = generateHTMLExport(editor.content, editor.content.data);
+                downloadHTML(html, editor.title || "memory-game");
+                editor.toast({
                   title: "Download started",
                   description: "Your memory game is being downloaded as HTML.",
                 });
               }}
-              disabled={!contentId || !content}
+              disabled={!editor.contentId || !editor.content}
               data-testid="button-download-html"
               className="cursor-pointer"
             >
@@ -460,11 +382,11 @@ export default function MemoryGameCreator() {
               Download HTML
             </Button>
           )}
-          {contentId && isPublished && (
+          {editor.contentId && editor.isPublished && (
             <ShareToClassroomDialog
-              contentTitle={title}
-              contentDescription={description}
-              materialLink={`${window.location.origin}/public/${contentId}`}
+              contentTitle={editor.title}
+              contentDescription={editor.description}
+              materialLink={`${window.location.origin}/public/${editor.contentId}`}
             />
           )}
         </div>
@@ -481,8 +403,8 @@ export default function MemoryGameCreator() {
                 <Label htmlFor="title">Title</Label>
                 <Input
                   id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  value={editor.title}
+                  onChange={(e) => editor.setTitle(e.target.value)}
                   placeholder="Enter game title"
                   data-testid="input-title"
                 />
@@ -491,19 +413,19 @@ export default function MemoryGameCreator() {
                 <Label htmlFor="description">Description</Label>
                 <Input
                   id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  value={editor.description}
+                  onChange={(e) => editor.setDescription(e.target.value)}
                   placeholder="Enter game description"
                   data-testid="input-description"
                 />
               </div>
               <ContentMetadataFields
-                subject={subject}
-                gradeLevel={gradeLevel}
-                ageRange={ageRange}
-                onSubjectChange={setSubject}
-                onGradeLevelChange={setGradeLevel}
-                onAgeRangeChange={setAgeRange}
+                subject={editor.subject}
+                gradeLevel={editor.gradeLevel}
+                ageRange={editor.ageRange}
+                onSubjectChange={editor.setSubject}
+                onGradeLevelChange={editor.setGradeLevel}
+                onAgeRangeChange={editor.setAgeRange}
               />
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div className="space-y-0.5">
@@ -514,13 +436,8 @@ export default function MemoryGameCreator() {
                 </div>
                 <Switch
                   id="isPublic"
-                  checked={isPublic}
-                  onCheckedChange={(checked) => {
-                    setIsPublic(checked);
-                    if (checked) {
-                      setIsPublished(true);
-                    }
-                  }}
+                  checked={editor.isPublic}
+                  onCheckedChange={editor.setIsPublicWithAutoPublish}
                   data-testid="switch-public"
                 />
               </div>
@@ -580,8 +497,8 @@ export default function MemoryGameCreator() {
                 </div>
                 <Switch
                   id="autosave"
-                  checked={autosave}
-                  onCheckedChange={setAutosave}
+                  checked={editor.autosave}
+                  onCheckedChange={editor.setAutosave}
                   data-testid="switch-autosave"
                 />
               </div>
@@ -606,13 +523,12 @@ export default function MemoryGameCreator() {
         </div>
       </div>
 
-      {showAIModal && (
-        <AIGenerationModal
-          contentType="memory-game"
-          onClose={() => setShowAIModal(false)}
-          onGenerated={handleAIGenerated}
-        />
-      )}
+      <AIGenerationModal
+        contentType="memory-game"
+        open={showAIModal}
+        onOpenChange={setShowAIModal}
+        onGenerated={handleAIGenerated}
+      />
     </div>
   );
 }

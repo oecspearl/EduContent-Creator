@@ -1,8 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams, useLocation } from "wouter";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useContentEditor } from "@/hooks/useContentEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,8 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { youtubeLoader } from "@/lib/youtube-loader";
 import { extractVideoId } from "@/lib/youtube-utils";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
@@ -32,123 +28,33 @@ import {
   Settings,
   Eye,
 } from "lucide-react";
-import type { H5pContent, InteractiveVideoData, VideoHotspot, QuizQuestion } from "@shared/schema";
+import type { InteractiveVideoData, VideoHotspot, QuizQuestion } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { ContentMetadataFields } from "@/components/ContentMetadataFields";
 
 export default function InteractiveVideoCreator() {
-  const params = useParams();
-  const [_, navigate] = useLocation();
-  const { toast } = useToast();
-  const contentId = params.id;
-  const breadcrumbs = useBreadcrumbs(contentId);
-  const isEditing = !!contentId;
-
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [subject, setSubject] = useState("");
-  const [gradeLevel, setGradeLevel] = useState("");
-  const [ageRange, setAgeRange] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [hotspots, setHotspots] = useState<VideoHotspot[]>([]);
-  const [isPublished, setIsPublished] = useState(false);
-  const [isPublic, setIsPublic] = useState(false);
-  const [autosave, setAutosave] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
   const [showEnhancedAIModal, setShowEnhancedAIModal] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showTestInteractions, setShowTestInteractions] = useState(false);
   const [videoDuration, setVideoDuration] = useState(0);
   const previewPlayerRef = useRef<any>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
-  const { data: content } = useQuery<H5pContent>({
-    queryKey: ["/api/content", contentId],
-    enabled: isEditing,
+  const editor = useContentEditor<InteractiveVideoData>({
+    contentType: "interactive-video",
+    contentLabel: "Interactive video",
+    buildData: useCallback(() => ({ videoUrl, hotspots }), [videoUrl, hotspots]),
+    populateFromContent: useCallback((content) => {
+      const data = content.data as InteractiveVideoData;
+      setVideoUrl(data.videoUrl || "");
+      setHotspots(data.hotspots || []);
+    }, []),
+    canSave: useCallback(() => !!videoUrl, [videoUrl]),
+    autosaveDeps: [videoUrl, hotspots],
   });
-
-  useEffect(() => {
-    if (content && content.type === "interactive-video") {
-      setTitle(content.title);
-      setDescription(content.description || "");
-      setSubject(content.subject || "");
-      setGradeLevel(content.gradeLevel || "");
-      setAgeRange(content.ageRange || "");
-      const videoData = content.data as InteractiveVideoData;
-      setVideoUrl(videoData.videoUrl || "");
-      setHotspots(videoData.hotspots || []);
-      setIsPublished(content.isPublished);
-      setIsPublic(content.isPublic || false);
-    }
-  }, [content]);
-
-  const saveMutation = useMutation({
-    mutationFn: async (publish: boolean = false) => {
-      const data: InteractiveVideoData = { videoUrl, hotspots };
-      
-      if (isEditing) {
-        const response = await apiRequest("PUT", `/api/content/${contentId}`, {
-          title,
-          description,
-          subject,
-          gradeLevel,
-          ageRange,
-          data,
-          isPublished: publish,
-          isPublic,
-        });
-        return await response.json();
-      } else {
-        const response = await apiRequest("POST", "/api/content", {
-          title,
-          description,
-          subject,
-          gradeLevel,
-          ageRange,
-          type: "interactive-video",
-          data,
-          isPublished: publish,
-          isPublic,
-        });
-        return await response.json();
-      }
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
-      if (!isEditing) {
-        navigate(`/create/interactive-video/${data.id}`);
-      }
-      toast({ title: "Saved!", description: "Interactive video saved successfully." });
-      setIsSaving(false);
-    },
-  });
-
-  useEffect(() => {
-    if (!autosave) return; // Skip autosave if disabled
-    if (!title || !videoUrl) return;
-    
-    const timer = setTimeout(() => {
-      setIsSaving(true);
-      saveMutation.mutate(isPublished);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [title, description, videoUrl, hotspots, isPublic, autosave, isPublished]);
-  
-  const handleManualSave = () => {
-    if (!title || !videoUrl) {
-      toast({
-        title: "Cannot save",
-        description: "Please add a title and video URL.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setIsSaving(true);
-    saveMutation.mutate(isPublished);
-  };
 
   const addHotspot = () => {
     const newHotspot: VideoHotspot = {
@@ -180,17 +86,6 @@ export default function InteractiveVideoCreator() {
   const handleEnhancedAIGenerated = (videoUrl: string, hotspots: VideoHotspot[]) => {
     setVideoUrl(videoUrl);
     setHotspots(hotspots);
-  };
-
-  const handlePublish = async () => {
-    setIsPublished(!isPublished);
-    await saveMutation.mutateAsync(!isPublished);
-    toast({
-      title: isPublished ? "Unpublished" : "Published!",
-      description: isPublished
-        ? "Interactive video is now private."
-        : "Interactive video is now publicly accessible via share link.",
-    });
   };
 
   const formatTime = (seconds: number) => {
@@ -253,38 +148,38 @@ export default function InteractiveVideoCreator() {
       <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back" className="cursor-pointer">
+            <Button variant="ghost" size="icon" onClick={() => editor.navigate("/dashboard")} data-testid="button-back" className="cursor-pointer">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold">Interactive Video Creator</h1>
-              {isSaving && <Badge variant="outline">Saving...</Badge>}
+              {editor.isSaving && <Badge variant="outline">Saving...</Badge>}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!autosave && (
+            {!editor.autosave && (
               <Button
                 variant="default"
                 size="sm"
-                onClick={handleManualSave}
-                disabled={isSaving || !title || !videoUrl}
+                onClick={editor.handleManualSave}
+                disabled={editor.isSaving || !editor.title || !videoUrl}
                 data-testid="button-save"
                 className="cursor-pointer"
               >
                 <Save className="h-4 w-4 mr-1" />
-                {isSaving ? "Saving..." : "Save"}
+                {editor.isSaving ? "Saving..." : "Save"}
               </Button>
             )}
             <Button
-              variant={isPublished ? "outline" : "default"}
+              variant={editor.isPublished ? "outline" : "default"}
               size="sm"
-              onClick={handlePublish}
-              disabled={!title || !videoUrl}
+              onClick={editor.handlePublish}
+              disabled={!editor.title || !videoUrl}
               data-testid="button-publish"
               className="cursor-pointer"
             >
               <Globe className="h-4 w-4 mr-1" />
-              {isPublished ? "Unpublish" : "Publish"}
+              {editor.isPublished ? "Unpublish" : "Publish"}
             </Button>
           </div>
         </div>
@@ -293,7 +188,7 @@ export default function InteractiveVideoCreator() {
       {/* Breadcrumbs */}
       <div className="bg-background border-b">
         <div className="max-w-7xl mx-auto px-6 py-3">
-          <Breadcrumbs items={breadcrumbs} />
+          <Breadcrumbs items={editor.breadcrumbs} />
         </div>
       </div>
 
@@ -320,11 +215,11 @@ export default function InteractiveVideoCreator() {
               Test Interactions
             </Button>
           )}
-          {contentId && isPublished && (
+          {editor.contentId && editor.isPublished && (
             <ShareToClassroomDialog
-              contentTitle={title}
-              contentDescription={description}
-              materialLink={`${window.location.origin}/public/${contentId}`}
+              contentTitle={editor.title}
+              contentDescription={editor.description}
+              materialLink={`${window.location.origin}/public/${editor.contentId}`}
             />
           )}
         </div>
@@ -343,8 +238,8 @@ export default function InteractiveVideoCreator() {
                 <Input
                   id="title"
                   placeholder="e.g., Cell Division Explained"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  value={editor.title}
+                  onChange={(e) => editor.setTitle(e.target.value)}
                   data-testid="input-title"
                 />
               </div>
@@ -353,19 +248,19 @@ export default function InteractiveVideoCreator() {
                 <Textarea
                   id="description"
                   placeholder="Brief description of this interactive video..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  value={editor.description}
+                  onChange={(e) => editor.setDescription(e.target.value)}
                   className="h-20 resize-none"
                   data-testid="textarea-description"
                 />
               </div>
               <ContentMetadataFields
-                subject={subject}
-                gradeLevel={gradeLevel}
-                ageRange={ageRange}
-                onSubjectChange={setSubject}
-                onGradeLevelChange={setGradeLevel}
-                onAgeRangeChange={setAgeRange}
+                subject={editor.subject}
+                gradeLevel={editor.gradeLevel}
+                ageRange={editor.ageRange}
+                onSubjectChange={editor.setSubject}
+                onGradeLevelChange={editor.setGradeLevel}
+                onAgeRangeChange={editor.setAgeRange}
               />
               <div className="space-y-2">
                 <Label htmlFor="videoUrl">YouTube Video URL *</Label>
@@ -389,13 +284,8 @@ export default function InteractiveVideoCreator() {
                 </div>
                 <Switch
                   id="isPublic"
-                  checked={isPublic}
-                  onCheckedChange={(checked) => {
-                    setIsPublic(checked);
-                    if (checked) {
-                      setIsPublished(true);
-                    }
-                  }}
+                  checked={editor.isPublic}
+                  onCheckedChange={editor.setIsPublicWithAutoPublish}
                   data-testid="switch-public"
                 />
               </div>
@@ -420,8 +310,8 @@ export default function InteractiveVideoCreator() {
                 </div>
                 <Switch
                   id="autosave"
-                  checked={autosave}
-                  onCheckedChange={setAutosave}
+                  checked={editor.autosave}
+                  onCheckedChange={editor.setAutosave}
                   data-testid="switch-autosave"
                 />
               </div>
@@ -829,9 +719,9 @@ export default function InteractiveVideoCreator() {
         open={showEnhancedAIModal}
         onOpenChange={setShowEnhancedAIModal}
         onGenerated={handleEnhancedAIGenerated}
-        subject={subject}
-        gradeLevel={gradeLevel}
-        ageRange={ageRange}
+        subject={editor.subject}
+        gradeLevel={editor.gradeLevel}
+        ageRange={editor.ageRange}
       />
 
       {/* Test Interactions — full interactive player preview */}
@@ -840,7 +730,7 @@ export default function InteractiveVideoCreator() {
           <DialogHeader className="p-6 pb-0">
             <DialogTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5" />
-              Test Interactions — {title || "Untitled"}
+              Test Interactions — {editor.title || "Untitled"}
             </DialogTitle>
             <p className="text-sm text-muted-foreground">
               This is exactly what students will see. Hotspots will trigger as you watch. Progress is not saved during testing.

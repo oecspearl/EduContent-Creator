@@ -1,8 +1,5 @@
-import { useState, useEffect } from "react";
-import { useParams, useLocation } from "wouter";
+import { useState, useCallback } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
-import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,145 +7,54 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
-import { 
-  ArrowLeft, 
-  Sparkles, 
-  Plus, 
-  Trash2, 
-  GripVertical, 
+import {
+  ArrowLeft,
+  Sparkles,
+  Plus,
+  Trash2,
+  GripVertical,
   Settings,
   Globe,
   Image as ImageIcon,
   Download,
   Save
 } from "lucide-react";
-import type { H5pContent, FlashcardData } from "@shared/schema";
+import type { FlashcardData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { ContentMetadataFields } from "@/components/ContentMetadataFields";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
+import { useContentEditor } from "@/hooks/useContentEditor";
 
 export default function FlashcardCreator() {
-  const params = useParams();
-  const [_, navigate] = useLocation();
-  const { toast } = useToast();
-  const contentId = params.id;
-  const breadcrumbs = useBreadcrumbs(contentId);
-  const isEditing = !!contentId;
-
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [subject, setSubject] = useState("");
-  const [gradeLevel, setGradeLevel] = useState("");
-  const [ageRange, setAgeRange] = useState("");
   const [cards, setCards] = useState<FlashcardData["cards"]>([]);
   const [settings, setSettings] = useState({
     shuffleCards: false,
     showProgress: true,
     autoFlipDelay: undefined as number | undefined,
   });
-  const [isPublished, setIsPublished] = useState(false);
-  const [isPublic, setIsPublic] = useState(false);
-  const [autosave, setAutosave] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
-  const { data: content } = useQuery<H5pContent>({
-    queryKey: ["/api/content", contentId],
-    enabled: isEditing,
-  });
-
-  useEffect(() => {
-    if (content && content.type === "flashcard") {
-      setTitle(content.title);
-      setDescription(content.description || "");
-      setSubject(content.subject || "");
-      setGradeLevel(content.gradeLevel || "");
-      setAgeRange(content.ageRange || "");
-      const flashcardData = content.data as FlashcardData;
-      setCards(flashcardData.cards || []);
+  const editor = useContentEditor<FlashcardData>({
+    contentType: "flashcard",
+    contentLabel: "Flashcard set",
+    buildData: useCallback(() => ({ cards, settings }), [cards, settings]),
+    populateFromContent: useCallback((content) => {
+      const data = content.data as FlashcardData;
+      setCards(data.cards || []);
       setSettings({
-        shuffleCards: flashcardData.settings?.shuffleCards ?? settings.shuffleCards,
-        showProgress: flashcardData.settings?.showProgress ?? settings.showProgress,
-        autoFlipDelay: flashcardData.settings?.autoFlipDelay ?? settings.autoFlipDelay,
+        shuffleCards: data.settings?.shuffleCards ?? false,
+        showProgress: data.settings?.showProgress ?? true,
+        autoFlipDelay: data.settings?.autoFlipDelay,
       });
-      setIsPublished(content.isPublished);
-      setIsPublic(content.isPublic || false);
-    }
-  }, [content]);
-
-  const saveMutation = useMutation({
-    mutationFn: async (publish: boolean = false) => {
-      const data: FlashcardData = { cards, settings };
-      
-      if (isEditing) {
-        const response = await apiRequest("PUT", `/api/content/${contentId}`, {
-          title,
-          description,
-          subject,
-          gradeLevel,
-          ageRange,
-          data,
-          isPublished: publish,
-          isPublic,
-        });
-        return await response.json();
-      } else {
-        const response = await apiRequest("POST", "/api/content", {
-          title,
-          description,
-          subject,
-          gradeLevel,
-          ageRange,
-          type: "flashcard",
-          data,
-          isPublished: publish,
-          isPublic,
-        });
-        return await response.json();
-      }
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
-      if (!isEditing) {
-        navigate(`/create/flashcard/${data.id}`);
-      }
-      toast({ title: "Saved!", description: "Flashcard set saved successfully." });
-      setIsSaving(false);
-    },
+    }, []),
+    canSave: useCallback(() => cards.length > 0, [cards.length]),
+    autosaveDeps: [cards, settings],
   });
-
-  useEffect(() => {
-    if (!autosave) return; // Skip autosave if disabled
-    if (!title || cards.length === 0) return;
-    
-    const timer = setTimeout(() => {
-      setIsSaving(true);
-      saveMutation.mutate(isPublished);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [title, description, cards, settings, isPublic, autosave, isPublished]);
-  
-  const handleManualSave = () => {
-    if (!title || cards.length === 0) {
-      toast({
-        title: "Cannot save",
-        description: "Please add a title and at least one card.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setIsSaving(true);
-    saveMutation.mutate(isPublished);
-  };
 
   const addCard = () => {
-    const newCard = {
+    setCards([...cards, {
       id: Date.now().toString(),
       front: "",
       back: "",
@@ -157,8 +63,7 @@ export default function FlashcardCreator() {
       backImageUrl: undefined,
       frontImageAlt: undefined,
       backImageAlt: undefined,
-    };
-    setCards([...cards, newCard]);
+    }]);
   };
 
   const updateCard = (index: number, updates: Partial<typeof cards[0]>) => {
@@ -177,53 +82,42 @@ export default function FlashcardCreator() {
     }
   };
 
-  const handlePublish = async () => {
-    setIsPublished(!isPublished);
-    await saveMutation.mutateAsync(!isPublished);
-    toast({
-      title: isPublished ? "Unpublished" : "Published!",
-      description: isPublished
-        ? "Flashcard set is now private."
-        : "Flashcard set is now publicly accessible via share link.",
-    });
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header bar */}
       <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back">
+            <Button variant="ghost" size="icon" onClick={() => editor.navigate("/dashboard")} data-testid="button-back">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold">Flashcard Creator</h1>
-              {isSaving && <Badge variant="outline">Saving...</Badge>}
+              {editor.isSaving && <Badge variant="outline">Saving...</Badge>}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!autosave && (
+            {!editor.autosave && (
               <Button
                 variant="default"
                 size="sm"
-                onClick={handleManualSave}
-                disabled={isSaving || !title || cards.length === 0}
+                onClick={editor.handleManualSave}
+                disabled={editor.isSaving || !editor.title || cards.length === 0}
                 data-testid="button-save"
               >
                 <Save className="h-4 w-4 mr-1" />
-                {isSaving ? "Saving..." : "Save"}
+                {editor.isSaving ? "Saving..." : "Save"}
               </Button>
             )}
             <Button
-              variant={isPublished ? "outline" : "default"}
+              variant={editor.isPublished ? "outline" : "default"}
               size="sm"
-              onClick={handlePublish}
-              disabled={!title || cards.length === 0}
+              onClick={editor.handlePublish}
+              disabled={!editor.title || cards.length === 0}
               data-testid="button-publish"
             >
               <Globe className="h-4 w-4 mr-1" />
-              {isPublished ? "Unpublish" : "Publish"}
+              {editor.isPublished ? "Unpublish" : "Publish"}
             </Button>
           </div>
         </div>
@@ -232,7 +126,7 @@ export default function FlashcardCreator() {
       {/* Breadcrumbs */}
       <div className="bg-background border-b">
         <div className="max-w-7xl mx-auto px-6 py-3">
-          <Breadcrumbs items={breadcrumbs} />
+          <Breadcrumbs items={editor.breadcrumbs} />
         </div>
       </div>
 
@@ -243,20 +137,20 @@ export default function FlashcardCreator() {
             <Settings className="h-4 w-4 mr-1" />
             Settings
           </Button>
-          {contentId && (
+          {editor.contentId && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
-                if (!content) return;
-                const html = generateHTMLExport(content, content.data);
-                downloadHTML(html, title || "flashcards");
-                toast({
+                if (!editor.content) return;
+                const html = generateHTMLExport(editor.content, editor.content.data);
+                downloadHTML(html, editor.title || "flashcards");
+                editor.toast({
                   title: "Download started",
                   description: "Your flashcards are being downloaded as HTML.",
                 });
               }}
-              disabled={!contentId || !content}
+              disabled={!editor.contentId || !editor.content}
               data-testid="button-download-html"
             >
               <Download className="h-4 w-4 mr-1" />
@@ -267,11 +161,11 @@ export default function FlashcardCreator() {
             <Sparkles className="h-4 w-4 mr-1" />
             AI Generate
           </Button>
-          {contentId && isPublished && (
+          {editor.contentId && editor.isPublished && (
             <ShareToClassroomDialog
-              contentTitle={title}
-              contentDescription={description}
-              materialLink={`${window.location.origin}/public/${contentId}`}
+              contentTitle={editor.title}
+              contentDescription={editor.description}
+              materialLink={`${window.location.origin}/public/${editor.contentId}`}
             />
           )}
         </div>
@@ -292,8 +186,8 @@ export default function FlashcardCreator() {
                   <Input
                     id="title"
                     placeholder="e.g., Spanish Vocabulary - Food"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    value={editor.title}
+                    onChange={(e) => editor.setTitle(e.target.value)}
                     data-testid="input-title"
                   />
                 </div>
@@ -302,19 +196,19 @@ export default function FlashcardCreator() {
                   <Textarea
                     id="description"
                     placeholder="Brief description of this flashcard set..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    value={editor.description}
+                    onChange={(e) => editor.setDescription(e.target.value)}
                     className="h-20 resize-none"
                     data-testid="textarea-description"
                   />
                 </div>
                 <ContentMetadataFields
-                  subject={subject}
-                  gradeLevel={gradeLevel}
-                  ageRange={ageRange}
-                  onSubjectChange={setSubject}
-                  onGradeLevelChange={setGradeLevel}
-                  onAgeRangeChange={setAgeRange}
+                  subject={editor.subject}
+                  gradeLevel={editor.gradeLevel}
+                  ageRange={editor.ageRange}
+                  onSubjectChange={editor.setSubject}
+                  onGradeLevelChange={editor.setGradeLevel}
+                  onAgeRangeChange={editor.setAgeRange}
                 />
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="space-y-0.5">
@@ -325,13 +219,8 @@ export default function FlashcardCreator() {
                   </div>
                   <Switch
                     id="isPublic"
-                    checked={isPublic}
-                    onCheckedChange={(checked) => {
-                      setIsPublic(checked);
-                      if (checked) {
-                        setIsPublished(true);
-                      }
-                    }}
+                    checked={editor.isPublic}
+                    onCheckedChange={editor.setIsPublicWithAutoPublish}
                     data-testid="switch-public"
                   />
                 </div>
@@ -415,9 +304,9 @@ export default function FlashcardCreator() {
                                       data-testid={`input-front-image-alt-${index}`}
                                     />
                                     <div className="mt-2 rounded-md overflow-hidden border">
-                                      <img 
-                                        src={card.frontImageUrl} 
-                                        alt={card.frontImageAlt || "Front preview"} 
+                                      <img
+                                        src={card.frontImageUrl}
+                                        alt={card.frontImageAlt || "Front preview"}
                                         className="w-full h-32 object-cover"
                                         loading="lazy"
                                         onError={(e) => {
@@ -466,9 +355,9 @@ export default function FlashcardCreator() {
                                       data-testid={`input-back-image-alt-${index}`}
                                     />
                                     <div className="mt-2 rounded-md overflow-hidden border">
-                                      <img 
-                                        src={card.backImageUrl} 
-                                        alt={card.backImageAlt || "Back preview"} 
+                                      <img
+                                        src={card.backImageUrl}
+                                        alt={card.backImageAlt || "Back preview"}
                                         className="w-full h-32 object-cover"
                                         loading="lazy"
                                         onError={(e) => {
@@ -517,8 +406,8 @@ export default function FlashcardCreator() {
                     </div>
                     <Switch
                       id="autosave"
-                      checked={autosave}
-                      onCheckedChange={setAutosave}
+                      checked={editor.autosave}
+                      onCheckedChange={editor.setAutosave}
                       data-testid="switch-autosave"
                     />
                   </div>

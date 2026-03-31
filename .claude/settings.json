@@ -29,7 +29,9 @@
       "Bash(ls /Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/tsconfig*.json)",
       "Bash(do)",
       "Bash(echo \"=== $f ===\")",
-      "Read(//Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/client/src/pages/**)"
+      "Read(//Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/client/src/pages/**)",
+      "Bash(find /Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/client/src -name context* -o -name *context*)",
+      "Bash(ls /Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/client/vite.config.*)"
     ],
     "additionalDirectories": [
       "/Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/server"

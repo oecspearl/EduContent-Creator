@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
-import { useParams, useLocation } from "wouter";
+import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useContentEditor } from "@/hooks/useContentEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,12 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
 import { ArrowLeft, Plus, Trash2, Globe, ChevronLeft, ChevronRight, Layers, X, Sparkles, Save, Video, Image, FileQuestion, ArrowUp, ArrowDown, GripVertical, Download, Settings } from "lucide-react";
-import type { H5pContent, InteractiveBookData, ContentType, BookPageType, VideoPageData, QuizPageData, ImagePageData } from "@shared/schema";
+import type { InteractiveBookData, ContentType, BookPageType, VideoPageData, QuizPageData, ImagePageData, H5pContent } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { VideoPageEditor } from "@/components/book-pages/VideoPageEditor";
 import { QuizPageEditor } from "@/components/book-pages/QuizPageEditor";
@@ -25,18 +22,6 @@ import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
 import { ContentMetadataFields } from "@/components/ContentMetadataFields";
 
 export default function InteractiveBookCreator() {
-  const params = useParams();
-  const [_, navigate] = useLocation();
-  const { toast } = useToast();
-  const contentId = params.id;
-  const breadcrumbs = useBreadcrumbs(contentId);
-  const isEditing = !!contentId;
-
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [subject, setSubject] = useState("");
-  const [gradeLevel, setGradeLevel] = useState("");
-  const [ageRange, setAgeRange] = useState("");
   const [pages, setPages] = useState<InteractiveBookData["pages"]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [settings, setSettings] = useState({
@@ -44,110 +29,31 @@ export default function InteractiveBookCreator() {
     showProgress: true,
     requireCompletion: false,
   });
-  const [isPublished, setIsPublished] = useState(false);
-  const [isPublic, setIsPublic] = useState(false);
-  const [autosave, setAutosave] = useState(true);
   const [showEmbedDialog, setShowEmbedDialog] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [showPageTypeDialog, setShowPageTypeDialog] = useState(false);
 
-  const { data: content } = useQuery<H5pContent>({
-    queryKey: ["/api/content", contentId],
-    enabled: isEditing,
+  const editor = useContentEditor<InteractiveBookData>({
+    contentType: "interactive-book",
+    contentLabel: "Interactive book",
+    buildData: useCallback(() => ({ pages, settings }), [pages, settings]),
+    populateFromContent: useCallback((content) => {
+      const data = content.data as InteractiveBookData;
+      const loadedPages = data.pages || [];
+      setPages(loadedPages.length > 0 ? loadedPages : [{
+        id: Date.now().toString(),
+        title: "Page 1",
+        content: "",
+      }]);
+      setSettings(data.settings || { showNavigation: true, showProgress: true, requireCompletion: false });
+    }, []),
+    canSave: useCallback(() => pages.length > 0, [pages.length]),
+    autosaveDeps: [pages, settings],
   });
 
   const { data: availableContent } = useQuery<H5pContent[]>({
     queryKey: ["/api/content"],
   });
-
-  useEffect(() => {
-    if (content && content.type === "interactive-book") {
-      setTitle(content.title);
-      setDescription(content.description || "");
-      setSubject(content.subject || "");
-      setGradeLevel(content.gradeLevel || "");
-      setAgeRange(content.ageRange || "");
-      const data = content.data as InteractiveBookData;
-      const loadedPages = data.pages || [];
-      setPages(loadedPages);
-      setSettings(data.settings || settings);
-      setIsPublished(content.isPublished);
-      setIsPublic(content.isPublic || false);
-      
-      // If no pages exist, automatically add one
-      if (loadedPages.length === 0) {
-        setPages([{
-          id: Date.now().toString(),
-          title: "Page 1",
-          content: "",
-        }]);
-      }
-    }
-  }, [content]);
-
-  const saveMutation = useMutation({
-    mutationFn: async (publish: boolean = false) => {
-      const data: InteractiveBookData = { 
-        pages, 
-        settings,
-      };
-      
-      if (isEditing) {
-        const response = await apiRequest("PUT", `/api/content/${contentId}`, {
-          title, description, subject, gradeLevel, ageRange, data, isPublished: publish, isPublic,
-        });
-        return await response.json();
-      } else {
-        const response = await apiRequest("POST", "/api/content", {
-          title, description, subject, gradeLevel, ageRange, type: "interactive-book", data, isPublished: publish, isPublic,
-        });
-        return await response.json();
-      }
-    },
-    onSuccess: (data) => {
-      // Only invalidate the list queries, not the current content
-      queryClient.invalidateQueries({ 
-        queryKey: ["/api/content"],
-        exact: true,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/content/public"] });
-      if (!isEditing) navigate(`/create/interactive-book/${data.id}`);
-      toast({
-        title: "Saved successfully!",
-        description: "Your interactive book has been saved.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to save",
-        description: "There was an error saving your book. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  useEffect(() => {
-    if (!autosave) return; // Skip autosave if disabled
-    if (!title || pages.length === 0) return;
-    
-    const timer = setTimeout(() => {
-      saveMutation.mutate(isPublished);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [title, description, pages, settings, isPublic, autosave, isPublished]);
-  
-  const handleManualSave = () => {
-    if (!title || pages.length === 0) {
-      toast({
-        title: "Cannot save",
-        description: "Please add a title and at least one page.",
-        variant: "destructive",
-      });
-      return;
-    }
-    saveMutation.mutate(isPublished);
-  };
 
   const addPage = (pageType: BookPageType = "content") => {
     setPages([...pages, {
@@ -167,7 +73,7 @@ export default function InteractiveBookCreator() {
     };
     setPages(updated);
     setShowEmbedDialog(false);
-    toast({ title: "Embedded!", description: `${selectedContent.title} has been embedded in this page.` });
+    editor.toast({ title: "Embedded!", description: `${selectedContent.title} has been embedded in this page.` });
   };
 
   const removeEmbeddedContent = () => {
@@ -178,7 +84,7 @@ export default function InteractiveBookCreator() {
       embeddedContent: undefined,
     };
     setPages(updated);
-    toast({ title: "Removed", description: "Embedded content has been removed from this page." });
+    editor.toast({ title: "Removed", description: "Embedded content has been removed from this page." });
   };
 
   const movePage = (index: number, direction: "up" | "down") => {
@@ -197,7 +103,7 @@ export default function InteractiveBookCreator() {
       setCurrentPageIndex(index);
     }
 
-    toast({
+    editor.toast({
       title: "Page moved",
       description: `Page moved ${direction === "up" ? "up" : "down"}`,
     });
@@ -221,7 +127,7 @@ export default function InteractiveBookCreator() {
 
   const handleAIGenerated = (data: any) => {
     if (!data.pages || !Array.isArray(data.pages)) {
-      toast({
+      editor.toast({
         title: "Error",
         description: "Invalid response from AI. Please try again.",
         variant: "destructive",
@@ -230,12 +136,12 @@ export default function InteractiveBookCreator() {
     }
 
     try {
-      const validPages = data.pages.filter((page: any) => 
+      const validPages = data.pages.filter((page: any) =>
         page != null && typeof page === 'object'
       );
 
       if (validPages.length === 0) {
-        toast({
+        editor.toast({
           title: "Error",
           description: "No valid pages generated. Please try again.",
           variant: "destructive",
@@ -248,20 +154,20 @@ export default function InteractiveBookCreator() {
         title: String(page.title ?? "Untitled Page").trim(),
         content: String(page.content ?? "").trim(),
       }));
-      
+
       setPages(prev => {
         const firstNewPageIndex = prev.length;
         setCurrentPageIndex(firstNewPageIndex);
         return [...prev, ...normalizedPages];
       });
-      
+
       setShowAIModal(false);
-      toast({ 
-        title: "Pages Generated!", 
-        description: `${normalizedPages.length} pages have been added to your book.` 
+      editor.toast({
+        title: "Pages Generated!",
+        description: `${normalizedPages.length} pages have been added to your book.`
       });
     } catch (error) {
-      toast({
+      editor.toast({
         title: "Error",
         description: "Failed to process AI response. Please try again.",
         variant: "destructive",
@@ -275,40 +181,37 @@ export default function InteractiveBookCreator() {
       <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back" className="cursor-pointer">
+            <Button variant="ghost" size="icon" onClick={() => editor.navigate("/dashboard")} data-testid="button-back" className="cursor-pointer">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold">Interactive Book</h1>
-              {saveMutation.isPending && <span className="text-sm text-muted-foreground">Saving...</span>}
+              {(editor.saveMutation.isPending || editor.isSaving) && <span className="text-sm text-muted-foreground">Saving...</span>}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!autosave && (
+            {!editor.autosave && (
               <Button
                 variant="default"
                 size="sm"
-                onClick={handleManualSave}
-                disabled={saveMutation.isPending || !title || pages.length === 0}
+                onClick={editor.handleManualSave}
+                disabled={editor.saveMutation.isPending || !editor.title || pages.length === 0}
                 data-testid="button-save"
                 className="cursor-pointer"
               >
                 <Save className="h-4 w-4 mr-1" />
-                {saveMutation.isPending ? "Saving..." : "Save"}
+                {editor.saveMutation.isPending ? "Saving..." : "Save"}
               </Button>
             )}
             <Button
-              variant={isPublished ? "default" : "outline"}
+              variant={editor.isPublished ? "default" : "outline"}
               size="sm"
-              onClick={() => {
-                setIsPublished(!isPublished);
-                saveMutation.mutate(!isPublished);
-              }}
+              onClick={editor.handlePublish}
               data-testid="button-publish"
               className="cursor-pointer"
             >
               <Globe className="h-4 w-4 mr-1" />
-              {isPublished ? "Published" : "Publish"}
+              {editor.isPublished ? "Published" : "Publish"}
             </Button>
           </div>
         </div>
@@ -317,7 +220,7 @@ export default function InteractiveBookCreator() {
       {/* Breadcrumbs */}
       <div className="bg-background border-b">
         <div className="max-w-7xl mx-auto px-6 py-3">
-          <Breadcrumbs items={breadcrumbs} />
+          <Breadcrumbs items={editor.breadcrumbs} />
         </div>
       </div>
 
@@ -328,20 +231,20 @@ export default function InteractiveBookCreator() {
             <Sparkles className="h-4 w-4 mr-1" />
             AI Generate Pages
           </Button>
-          {contentId && (
+          {editor.contentId && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
-                if (!content) return;
-                const html = generateHTMLExport(content, content.data);
-                downloadHTML(html, title || "interactive-book");
-                toast({
+                if (!editor.content) return;
+                const html = generateHTMLExport(editor.content, editor.content.data);
+                downloadHTML(html, editor.title || "interactive-book");
+                editor.toast({
                   title: "Download started",
                   description: "Your interactive book is being downloaded as HTML.",
                 });
               }}
-              disabled={!contentId || !content}
+              disabled={!editor.contentId || !editor.content}
               data-testid="button-download-html"
               className="cursor-pointer"
             >
@@ -349,11 +252,11 @@ export default function InteractiveBookCreator() {
               Download HTML
             </Button>
           )}
-          {contentId && isPublished && (
+          {editor.contentId && editor.isPublished && (
             <ShareToClassroomDialog
-              contentTitle={title}
-              contentDescription={description}
-              materialLink={`${window.location.origin}/public/${contentId}`}
+              contentTitle={editor.title}
+              contentDescription={editor.description}
+              materialLink={`${window.location.origin}/public/${editor.contentId}`}
             />
           )}
         </div>
@@ -370,8 +273,8 @@ export default function InteractiveBookCreator() {
                 <Label htmlFor="title">Title</Label>
                 <Input
                   id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  value={editor.title}
+                  onChange={(e) => editor.setTitle(e.target.value)}
                   placeholder="Enter book title"
                   data-testid="input-title"
                 />
@@ -380,19 +283,19 @@ export default function InteractiveBookCreator() {
                 <Label htmlFor="description">Description</Label>
                 <Input
                   id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  value={editor.description}
+                  onChange={(e) => editor.setDescription(e.target.value)}
                   placeholder="Enter book description"
                   data-testid="input-description"
                 />
               </div>
               <ContentMetadataFields
-                subject={subject}
-                gradeLevel={gradeLevel}
-                ageRange={ageRange}
-                onSubjectChange={setSubject}
-                onGradeLevelChange={setGradeLevel}
-                onAgeRangeChange={setAgeRange}
+                subject={editor.subject}
+                gradeLevel={editor.gradeLevel}
+                ageRange={editor.ageRange}
+                onSubjectChange={editor.setSubject}
+                onGradeLevelChange={editor.setGradeLevel}
+                onAgeRangeChange={editor.setAgeRange}
               />
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div className="space-y-0.5">
@@ -403,13 +306,8 @@ export default function InteractiveBookCreator() {
                 </div>
                 <Switch
                   id="isPublic"
-                  checked={isPublic}
-                  onCheckedChange={(checked) => {
-                    setIsPublic(checked);
-                    if (checked) {
-                      setIsPublished(true);
-                    }
-                  }}
+                  checked={editor.isPublic}
+                  onCheckedChange={editor.setIsPublicWithAutoPublish}
                   data-testid="switch-public"
                 />
               </div>
@@ -699,7 +597,7 @@ export default function InteractiveBookCreator() {
                                   <DialogTitle>Select Content to Embed</DialogTitle>
                                 </DialogHeader>
                                 <div className="space-y-2">
-                                  {availableContent?.filter(c => c.type !== "interactive-book" && c.id !== contentId).map((c) => (
+                                  {availableContent?.filter(c => c.type !== "interactive-book" && c.id !== editor.contentId).map((c) => (
                                     <Card
                                       key={c.id}
                                       className="cursor-pointer hover-elevate"
@@ -730,7 +628,7 @@ export default function InteractiveBookCreator() {
                               <div>
                                 <p className="font-medium text-sm">
                                   Embedded: {
-                                    pages[currentPageIndex].embeddedContentId 
+                                    pages[currentPageIndex].embeddedContentId
                                       ? (availableContent?.find(c => c.id === pages[currentPageIndex].embeddedContentId)?.title || "Content")
                                       : (pages[currentPageIndex].embeddedContent ? `${getContentTypeLabel(pages[currentPageIndex].embeddedContent!.type as ContentType)} (Legacy)` : "Content")
                                   }
@@ -770,8 +668,8 @@ export default function InteractiveBookCreator() {
                 </div>
                 <Switch
                   id="autosave"
-                  checked={autosave}
-                  onCheckedChange={setAutosave}
+                  checked={editor.autosave}
+                  onCheckedChange={editor.setAutosave}
                   data-testid="switch-autosave"
                 />
               </div>

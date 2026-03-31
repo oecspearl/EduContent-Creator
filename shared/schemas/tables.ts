@@ -2,7 +2,7 @@
  * Database table definitions (Drizzle ORM).
  */
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, boolean, jsonb, timestamp, integer, real, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, boolean, jsonb, timestamp, integer, real, unique, index } from "drizzle-orm/pg-core";
 
 // Profiles table
 export const profiles = pgTable("profiles", {
@@ -41,7 +41,10 @@ export const h5pContent = pgTable("h5p_content", {
   ageRange: text("age_range"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("h5p_content_user_id_idx").on(table.userId),
+  isPublicIdx: index("h5p_content_is_public_idx").on(table.isPublic),
+}));
 
 // Content shares table
 export const contentShares = pgTable("content_shares", {
@@ -74,7 +77,10 @@ export const quizAttempts = pgTable("quiz_attempts", {
   totalQuestions: integer("total_questions").notNull(),
   answers: jsonb("answers").notNull(),
   completedAt: timestamp("completed_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userContentIdx: index("quiz_attempts_user_content_idx").on(table.userId, table.contentId),
+  contentIdIdx: index("quiz_attempts_content_id_idx").on(table.contentId),
+}));
 
 // Interaction events table
 export const interactionEvents = pgTable("interaction_events", {
@@ -84,7 +90,9 @@ export const interactionEvents = pgTable("interaction_events", {
   eventType: text("event_type").notNull(),
   eventData: jsonb("event_data"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userContentIdx: index("interaction_events_user_content_idx").on(table.userId, table.contentId),
+}));
 
 // Chat messages table
 export const chatMessages = pgTable("chat_messages", {
@@ -116,6 +124,7 @@ export const classEnrollments = pgTable("class_enrollments", {
   enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
 }, (table) => ({
   uniqueClassUser: unique().on(table.classId, table.userId),
+  userIdIdx: index("class_enrollments_user_id_idx").on(table.userId),
 }));
 
 // Audit log table — tracks grade-related and administrative actions
@@ -139,7 +148,9 @@ export const notifications = pgTable("notifications", {
   linkUrl: text("link_url"), // In-app link to navigate to
   isRead: boolean("is_read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("notifications_user_id_idx").on(table.userId),
+}));
 
 // Learning paths table — ordered sequences of content
 export const learningPaths = pgTable("learning_paths", {
@@ -225,4 +236,5 @@ export const contentAssignments = pgTable("content_assignments", {
   instructions: text("instructions"),
 }, (table) => ({
   uniqueContentClass: unique().on(table.contentId, table.classId),
+  classIdIdx: index("content_assignments_class_id_idx").on(table.classId),
 }));

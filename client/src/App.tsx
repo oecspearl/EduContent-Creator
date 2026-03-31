@@ -40,20 +40,13 @@ import MessagesPage from "@/pages/MessagesPage";
 import ParentViewPage from "@/pages/ParentViewPage";
 import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/not-found";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageSkeleton } from "@/components/PageSkeleton";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-96 w-full" />
-        </div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   if (!user) {
@@ -68,14 +61,7 @@ function TeacherRoute({ component: Component }: { component: React.ComponentType
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-96 w-full" />
-        </div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   if (!user) {
@@ -94,14 +80,7 @@ function DashboardRoute() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-96 w-full" />
-        </div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   if (!user) {
@@ -116,14 +95,7 @@ function HelpRoute() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-96 w-full" />
-        </div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   if (!user) {
