@@ -91,6 +91,13 @@ async function isStudentEnrolledInPathClass(userId: string, path: { classId: str
   return !!enrollment;
 }
 
+/** Check if the requesting user is an admin. */
+async function isAdmin(userId: string) {
+  const [user] = await db.select({ role: profiles.role })
+    .from(profiles).where(eq(profiles.id, userId)).limit(1);
+  return user?.role === "admin";
+}
+
 // ─── Routes ───────────────────────────────────────────────
 
 export function registerLearningPathRoutes({ app, storage, requireAuth, requireTeacher }: RouteContext) {
@@ -145,12 +152,12 @@ export function registerLearningPathRoutes({ app, storage, requireAuth, requireT
     res.json({ ...path, items });
   }));
 
-  // ── Update learning path (teachers only) ────────────────
+  // ── Update learning path (owner or admin) ────────────────
   app.put("/api/learning-paths/:id", requireTeacher, asyncHandler(async (req: any, res) => {
     const [path] = await db.select().from(learningPaths)
       .where(eq(learningPaths.id, req.params.id)).limit(1);
     if (!path) return res.status(404).json({ message: "Path not found" });
-    if (path.userId !== req.session.userId!) {
+    if (path.userId !== req.session.userId! && !(await isAdmin(req.session.userId!))) {
       return res.status(403).json({ message: "Not authorized to update this path" });
     }
 
@@ -226,12 +233,12 @@ export function registerLearningPathRoutes({ app, storage, requireAuth, requireT
     });
   }));
 
-  // ── Teacher: get all students' progress on a path ───────
+  // ── Teacher/admin: get all students' progress on a path ──
   app.get("/api/learning-paths/:id/students", requireTeacher, asyncHandler(async (req: any, res) => {
     const [path] = await db.select().from(learningPaths)
       .where(eq(learningPaths.id, req.params.id)).limit(1);
     if (!path) return res.status(404).json({ message: "Path not found" });
-    if (path.userId !== req.session.userId!) {
+    if (path.userId !== req.session.userId! && !(await isAdmin(req.session.userId!))) {
       return res.status(403).json({ message: "Not authorized to view this path" });
     }
     if (!path.classId) {
@@ -347,11 +354,12 @@ export function registerLearningPathRoutes({ app, storage, requireAuth, requireT
     res.json(enriched);
   }));
 
-  // ── Delete learning path (teachers only) ────────────────
+  // ── Delete learning path (owner or admin) ────────────────
   app.delete("/api/learning-paths/:id", requireTeacher, asyncHandler(async (req: any, res) => {
     const [path] = await db.select().from(learningPaths)
       .where(eq(learningPaths.id, req.params.id)).limit(1);
-    if (!path || path.userId !== req.session.userId!) {
+    if (!path) return res.status(404).json({ message: "Path not found" });
+    if (path.userId !== req.session.userId! && !(await isAdmin(req.session.userId!))) {
       return res.status(403).json({ message: "Not authorized" });
     }
     await db.delete(learningPaths).where(eq(learningPaths.id, req.params.id));
