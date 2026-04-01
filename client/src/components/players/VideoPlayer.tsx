@@ -37,6 +37,10 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
   const [isProgressInitialized, setIsProgressInitialized] = useState(false);
   const pendingMilestoneRef = useRef<number | null>(null);
   const pendingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Accumulate graded answers across hotspots to save as one quiz attempt
+  const gradedAnswersRef = useRef<Array<{ questionId: string; answer: string | number | boolean; isCorrect: boolean }>>([]);
+  const gradedAttemptSavedRef = useRef(false);
   const previousAuthRef = useRef<boolean>(isAuthenticated);
 
   // Reset initialization when auth changes from false → true
@@ -107,10 +111,10 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
   // Track hotspot completion (monotonic - only send if higher, wait for init)
   useEffect(() => {
     if (!isProgressInitialized || !isAuthenticated) return;
-    
+
     if (data.hotspots.length > 0) {
       const completionPercentage = Math.round((completedHotspots.size / data.hotspots.length) * 100);
-      
+
       // Only update if hotspot completion exceeds local high water mark and not already pending
       if (completionPercentage > highestProgress && completionPercentage > 0 && completionPercentage !== pendingMilestoneRef.current) {
         pendingMilestoneRef.current = completionPercentage;
@@ -123,6 +127,18 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
           pendingMilestoneRef.current = null;
           pendingTimeoutRef.current = null;
         }, 5000);
+      }
+
+      // Save aggregated graded quiz attempt once all graded hotspots are completed
+      const gradedHotspots = data.hotspots.filter(h => h.isGraded);
+      if (gradedHotspots.length > 0 && !gradedAttemptSavedRef.current) {
+        const allGradedDone = gradedHotspots.every(h => completedHotspots.has(h.id));
+        if (allGradedDone && gradedAnswersRef.current.length > 0) {
+          const correctCount = gradedAnswersRef.current.filter(a => a.isCorrect).length;
+          const totalCount = gradedAnswersRef.current.length;
+          saveQuizAttempt(correctCount, totalCount, gradedAnswersRef.current, true);
+          gradedAttemptSavedRef.current = true;
+        }
       }
     }
   }, [completedHotspots.size, highestProgress, isProgressInitialized, isAuthenticated]);
@@ -305,7 +321,7 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
     const hotspotTimestamp = currentHotspot.timestamp;
     const hotspotType = currentHotspot.type;
     
-    // Log hotspot interaction + optionally save graded quiz attempt
+    // Log hotspot interaction + accumulate graded answers
     if (hotspotType === "question") {
       const isCorrect = currentHotspot.correctAnswer === selectedAnswer;
       logInteraction("hotspot_completed", {
@@ -313,13 +329,13 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
         selectedAnswer, isCorrect,
       });
 
-      // Only save as a graded quiz attempt when the teacher enabled grading for this hotspot
+      // Accumulate graded answer (will be saved as one attempt when all graded hotspots are done)
       if (selectedAnswer !== null && currentHotspot.isGraded) {
-        saveQuizAttempt(isCorrect ? 1 : 0, 1, [{
+        gradedAnswersRef.current.push({
           questionId: hotspotId,
           answer: selectedAnswer,
           isCorrect,
-        }], true);
+        });
       }
     } else if (hotspotType === "quiz" && currentHotspot.questions) {
       const totalQuestions = currentHotspot.questions.length;
@@ -345,9 +361,9 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
         answers: quizAnswers,
       });
 
-      // Only save as a graded quiz attempt when the teacher enabled grading for this hotspot
+      // Accumulate graded answers (will be saved as one attempt when all graded hotspots are done)
       if (currentHotspot.isGraded) {
-        saveQuizAttempt(correctAnswers, totalQuestions, answersData, true);
+        gradedAnswersRef.current.push(...answersData);
       }
     } else {
       logInteraction("hotspot_completed", {
