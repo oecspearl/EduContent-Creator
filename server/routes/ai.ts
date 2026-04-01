@@ -24,22 +24,8 @@ import {
 } from "../openai";
 import { withTimeoutMiddleware } from "../middleware/timeout";
 import { aiGenerationRateLimit, imageSearchRateLimit, presentationCreationRateLimit } from "../middleware/rate-limit";
+import { asyncHandler } from "../utils/async-handler";
 import type { RouteContext } from "./types";
-
-function handleAIError(error: any, res: any) {
-  if (res.headersSent) return;
-
-  if (error.message?.includes("API key") || error.message?.includes("authentication")) {
-    return res.status(401).json({ message: "OpenAI API authentication failed. Please check your OPENAI_API_KEY." });
-  }
-  if (error.message?.includes("timeout") || error.code === "ETIMEDOUT") {
-    return res.status(504).json({ message: "Request timeout - The AI generation took too long. Please try again with fewer items." });
-  }
-  if (error.message?.includes("rate limit")) {
-    return res.status(429).json({ message: "Rate limit exceeded. Please wait a moment and try again." });
-  }
-  res.status(500).json({ message: error.message || "Failed to generate content. Please try again." });
-}
 
 function requireOpenAIKey(res: any): boolean {
   if (!process.env.OPENAI_API_KEY) {
@@ -51,7 +37,7 @@ function requireOpenAIKey(res: any): boolean {
 
 export function registerAIRoutes({ app, storage, requireAuth, requireTeacher }: RouteContext) {
   // AI content generation (teachers only)
-  app.post("/api/ai/generate", requireTeacher, aiGenerationRateLimit, withTimeoutMiddleware(25000), async (req: any, res) => {
+  app.post("/api/ai/generate", requireTeacher, aiGenerationRateLimit, withTimeoutMiddleware(25000), asyncHandler(async (req: any, res) => {
     try {
       if (!requireOpenAIKey(res)) return;
 
@@ -91,12 +77,21 @@ export function registerAIRoutes({ app, storage, requireAuth, requireTeacher }: 
     } catch (error: any) {
       console.error("AI generation error:", error);
       if (error.name === "ZodError") return res.status(400).json({ message: "Invalid request data", errors: error.errors });
-      handleAIError(error, res);
+      if (error.message?.includes("API key") || error.message?.includes("authentication")) {
+        return res.status(401).json({ message: "OpenAI API authentication failed. Please check your OPENAI_API_KEY." });
+      }
+      if (error.message?.includes("timeout") || error.code === "ETIMEDOUT") {
+        return res.status(504).json({ message: "Request timeout - The AI generation took too long. Please try again with fewer items." });
+      }
+      if (error.message?.includes("rate limit")) {
+        return res.status(429).json({ message: "Rate limit exceeded. Please wait a moment and try again." });
+      }
+      throw error;
     }
-  });
+  }));
 
   // Enhanced AI interactive video generation (teachers only)
-  app.post("/api/ai/generate-interactive-video", requireTeacher, aiGenerationRateLimit, withTimeoutMiddleware(25000), async (req: any, res) => {
+  app.post("/api/ai/generate-interactive-video", requireTeacher, aiGenerationRateLimit, withTimeoutMiddleware(25000), asyncHandler(async (req: any, res) => {
     try {
       if (!requireOpenAIKey(res)) return;
 
@@ -145,12 +140,21 @@ export function registerAIRoutes({ app, storage, requireAuth, requireTeacher }: 
     } catch (error: any) {
       console.error("Interactive video AI generation error:", error);
       if (error.name === "ZodError") return res.status(400).json({ message: "Invalid request data", errors: error.errors });
-      handleAIError(error, res);
+      if (error.message?.includes("API key") || error.message?.includes("authentication")) {
+        return res.status(401).json({ message: "OpenAI API authentication failed. Please check your OPENAI_API_KEY." });
+      }
+      if (error.message?.includes("timeout") || error.code === "ETIMEDOUT") {
+        return res.status(504).json({ message: "Request timeout - The AI generation took too long. Please try again with fewer items." });
+      }
+      if (error.message?.includes("rate limit")) {
+        return res.status(429).json({ message: "Rate limit exceeded. Please wait a moment and try again." });
+      }
+      throw error;
     }
-  });
+  }));
 
   // Chat assistant with streaming
-  app.post("/api/chat", requireAuth, async (req: any, res) => {
+  app.post("/api/chat", requireAuth, asyncHandler(async (req: any, res) => {
     try {
       const parsed = chatRequestSchema.parse(req.body);
       const userId = req.session.userId!;
@@ -225,38 +229,28 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       console.error("Chat error:", error);
       if (!res.headersSent) {
         if (error.name === "ZodError") return res.status(400).json({ message: "Invalid request data", errors: error.errors });
-        res.status(500).json({ message: error.message || "Failed to process chat" });
+        throw error;
       } else {
         res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
         res.end();
       }
     }
-  });
+  }));
 
   // Chat history
-  app.get("/api/chat/history", requireAuth, async (req: any, res) => {
-    try {
-      const limit = parseInt(req.query.limit as string) || 50;
-      const history = await storage.getChatHistory(req.session.userId!, limit);
-      res.json(history.reverse());
-    } catch (error: any) {
-      console.error("Get chat history error:", error);
-      res.status(500).json({ message: "Failed to get chat history" });
-    }
-  });
+  app.get("/api/chat/history", requireAuth, asyncHandler(async (req: any, res) => {
+    const limit = parseInt(req.query.limit as string) || 50;
+    const history = await storage.getChatHistory(req.session.userId!, limit);
+    res.json(history.reverse());
+  }));
 
-  app.delete("/api/chat/history", requireAuth, async (req: any, res) => {
-    try {
-      await storage.deleteChatHistory(req.session.userId!);
-      res.json({ message: "Chat history cleared" });
-    } catch (error: any) {
-      console.error("Delete chat history error:", error);
-      res.status(500).json({ message: "Failed to clear chat history" });
-    }
-  });
+  app.delete("/api/chat/history", requireAuth, asyncHandler(async (req: any, res) => {
+    await storage.deleteChatHistory(req.session.userId!);
+    res.json({ message: "Chat history cleared" });
+  }));
 
   // Video Finder pedagogy generation
-  app.post("/api/video-finder/generate-pedagogy", requireAuth, async (req, res) => {
+  app.post("/api/video-finder/generate-pedagogy", requireAuth, asyncHandler(async (req, res) => {
     try {
       const parsed = videoFinderPedagogySchema.parse(req.body);
       const result = await generateVideoFinderPedagogy(parsed);
@@ -264,12 +258,12 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     } catch (error: any) {
       console.error("Video Finder pedagogy generation error:", error);
       if (error.name === "ZodError") return res.status(400).json({ message: "Invalid request data", errors: error.errors });
-      res.status(500).json({ message: error.message || "Failed to generate pedagogical content." });
+      throw error;
     }
-  });
+  }));
 
   // Presentation AI generation (teachers only)
-  app.post("/api/presentation/generate", requireTeacher, presentationCreationRateLimit, withTimeoutMiddleware(25000), async (req, res) => {
+  app.post("/api/presentation/generate", requireTeacher, presentationCreationRateLimit, withTimeoutMiddleware(25000), asyncHandler(async (req, res) => {
     try {
       const parsed = presentationGenerationSchema.parse(req.body);
       const slides = await generatePresentation(parsed);
@@ -281,12 +275,12 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
       if (error.message?.includes("timeout") || error.code === "ETIMEDOUT") {
         return res.status(504).json({ message: "Request timeout - Please try again with fewer slides." });
       }
-      res.status(500).json({ message: error.message || "Failed to generate slides content." });
+      throw error;
     }
-  });
+  }));
 
   // Unsplash image search (teachers only)
-  app.post("/api/unsplash/search", requireTeacher, imageSearchRateLimit, async (req, res) => {
+  app.post("/api/unsplash/search", requireTeacher, imageSearchRateLimit, asyncHandler(async (req, res) => {
     try {
       const parsed = unsplashSearchSchema.parse(req.body);
       const { searchPhotos } = await import("../unsplash");
@@ -295,12 +289,12 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     } catch (error: any) {
       console.error("Unsplash search error:", error);
       if (error.name === "ZodError") return res.status(400).json({ message: "Invalid request data", errors: error.errors });
-      res.status(500).json({ message: error.message || "Failed to search for images" });
+      throw error;
     }
-  });
+  }));
 
   // AI image generation (teachers only)
-  app.post("/api/ai/generate-image", requireTeacher, aiGenerationRateLimit, async (req, res) => {
+  app.post("/api/ai/generate-image", requireTeacher, aiGenerationRateLimit, asyncHandler(async (req, res) => {
     try {
       const parsed = aiImageGenerationSchema.parse(req.body);
       if (!requireOpenAIKey(res)) return;
@@ -318,12 +312,12 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     } catch (error: any) {
       console.error("OpenAI image generation error:", error);
       if (error.name === "ZodError") return res.status(400).json({ message: "Invalid request data", errors: error.errors });
-      res.status(500).json({ message: error.message || "Failed to generate image with AI." });
+      throw error;
     }
-  });
+  }));
 
   // YouTube search (teachers only)
-  app.post("/api/youtube/search-simple", requireTeacher, async (req, res) => {
+  app.post("/api/youtube/search-simple", requireTeacher, asyncHandler(async (req, res) => {
     try {
       const parsed = youtubeSimpleSearchSchema.parse(req.body);
       const { searchEducationalVideos } = await import("../youtube");
@@ -334,12 +328,12 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     } catch (error: any) {
       console.error("YouTube search error:", error);
       if (error.name === "ZodError") return res.status(400).json({ message: "Invalid request data", errors: error.errors });
-      res.status(500).json({ message: error.message || "Failed to search YouTube videos." });
+      throw error;
     }
-  });
+  }));
 
   // YouTube search (teachers only)
-  app.post("/api/youtube/search", requireTeacher, async (req, res) => {
+  app.post("/api/youtube/search", requireTeacher, asyncHandler(async (req, res) => {
     try {
       const parsed = youtubeFullSearchSchema.parse(req.body);
       const { searchEducationalVideos } = await import("../youtube");
@@ -351,7 +345,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     } catch (error: any) {
       console.error("YouTube search error:", error);
       if (error.name === "ZodError") return res.status(400).json({ message: "Invalid request data", errors: error.errors });
-      res.status(500).json({ message: error.message || "Failed to search YouTube videos." });
+      throw error;
     }
-  });
+  }));
 }
