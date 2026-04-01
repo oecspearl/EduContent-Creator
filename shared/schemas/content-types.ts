@@ -58,6 +58,8 @@ export type VideoHotspot = {
   options?: string[];
   correctAnswer?: number;
   questions?: QuizQuestion[];
+  /** When true, the answer is saved as a quiz attempt and appears in the gradebook. */
+  isGraded?: boolean;
 };
 
 export type InteractiveVideoData = {

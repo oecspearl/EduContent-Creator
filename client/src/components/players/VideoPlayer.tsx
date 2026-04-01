@@ -305,7 +305,7 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
     const hotspotTimestamp = currentHotspot.timestamp;
     const hotspotType = currentHotspot.type;
     
-    // Log hotspot interaction + save quiz attempt for grading
+    // Log hotspot interaction + optionally save graded quiz attempt
     if (hotspotType === "question") {
       const isCorrect = currentHotspot.correctAnswer === selectedAnswer;
       logInteraction("hotspot_completed", {
@@ -313,9 +313,8 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
         selectedAnswer, isCorrect,
       });
 
-      // Save as quiz attempt so it appears in analytics and gradebook
-      // skipProgressUpdate=true because the video manages its own progress via hotspot completion
-      if (selectedAnswer !== null) {
+      // Only save as a graded quiz attempt when the teacher enabled grading for this hotspot
+      if (selectedAnswer !== null && currentHotspot.isGraded) {
         saveQuizAttempt(isCorrect ? 1 : 0, 1, [{
           questionId: hotspotId,
           answer: selectedAnswer,
@@ -346,9 +345,10 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
         answers: quizAnswers,
       });
 
-      // Save as quiz attempt so it appears in analytics and gradebook
-      // skipProgressUpdate=true because the video manages its own progress via hotspot completion
-      saveQuizAttempt(correctAnswers, totalQuestions, answersData, true);
+      // Only save as a graded quiz attempt when the teacher enabled grading for this hotspot
+      if (currentHotspot.isGraded) {
+        saveQuizAttempt(correctAnswers, totalQuestions, answersData, true);
+      }
     } else {
       logInteraction("hotspot_completed", {
         hotspotId, hotspotType, timestamp: hotspotTimestamp,
@@ -414,6 +414,9 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
                       <span className="text-sm font-mono text-muted-foreground">
                         {formatTime(currentHotspot.timestamp)}
                       </span>
+                      {currentHotspot.isGraded && (
+                        <Badge variant="secondary" className="text-[10px]">Graded</Badge>
+                      )}
                     </div>
                     {/* Skip button for all types */}
                     {(currentHotspot.type === "info" || currentHotspot.type === "navigation") && (

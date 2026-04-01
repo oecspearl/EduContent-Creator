@@ -126,11 +126,13 @@ export function registerLearningPathRoutes({ app, storage, requireAuth, requireT
     res.json(path);
   }));
 
-  // ── List teacher's learning paths ───────────────────────
+  // ── List learning paths (own paths, or ALL paths for admins) ──
   app.get("/api/learning-paths", requireTeacher, asyncHandler(async (req: any, res) => {
-    const paths = await db.select().from(learningPaths)
-      .where(eq(learningPaths.userId, req.session.userId!))
-      .orderBy(desc(learningPaths.createdAt));
+    const admin = await isAdmin(req.session.userId!);
+    const query = admin
+      ? db.select().from(learningPaths)
+      : db.select().from(learningPaths).where(eq(learningPaths.userId, req.session.userId!));
+    const paths = await query.orderBy(desc(learningPaths.createdAt));
     res.json(paths);
   }));
 

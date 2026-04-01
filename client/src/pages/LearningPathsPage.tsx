@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -27,6 +28,10 @@ import {
   CheckCircle2,
   Eye,
   AlertTriangle,
+  Users,
+  User,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { format } from "date-fns";
 import type { H5pContent, Class } from "@shared/schema";
@@ -52,6 +57,33 @@ type PathWithItems = LearningPath & {
   }>;
 };
 
+type StudentProgress = {
+  id: string;
+  fullName: string;
+  email: string;
+  completedItems: number;
+  totalItems: number;
+  progressPercentage: number;
+  items: Array<{
+    contentId: string;
+    contentTitle: string;
+    contentType: string;
+    completionPercentage: number;
+    completedAt: string | null;
+  }>;
+};
+
+type StudentProgressResponse = {
+  path: LearningPath;
+  students: StudentProgress[];
+  items: Array<{
+    id: string;
+    contentId: string;
+    contentTitle: string;
+    contentType: string;
+  }>;
+};
+
 export default function LearningPathsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -60,6 +92,8 @@ export default function LearningPathsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [viewPathId, setViewPathId] = useState<string | null>(null);
   const [deletePathId, setDeletePathId] = useState<string | null>(null);
+  const [progressPathId, setProgressPathId] = useState<string | null>(null);
+  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
 
   // Form state
   const [pathName, setPathName] = useState("");
@@ -85,6 +119,12 @@ export default function LearningPathsPage() {
   const { data: viewPath, isLoading: loadingViewPath } = useQuery<PathWithItems>({
     queryKey: ["/api/learning-paths", viewPathId],
     enabled: !!viewPathId,
+    retry: 1,
+  });
+
+  const { data: studentProgress, isLoading: loadingProgress } = useQuery<StudentProgressResponse>({
+    queryKey: [`/api/learning-paths/${progressPathId}/students`],
+    enabled: !!progressPathId,
     retry: 1,
   });
 
@@ -140,6 +180,11 @@ export default function LearningPathsPage() {
     if (swapIdx < 0 || swapIdx >= newIds.length) return;
     [newIds[index], newIds[swapIdx]] = [newIds[swapIdx], newIds[index]];
     setSelectedContentIds(newIds);
+  };
+
+  const getClassName = (classId: string | null) => {
+    if (!classId) return null;
+    return classes?.find(c => c.id === classId)?.name || null;
   };
 
   return (
@@ -212,35 +257,57 @@ export default function LearningPathsPage() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {paths.map(path => (
-                <Card key={path.id} className="border-border/40">
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <Waypoints className="h-4 w-4 text-primary shrink-0" />
-                          <h3 className="font-semibold text-foreground truncate">{path.name}</h3>
+              {paths.map(path => {
+                const className = getClassName(path.classId);
+                return (
+                  <Card key={path.id} className="border-border/40">
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Waypoints className="h-4 w-4 text-primary shrink-0" />
+                            <h3 className="font-semibold text-foreground truncate">{path.name}</h3>
+                          </div>
+                          {path.description && (
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{path.description}</p>
+                          )}
+                          <div className="flex items-center gap-3 mt-2">
+                            <p className="text-xs text-muted-foreground">
+                              Created {format(new Date(path.createdAt), "MMM d, yyyy")}
+                            </p>
+                            {className && (
+                              <Badge variant="outline" className="text-[10px]">{className}</Badge>
+                            )}
+                          </div>
                         </div>
-                        {path.description && (
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{path.description}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Created {format(new Date(path.createdAt), "MMM d, yyyy")}
-                        </p>
+                        <div className="flex gap-2 shrink-0">
+                          {path.classId && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="cursor-pointer gap-1.5"
+                              onClick={() => {
+                                setProgressPathId(path.id);
+                                setExpandedStudentId(null);
+                              }}
+                            >
+                              <Users className="h-3.5 w-3.5" />
+                              Student Progress
+                            </Button>
+                          )}
+                          <Button variant="outline" size="sm" className="cursor-pointer gap-1.5" onClick={() => setViewPathId(path.id)}>
+                            <Eye className="h-3.5 w-3.5" />
+                            View
+                          </Button>
+                          <Button variant="outline" size="sm" className="cursor-pointer text-destructive" onClick={() => setDeletePathId(path.id)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex gap-2 shrink-0">
-                        <Button variant="outline" size="sm" className="cursor-pointer gap-1.5" onClick={() => setViewPathId(path.id)}>
-                          <Eye className="h-3.5 w-3.5" />
-                          View
-                        </Button>
-                        <Button variant="outline" size="sm" className="cursor-pointer text-destructive" onClick={() => setDeletePathId(path.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </main>
@@ -403,6 +470,141 @@ export default function LearningPathsPage() {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground text-center py-4">No items in this path.</p>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Student Progress Dialog */}
+      <Dialog open={!!progressPathId} onOpenChange={() => { setProgressPathId(null); setExpandedStudentId(null); }}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Student Progress — {studentProgress?.path.name || "Loading..."}
+            </DialogTitle>
+            <DialogDescription>
+              View how each student is progressing through this learning path.
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingProgress ? (
+            <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20" />)}</div>
+          ) : !studentProgress?.students || studentProgress.students.length === 0 ? (
+            <div className="py-12 text-center">
+              <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">
+                No students enrolled in the class assigned to this path.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Summary bar */}
+              <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg">
+                <div className="text-center">
+                  <p className="text-2xl font-bold">{studentProgress.students.length}</p>
+                  <p className="text-xs text-muted-foreground">Students</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold">
+                    {studentProgress.students.filter(s => s.progressPercentage === 100).length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Completed</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold">
+                    {studentProgress.students.length > 0
+                      ? Math.round(studentProgress.students.reduce((sum, s) => sum + s.progressPercentage, 0) / studentProgress.students.length)
+                      : 0}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">Avg Progress</p>
+                </div>
+              </div>
+
+              {/* Student list */}
+              {studentProgress.students.map(student => {
+                const isExpanded = expandedStudentId === student.id;
+                return (
+                  <Card key={student.id} className="border-border/40">
+                    <CardContent className="p-0">
+                      <button
+                        className="w-full p-4 flex items-center gap-4 text-left hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => setExpandedStudentId(isExpanded ? null : student.id)}
+                      >
+                        <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                          <User className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-medium truncate">{student.fullName}</p>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {student.progressPercentage === 100 ? (
+                                <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  Complete
+                                </Badge>
+                              ) : (
+                                <span className="text-sm font-medium tabular-nums">
+                                  {student.completedItems}/{student.totalItems}
+                                </span>
+                              )}
+                              {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 mt-1.5">
+                            <Progress value={student.progressPercentage} className="flex-1 h-2" />
+                            <span className="text-xs text-muted-foreground tabular-nums w-8">{student.progressPercentage}%</span>
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Expanded: per-item detail */}
+                      {isExpanded && (
+                        <div className="px-4 pb-4 pt-0 border-t border-border/40">
+                          <div className="space-y-2 mt-3">
+                            {student.items.map((item, i) => (
+                              <div
+                                key={item.contentId}
+                                className="flex items-center gap-3 p-2.5 rounded-md bg-muted/20"
+                              >
+                                <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                                  item.completionPercentage >= 100
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                    : item.completionPercentage > 0
+                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                    : "bg-muted text-muted-foreground"
+                                }`}>
+                                  {item.completionPercentage >= 100 ? (
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                  ) : (
+                                    i + 1
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm truncate ${item.completionPercentage >= 100 ? "line-through text-muted-foreground" : ""}`}>
+                                    {item.contentTitle}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <Badge variant="outline" className="text-[9px]">{item.contentType}</Badge>
+                                    {item.completedAt && (
+                                      <span className="text-[10px] text-muted-foreground">
+                                        Completed {format(new Date(item.completedAt), "MMM d, yyyy")}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className="text-xs font-medium tabular-nums w-10 text-right">
+                                  {Math.round(item.completionPercentage)}%
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </DialogContent>
       </Dialog>

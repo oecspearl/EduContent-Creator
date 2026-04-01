@@ -508,6 +508,20 @@ export default function InteractiveVideoCreator() {
                               data-testid={`input-correct-${index}`}
                             />
                           </div>
+                          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                            <div className="space-y-0.5">
+                              <Label htmlFor={`graded-${index}`} className="text-sm font-medium">Add to Gradebook</Label>
+                              <p className="text-xs text-muted-foreground">
+                                Save the student's answer as a graded attempt
+                              </p>
+                            </div>
+                            <Switch
+                              id={`graded-${index}`}
+                              checked={hotspot.isGraded ?? false}
+                              onCheckedChange={(checked) => updateHotspot(index, { isGraded: checked })}
+                              data-testid={`switch-graded-${index}`}
+                            />
+                          </div>
                         </>
                       )}
 
@@ -698,6 +712,21 @@ export default function InteractiveVideoCreator() {
                               <p>No questions yet. Click "Add Question" to get started.</p>
                             </div>
                           )}
+
+                          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                            <div className="space-y-0.5">
+                              <Label htmlFor={`quiz-graded-${index}`} className="text-sm font-medium">Add to Gradebook</Label>
+                              <p className="text-xs text-muted-foreground">
+                                Save quiz scores as graded attempts
+                              </p>
+                            </div>
+                            <Switch
+                              id={`quiz-graded-${index}`}
+                              checked={hotspot.isGraded ?? false}
+                              onCheckedChange={(checked) => updateHotspot(index, { isGraded: checked })}
+                              data-testid={`switch-quiz-graded-${index}`}
+                            />
+                          </div>
                         </div>
                       )}
                     </CardContent>
