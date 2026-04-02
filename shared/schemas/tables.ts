@@ -225,7 +225,22 @@ export const rubricScores = pgTable("rubric_scores", {
   uniqueRubricStudent: unique().on(table.rubricId, table.studentId),
 }));
 
-// Content assignments table
+// Student-level content assignments — assign content directly to individual students
+export const studentAssignments = pgTable("student_assignments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull().references(() => h5pContent.id, { onDelete: "cascade" }),
+  studentId: varchar("student_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  assignedBy: varchar("assigned_by").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  dueDate: timestamp("due_date"),
+  instructions: text("instructions"),
+}, (table) => ({
+  uniqueContentStudent: unique().on(table.contentId, table.studentId),
+  studentIdIdx: index("student_assignments_student_id_idx").on(table.studentId),
+  contentIdIdx: index("student_assignments_content_id_idx").on(table.contentId),
+}));
+
+// Class-level content assignments
 export const contentAssignments = pgTable("content_assignments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   contentId: varchar("content_id").notNull().references(() => h5pContent.id, { onDelete: "cascade" }),

@@ -5,6 +5,9 @@
  * progress analytics, and AI-powered study insights.
  */
 import { z } from "zod";
+import { db } from "../../db";
+import { studentAssignments, h5pContent } from "@shared/schema";
+import { eq, desc } from "drizzle-orm";
 import { callOpenAIJSON } from "../utils/openai-helper";
 import { rateLimit } from "../middleware/rate-limit";
 import { asyncHandler } from "../utils/async-handler";
@@ -18,14 +21,40 @@ const studentAIRateLimit = rateLimit({
 });
 
 export function registerStudentRoutes({ app, storage, requireAuth }: RouteContext) {
-  // Get assignments for the logged-in student
+  // Get assignments for the logged-in student (class-level + individual)
   app.get("/api/student/my-assignments", requireAuth, asyncHandler(async (req: any, res) => {
     const userId = req.session.userId!;
-    const assignments = await storage.getStudentAssignments(userId);
+
+    // Class-level assignments
+    const classAssignments = await storage.getStudentAssignments(userId);
+
+    // Individual student-level assignments
+    const individualAssignments = await db.select({
+      assignmentId: studentAssignments.id,
+      contentId: h5pContent.id,
+      contentTitle: h5pContent.title,
+      contentType: h5pContent.type,
+      assignedAt: studentAssignments.assignedAt,
+      dueDate: studentAssignments.dueDate,
+      instructions: studentAssignments.instructions,
+    })
+      .from(studentAssignments)
+      .innerJoin(h5pContent, eq(studentAssignments.contentId, h5pContent.id))
+      .where(eq(studentAssignments.studentId, userId))
+      .orderBy(desc(studentAssignments.assignedAt));
+
+    // Merge, deduplicate by contentId (class assignment takes precedence)
+    const seenContentIds = new Set(classAssignments.map((a: any) => a.contentId));
+    const merged = [
+      ...classAssignments,
+      ...individualAssignments
+        .filter(a => !seenContentIds.has(a.contentId))
+        .map(a => ({ ...a, classId: null, className: "Individual Assignment" })),
+    ];
 
     // Enrich each assignment with the student's progress
     const enriched = await Promise.all(
-      assignments.map(async (a: any) => {
+      merged.map(async (a: any) => {
         const progress = await storage.getLearnerProgress(userId, a.contentId);
         return {
           ...a,

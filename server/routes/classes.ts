@@ -1,3 +1,6 @@
+import { db } from "../../db";
+import { studentAssignments, h5pContent, profiles } from "@shared/schema";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { asyncHandler } from "../utils/async-handler";
 import { AuthService } from "../services/auth-service";
 import { NotificationService } from "../services/notification-service";
@@ -484,5 +487,96 @@ export function registerClassRoutes({ app, storage, requireAuth, requireTeacher 
       message: `Successfully enrolled ${enrollments.length} student(s)`,
       errors: errors.length > 0 ? errors : undefined,
     });
+  }));
+
+  // ─── Student-level assignments ────────────────────────────
+
+  // Assign content to specific students
+  app.post("/api/content/:contentId/student-assignments", requireTeacher, asyncHandler(async (req: any, res) => {
+    const content = await storage.getContentById(req.params.contentId);
+    if (!content) return res.status(404).json({ message: "Content not found" });
+    if (content.userId !== req.session.userId!) return res.status(403).json({ message: "Not authorized to assign this content" });
+
+    const { studentIds, dueDate, instructions } = req.body;
+    if (!Array.isArray(studentIds) || studentIds.length === 0) {
+      return res.status(400).json({ message: "At least one student ID is required" });
+    }
+
+    const results = [];
+    const errors = [];
+    for (const studentId of studentIds) {
+      try {
+        const [assignment] = await db.insert(studentAssignments).values({
+          contentId: req.params.contentId,
+          studentId,
+          assignedBy: req.session.userId!,
+          dueDate: dueDate ? new Date(dueDate) : null,
+          instructions: instructions?.trim() || null,
+        }).returning();
+        results.push(assignment);
+
+        // Notify the student
+        (async () => {
+          try {
+            const notifSvc = new NotificationService();
+            await notifSvc.create(
+              studentId,
+              "new_assignment",
+              "New Assignment",
+              `You have been assigned "${content.title}"`,
+              `/preview/${req.params.contentId}`,
+            );
+            notifyUser(studentId, "new_assignment", {
+              contentTitle: content.title,
+              contentId: req.params.contentId,
+            });
+          } catch (e) { /* non-blocking */ }
+        })();
+      } catch (error: any) {
+        if (error.message?.includes("unique") || error.code === "23505") {
+          errors.push({ studentId, error: "Already assigned" });
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    res.json({ assigned: results.length, errors });
+  }));
+
+  // List student-level assignments for a piece of content
+  app.get("/api/content/:contentId/student-assignments", requireTeacher, asyncHandler(async (req: any, res) => {
+    const content = await storage.getContentById(req.params.contentId);
+    if (!content) return res.status(404).json({ message: "Content not found" });
+    if (content.userId !== req.session.userId!) return res.status(403).json({ message: "Not authorized" });
+
+    const assignments = await db.select({
+      id: studentAssignments.id,
+      studentId: studentAssignments.studentId,
+      fullName: profiles.fullName,
+      email: profiles.email,
+      assignedAt: studentAssignments.assignedAt,
+      dueDate: studentAssignments.dueDate,
+      instructions: studentAssignments.instructions,
+    })
+      .from(studentAssignments)
+      .innerJoin(profiles, eq(studentAssignments.studentId, profiles.id))
+      .where(eq(studentAssignments.contentId, req.params.contentId))
+      .orderBy(desc(studentAssignments.assignedAt));
+
+    res.json(assignments);
+  }));
+
+  // Remove a student-level assignment
+  app.delete("/api/content/:contentId/student-assignments/:studentId", requireTeacher, asyncHandler(async (req: any, res) => {
+    const content = await storage.getContentById(req.params.contentId);
+    if (!content) return res.status(404).json({ message: "Content not found" });
+    if (content.userId !== req.session.userId!) return res.status(403).json({ message: "Not authorized" });
+
+    await db.delete(studentAssignments).where(and(
+      eq(studentAssignments.contentId, req.params.contentId),
+      eq(studentAssignments.studentId, req.params.studentId),
+    ));
+    res.json({ message: "Student assignment removed" });
   }));
 }

@@ -20,6 +20,7 @@ export {
   classes,
   classEnrollments,
   contentAssignments,
+  studentAssignments,
   auditLog,
   notifications,
   learningPaths,
