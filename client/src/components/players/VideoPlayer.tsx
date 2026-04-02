@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, Check, X } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, Check, X, Trophy, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
 import { youtubeLoader } from "@/lib/youtube-loader";
 import { extractVideoId } from "@/lib/youtube-utils";
 import type { InteractiveVideoData, VideoHotspot, QuizQuestion } from "@shared/schema";
@@ -39,8 +39,25 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
   const pendingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Accumulate graded answers across hotspots to save as one quiz attempt
-  const gradedAnswersRef = useRef<Array<{ questionId: string; answer: string | number | boolean; isCorrect: boolean }>>([]);
+  const gradedAnswersRef = useRef<Map<string, { questionId: string; answer: string | number | boolean; isCorrect: boolean }>>(new Map());
   const gradedAttemptSavedRef = useRef(false);
+
+  // End-of-video performance summary
+  type SummaryItem = { questionId: string; title: string; answer: string | number | boolean; isCorrect: boolean; hotspotType: string };
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryItems, setSummaryItems] = useState<SummaryItem[]>([]);
+  const summaryItemsRef = useRef<SummaryItem[]>([]);
+
+  /** Reset grading + hotspot state so the video can be rewatched for a new attempt. */
+  const resetForRewatch = () => {
+    gradedAnswersRef.current = new Map();
+    gradedAttemptSavedRef.current = false;
+    summaryItemsRef.current = [];
+    setCompletedHotspots(new Set());
+    setShowSummary(false);
+    setSummaryItems([]);
+    lastCheckedTimeRef.current = -1;
+  };
   const previousAuthRef = useRef<boolean>(isAuthenticated);
 
   // Reset initialization when auth changes from false → true
@@ -133,10 +150,10 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
       const gradedHotspots = data.hotspots.filter(h => h.isGraded);
       if (gradedHotspots.length > 0 && !gradedAttemptSavedRef.current) {
         const allGradedDone = gradedHotspots.every(h => completedHotspots.has(h.id));
-        if (allGradedDone && gradedAnswersRef.current.length > 0) {
-          const correctCount = gradedAnswersRef.current.filter(a => a.isCorrect).length;
-          const totalCount = gradedAnswersRef.current.length;
-          saveQuizAttempt(correctCount, totalCount, gradedAnswersRef.current, true);
+        const answers = Array.from(gradedAnswersRef.current.values());
+        if (allGradedDone && answers.length > 0) {
+          const correctCount = answers.filter(a => a.isCorrect).length;
+          saveQuizAttempt(correctCount, answers.length, answers, true);
           gradedAttemptSavedRef.current = true;
         }
       }
@@ -172,6 +189,14 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
             if (event.data === window.YT.PlayerState.PLAYING) {
               setIsPlaying(true);
               startTimeTracking();
+            } else if (event.data === window.YT.PlayerState.ENDED) {
+              setIsPlaying(false);
+              stopTimeTracking();
+              // Show performance summary if there were graded hotspots
+              if (summaryItemsRef.current.length > 0) {
+                setSummaryItems([...summaryItemsRef.current]);
+                setShowSummary(true);
+              }
             } else {
               setIsPlaying(false);
               stopTimeTracking();
@@ -215,6 +240,12 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
 
   const checkForHotspots = (time: number) => {
     if (currentHotspot) return;
+
+    // Detect significant backward seek (> 2s back) — reset so hotspots re-trigger
+    if (lastCheckedTimeRef.current > 0 && time < lastCheckedTimeRef.current - 2) {
+      lastCheckedTimeRef.current = time;
+      return; // Skip this tick; next tick will detect normally
+    }
 
     // Find the earliest uncompleted hotspot whose timestamp falls between
     // lastCheckedTime and now (or within 0.5s tolerance for the first check).
@@ -329,13 +360,24 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
         selectedAnswer, isCorrect,
       });
 
-      // Accumulate graded answer (will be saved as one attempt when all graded hotspots are done)
+      // Accumulate graded answer — Map keyed by questionId prevents duplicates on rewatch
       if (selectedAnswer !== null && currentHotspot.isGraded) {
-        gradedAnswersRef.current.push({
+        gradedAnswersRef.current.set(hotspotId, {
           questionId: hotspotId,
           answer: selectedAnswer,
           isCorrect,
         });
+        // Track for summary display (replace if already exists)
+        const existingIdx = summaryItemsRef.current.findIndex(s => s.questionId === hotspotId);
+        const item: SummaryItem = {
+          questionId: hotspotId,
+          title: currentHotspot.title || `Question at ${formatTime(hotspotTimestamp)}`,
+          answer: selectedAnswer,
+          isCorrect,
+          hotspotType: "question",
+        };
+        if (existingIdx >= 0) summaryItemsRef.current[existingIdx] = item;
+        else summaryItemsRef.current.push(item);
       }
     } else if (hotspotType === "quiz" && currentHotspot.questions) {
       const totalQuestions = currentHotspot.questions.length;
@@ -349,6 +391,7 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
         }
         return {
           questionId: q.id,
+          question: q.question,
           answer: userAnswer as string | number | boolean,
           isCorrect,
         };
@@ -361,9 +404,22 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
         answers: quizAnswers,
       });
 
-      // Accumulate graded answers (will be saved as one attempt when all graded hotspots are done)
+      // Accumulate graded answers — Map keyed by questionId prevents duplicates on rewatch
       if (currentHotspot.isGraded) {
-        gradedAnswersRef.current.push(...answersData);
+        for (const a of answersData) {
+          gradedAnswersRef.current.set(a.questionId, a);
+          // Track for summary display
+          const existingIdx = summaryItemsRef.current.findIndex(s => s.questionId === a.questionId);
+          const item: SummaryItem = {
+            questionId: a.questionId,
+            title: a.question || `Quiz question`,
+            answer: a.answer,
+            isCorrect: a.isCorrect,
+            hotspotType: "quiz",
+          };
+          if (existingIdx >= 0) summaryItemsRef.current[existingIdx] = item;
+          else summaryItemsRef.current.push(item);
+        }
       }
     } else {
       logInteraction("hotspot_completed", {
@@ -726,6 +782,96 @@ export function VideoPlayer({ data, contentId }: VideoPlayerProps) {
                         </Button>
                       ) : null}
                     </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Performance Summary Overlay */}
+        {showSummary && summaryItems.length > 0 && (
+          <div className="absolute inset-0 bg-black/90 flex items-center justify-center p-6 z-10">
+            <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+              <CardContent className="pt-6">
+                <div className="space-y-5">
+                  {/* Header with score */}
+                  <div className="text-center space-y-3">
+                    <div className={`inline-flex items-center justify-center h-16 w-16 rounded-full mx-auto ${
+                      summaryItems.filter(i => i.isCorrect).length / summaryItems.length >= 0.7
+                        ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                        : summaryItems.filter(i => i.isCorrect).length / summaryItems.length >= 0.4
+                        ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+                        : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                    }`}>
+                      <Trophy className="h-8 w-8" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold">
+                        {summaryItems.filter(i => i.isCorrect).length}/{summaryItems.length} Correct
+                      </h3>
+                      <p className="text-3xl font-bold mt-1">
+                        {Math.round((summaryItems.filter(i => i.isCorrect).length / summaryItems.length) * 100)}%
+                      </p>
+                    </div>
+                    <Progress
+                      value={(summaryItems.filter(i => i.isCorrect).length / summaryItems.length) * 100}
+                      className="h-3 max-w-xs mx-auto"
+                    />
+                  </div>
+
+                  {/* Per-question breakdown */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Question Breakdown</h4>
+                    {summaryItems.map((item, i) => (
+                      <div
+                        key={item.questionId}
+                        className={`flex items-start gap-3 p-3 rounded-lg border ${
+                          item.isCorrect
+                            ? "border-green-200 bg-green-50/50 dark:border-green-900/50 dark:bg-green-900/10"
+                            : "border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-900/10"
+                        }`}
+                      >
+                        <div className={`mt-0.5 shrink-0 ${item.isCorrect ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                          {item.isCorrect
+                            ? <CheckCircle2 className="h-5 w-5" />
+                            : <XCircle className="h-5 w-5" />
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{item.title}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-[10px]">
+                              {item.hotspotType === "quiz" ? "Quiz" : "Question"}
+                            </Badge>
+                            <span className={`text-xs font-medium ${item.isCorrect ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                              {item.isCorrect ? "Correct" : "Incorrect"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3 justify-center pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        resetForRewatch();
+                        if (playerRef.current) {
+                          playerRef.current.seekTo(0, true);
+                          playerRef.current.playVideo();
+                        }
+                      }}
+                      className="gap-2"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      Rewatch & Retry
+                    </Button>
+                    <Button onClick={() => setShowSummary(false)}>
+                      Done
+                    </Button>
                   </div>
                 </div>
               </CardContent>
