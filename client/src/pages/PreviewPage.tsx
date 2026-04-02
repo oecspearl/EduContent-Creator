@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProgressTracker } from "@/hooks/use-progress-tracker";
 import { ArrowLeft, Share2, CheckCircle2 } from "lucide-react";
 import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, VideoFinderData, PresentationData } from "@shared/schema";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { QuizPlayer } from "@/components/players/QuizPlayer";
 import { FlashcardPlayer } from "@/components/players/FlashcardPlayer";
@@ -114,16 +115,18 @@ export default function PreviewPage() {
 
       {/* Content Player */}
       <main id="main-content" className="max-w-7xl mx-auto px-6 py-8" role="main">
-        {content.type === "quiz" && <QuizPlayer data={content.data as QuizData} contentId={content.id} />}
-        {content.type === "flashcard" && <FlashcardPlayer data={content.data as FlashcardData} contentId={content.id} />}
-        {content.type === "interactive-video" && <VideoPlayer data={content.data as InteractiveVideoData} contentId={content.id} />}
-        {content.type === "image-hotspot" && <ImageHotspotPlayer data={content.data as ImageHotspotData} contentId={content.id} />}
-        {content.type === "drag-drop" && <DragDropPlayer data={content.data as DragAndDropData} contentId={content.id} />}
-        {content.type === "fill-blanks" && <FillBlanksPlayer data={content.data as FillInBlanksData} contentId={content.id} />}
-        {content.type === "memory-game" && <MemoryGamePlayer data={content.data as MemoryGameData} contentId={content.id} />}
-        {content.type === "interactive-book" && <InteractiveBookPlayer data={content.data as InteractiveBookData} contentId={content.id} />}
-        {content.type === "video-finder" && <VideoFinderPlayer data={content.data as VideoFinderData} contentId={content.id} />}
-        {content.type === "presentation" && <PresentationPlayer data={content.data as PresentationData} contentId={content.id} />}
+        <ErrorBoundary section="content player">
+          {content.type === "quiz" && <QuizPlayer data={content.data as QuizData} contentId={content.id} />}
+          {content.type === "flashcard" && <FlashcardPlayer data={content.data as FlashcardData} contentId={content.id} />}
+          {content.type === "interactive-video" && <VideoPlayer data={content.data as InteractiveVideoData} contentId={content.id} />}
+          {content.type === "image-hotspot" && <ImageHotspotPlayer data={content.data as ImageHotspotData} contentId={content.id} />}
+          {content.type === "drag-drop" && <DragDropPlayer data={content.data as DragAndDropData} contentId={content.id} />}
+          {content.type === "fill-blanks" && <FillBlanksPlayer data={content.data as FillInBlanksData} contentId={content.id} />}
+          {content.type === "memory-game" && <MemoryGamePlayer data={content.data as MemoryGameData} contentId={content.id} />}
+          {content.type === "interactive-book" && <InteractiveBookPlayer data={content.data as InteractiveBookData} contentId={content.id} />}
+          {content.type === "video-finder" && <VideoFinderPlayer data={content.data as VideoFinderData} contentId={content.id} />}
+          {content.type === "presentation" && <PresentationPlayer data={content.data as PresentationData} contentId={content.id} />}
+        </ErrorBoundary>
 
         {/* Mark as Complete button — for students, as a fallback for all content types */}
         {user?.role === "student" && isAuthenticated && contentId && (

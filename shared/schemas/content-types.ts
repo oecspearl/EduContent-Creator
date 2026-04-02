@@ -146,6 +146,7 @@ export type BookPageType = "content" | "video" | "quiz" | "image";
 export type VideoPageData = {
   videoId: string;
   videoUrl: string;
+  localVideoUrl?: string;
   title: string;
   description?: string;
   thumbnailUrl?: string;

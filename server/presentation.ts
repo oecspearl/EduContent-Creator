@@ -345,7 +345,7 @@ function buildContentSlide(content: SlideContent, index: number, theme: typeof C
             elementProperties: shapeProps(slideId, img.x, img.y, img.width, img.height),
           },
         });
-      } catch { /* skip failed image */ }
+      } catch (e) { console.warn("Skipped failed image insertion:", (e as Error).message); }
     }
     return requests;
   }
@@ -420,7 +420,7 @@ function buildContentSlide(content: SlideContent, index: number, theme: typeof C
 
   // Image (right column when present)
   if (content.imageUrl && 'image' in L) {
-    const img = L.image;
+    const img = L.image as { x: number; y: number; width: number; height: number };
     try {
       requests.push({
         createImage: {
@@ -827,7 +827,7 @@ export async function addSlidesToPresentation(
         presentationId,
         requestBody: { requests: [{ deleteObject: { objectId: firstSlideId } }] },
       });
-    } catch { /* ignore */ }
+    } catch (e) { console.warn("Failed to delete default slide:", (e as Error).message); }
   }
 
   // Speaker notes (best-effort)

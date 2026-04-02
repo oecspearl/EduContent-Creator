@@ -109,6 +109,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
+  // Health check endpoint (no auth required)
+  app.get("/api/health", async (_req, res) => {
+    try {
+      if (sharedPool) {
+        await sharedPool.query("SELECT 1");
+        return res.json({ status: "ok", db: "connected" });
+      }
+      return res.status(503).json({
+        status: "degraded",
+        db: "disconnected",
+        error: "Database pool not initialized",
+      });
+    } catch (err: any) {
+      return res.status(503).json({
+        status: "degraded",
+        db: "disconnected",
+        error: err.message || "Unknown database error",
+      });
+    }
+  });
+
   // Shared context for all route modules
   const ctx = { app, storage, requireAuth, requireTeacher };
 

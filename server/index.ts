@@ -51,6 +51,7 @@ app.use((req, res, next) => {
   // Load dotenv only in development (Heroku sets env vars automatically)
   if (process.env.NODE_ENV !== "production") {
     try {
+      // @ts-ignore - dotenv may not have type declarations installed
       await import("dotenv/config");
     } catch {
       // dotenv not available, that's okay - Heroku provides env vars directly

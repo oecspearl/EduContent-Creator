@@ -7,7 +7,7 @@ import { ContentService } from "../services/content-service";
 import { AuditService } from "../services/audit-service";
 import { NotificationService } from "../services/notification-service";
 import { callOpenAIJSON } from "../utils/openai-helper";
-import { aiGenerationRateLimit } from "../middleware/rate-limit";
+import { aiGenerationRateLimit, rateLimit } from "../middleware/rate-limit";
 import { notifyTeachers } from "../websocket";
 import { asyncHandler } from "../utils/async-handler";
 import type { RouteContext } from "./types";
@@ -17,8 +17,27 @@ export function registerAnalyticsRoutes({ app, storage, requireAuth, requireTeac
   const auditSvc = new AuditService();
   const notifSvc = new NotificationService();
 
+  // Rate limiters for abuse-prone mutation endpoints
+  const progressRateLimit = rateLimit({
+    maxRequests: 30,
+    windowSeconds: 60,
+    keyGenerator: (req) => `progress-${(req.session as any)?.userId || req.ip}`,
+  });
+
+  const quizAttemptRateLimit = rateLimit({
+    maxRequests: 10,
+    windowSeconds: 60,
+    keyGenerator: (req) => `quiz-attempt-${(req.session as any)?.userId || req.ip}`,
+  });
+
+  const interactionEventRateLimit = rateLimit({
+    maxRequests: 60,
+    windowSeconds: 60,
+    keyGenerator: (req) => `interaction-event-${(req.session as any)?.userId || req.ip}`,
+  });
+
   // Progress tracking
-  app.post("/api/progress", requireAuth, asyncHandler(async (req: any, res) => {
+  app.post("/api/progress", requireAuth, progressRateLimit, asyncHandler(async (req: any, res) => {
     try {
       const parsed = insertLearnerProgressSchema.parse({
         ...req.body,
@@ -49,7 +68,7 @@ export function registerAnalyticsRoutes({ app, storage, requireAuth, requireTeac
   }));
 
   // Quiz attempts
-  app.post("/api/quiz-attempts", requireAuth, asyncHandler(async (req: any, res) => {
+  app.post("/api/quiz-attempts", requireAuth, quizAttemptRateLimit, asyncHandler(async (req: any, res) => {
     try {
       const parsed = insertQuizAttemptSchema.parse({ ...req.body, userId: req.session.userId! });
       const attempt = await storage.createQuizAttempt(parsed);
@@ -99,7 +118,7 @@ export function registerAnalyticsRoutes({ app, storage, requireAuth, requireTeac
   }));
 
   // Interaction events
-  app.post("/api/interaction-events", requireAuth, asyncHandler(async (req: any, res) => {
+  app.post("/api/interaction-events", requireAuth, interactionEventRateLimit, asyncHandler(async (req: any, res) => {
     try {
       const parsed = insertInteractionEventSchema.parse({ ...req.body, userId: req.session.userId! });
       const event = await storage.createInteractionEvent(parsed);

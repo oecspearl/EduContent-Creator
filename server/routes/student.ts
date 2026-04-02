@@ -6,8 +6,8 @@
  */
 import { z } from "zod";
 import { db } from "../../db";
-import { studentAssignments, h5pContent } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { studentAssignments, h5pContent, learnerProgress, quizAttempts } from "@shared/schema";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import { callOpenAIJSON } from "../utils/openai-helper";
 import { rateLimit } from "../middleware/rate-limit";
 import { asyncHandler } from "../utils/async-handler";
@@ -52,18 +52,23 @@ export function registerStudentRoutes({ app, storage, requireAuth }: RouteContex
         .map(a => ({ ...a, classId: null, className: "Individual Assignment" })),
     ];
 
-    // Enrich each assignment with the student's progress
-    const enriched = await Promise.all(
-      merged.map(async (a: any) => {
-        const progress = await storage.getLearnerProgress(userId, a.contentId);
-        return {
-          ...a,
-          completionPercentage: progress?.completionPercentage ?? 0,
-          completedAt: progress?.completedAt ?? null,
-          lastAccessedAt: progress?.lastAccessedAt ?? null,
-        };
-      }),
-    );
+    // Batch fetch all progress for this user's assigned content
+    const contentIds = merged.map((a: any) => a.contentId);
+    const allProgress = contentIds.length > 0
+      ? await db.select().from(learnerProgress)
+          .where(and(eq(learnerProgress.userId, userId), inArray(learnerProgress.contentId, contentIds)))
+      : [];
+    const progressMap = new Map(allProgress.map(p => [p.contentId, p]));
+
+    const enriched = merged.map((a: any) => {
+      const progress = progressMap.get(a.contentId);
+      return {
+        ...a,
+        completionPercentage: progress?.completionPercentage ?? 0,
+        completedAt: progress?.completedAt ?? null,
+        lastAccessedAt: progress?.lastAccessedAt ?? null,
+      };
+    });
 
     res.json(enriched);
   }));
@@ -76,10 +81,22 @@ export function registerStudentRoutes({ app, storage, requireAuth }: RouteContex
     const assignments = await storage.getStudentAssignments(userId);
     const contentIds = Array.from(new Set(assignments.map((a: any) => a.contentId)));
 
-    // Fetch quiz attempts for each assigned content
+    // Batch fetch all quiz attempts for this user's assigned content
+    const allAttempts = contentIds.length > 0
+      ? await db.select().from(quizAttempts)
+          .where(and(eq(quizAttempts.userId, userId), inArray(quizAttempts.contentId, contentIds)))
+      : [];
+    // Group by contentId
+    const attemptsByContent = new Map<string, typeof allAttempts>();
+    for (const a of allAttempts) {
+      const list = attemptsByContent.get(a.contentId) || [];
+      list.push(a);
+      attemptsByContent.set(a.contentId, list);
+    }
+
     const scores: any[] = [];
     for (const contentId of contentIds) {
-      const attempts = await storage.getQuizAttempts(userId, contentId);
+      const attempts = attemptsByContent.get(contentId) || [];
       if (attempts.length > 0) {
         const assignment = assignments.find((a: any) => a.contentId === contentId);
         const bestAttempt = attempts.reduce((best, a) =>

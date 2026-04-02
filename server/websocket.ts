@@ -9,6 +9,21 @@ type WSClient = {
 
 const clients: WSClient[] = [];
 
+function removeClient(client: WSClient) {
+  const idx = clients.indexOf(client);
+  if (idx !== -1) clients.splice(idx, 1);
+}
+
+function safeSend(ws: WebSocket, payload: string) {
+  try {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(payload);
+    }
+  } catch (e) {
+    console.error("WebSocket send failed:", e);
+  }
+}
+
 export function setupWebSocket(server: Server) {
   const wss = new WebSocketServer({ server, path: "/ws" });
 
@@ -26,14 +41,11 @@ export function setupWebSocket(server: Server) {
     const client: WSClient = { ws, userId, role };
     clients.push(client);
 
-    ws.on("close", () => {
-      const idx = clients.indexOf(client);
-      if (idx !== -1) clients.splice(idx, 1);
-    });
+    ws.on("close", () => removeClient(client));
 
-    ws.on("error", () => {
-      const idx = clients.indexOf(client);
-      if (idx !== -1) clients.splice(idx, 1);
+    ws.on("error", (error) => {
+      console.error(`WebSocket error for user ${userId}:`, error.message);
+      removeClient(client);
     });
   });
 
@@ -44,22 +56,20 @@ export function setupWebSocket(server: Server) {
 export function notifyUser(userId: string, event: string, data: any) {
   const payload = JSON.stringify({ event, data, timestamp: Date.now() });
   clients
-    .filter(c => c.userId === userId && c.ws.readyState === WebSocket.OPEN)
-    .forEach(c => c.ws.send(payload));
+    .filter(c => c.userId === userId)
+    .forEach(c => safeSend(c.ws, payload));
 }
 
 /** Send a message to all teachers (e.g., when a student completes something) */
 export function notifyTeachers(event: string, data: any) {
   const payload = JSON.stringify({ event, data, timestamp: Date.now() });
   clients
-    .filter(c => c.role === "teacher" && c.ws.readyState === WebSocket.OPEN)
-    .forEach(c => c.ws.send(payload));
+    .filter(c => c.role === "teacher")
+    .forEach(c => safeSend(c.ws, payload));
 }
 
 /** Broadcast to all connected clients */
 export function broadcast(event: string, data: any) {
   const payload = JSON.stringify({ event, data, timestamp: Date.now() });
-  clients
-    .filter(c => c.ws.readyState === WebSocket.OPEN)
-    .forEach(c => c.ws.send(payload));
+  clients.forEach(c => safeSend(c.ws, payload));
 }

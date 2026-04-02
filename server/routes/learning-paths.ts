@@ -105,23 +105,28 @@ export function registerLearningPathRoutes({ app, storage, requireAuth, requireT
   // ── Create learning path (teachers only) ────────────────
   app.post("/api/learning-paths", requireTeacher, asyncHandler(async (req: any, res) => {
     const parsed = createPathSchema.parse(req.body);
-    const [path] = await db.insert(learningPaths).values({
-      name: parsed.name,
-      description: parsed.description || null,
-      userId: req.session.userId!,
-      classId: parsed.classId || null,
-    }).returning();
 
-    if (parsed.items.length > 0) {
-      await db.insert(learningPathItems).values(
-        parsed.items.map((item, i) => ({
-          pathId: path.id,
-          contentId: item.contentId,
-          orderIndex: i,
-          isRequired: item.isRequired,
-        })),
-      );
-    }
+    const path = await db.transaction(async (tx) => {
+      const [created] = await tx.insert(learningPaths).values({
+        name: parsed.name,
+        description: parsed.description || null,
+        userId: req.session.userId!,
+        classId: parsed.classId || null,
+      }).returning();
+
+      if (parsed.items.length > 0) {
+        await tx.insert(learningPathItems).values(
+          parsed.items.map((item, i) => ({
+            pathId: created.id,
+            contentId: item.contentId,
+            orderIndex: i,
+            isRequired: item.isRequired,
+          })),
+        );
+      }
+
+      return created;
+    });
 
     res.json(path);
   }));
@@ -165,31 +170,35 @@ export function registerLearningPathRoutes({ app, storage, requireAuth, requireT
 
     const parsed = updatePathSchema.parse(req.body);
 
-    // Update path metadata
-    const metaUpdates: Record<string, any> = { updatedAt: new Date() };
-    if (parsed.name !== undefined) metaUpdates.name = parsed.name;
-    if (parsed.description !== undefined) metaUpdates.description = parsed.description || null;
-    if (parsed.classId !== undefined) metaUpdates.classId = parsed.classId;
+    const updated = await db.transaction(async (tx) => {
+      // Update path metadata
+      const metaUpdates: Record<string, any> = { updatedAt: new Date() };
+      if (parsed.name !== undefined) metaUpdates.name = parsed.name;
+      if (parsed.description !== undefined) metaUpdates.description = parsed.description || null;
+      if (parsed.classId !== undefined) metaUpdates.classId = parsed.classId;
 
-    const [updated] = await db.update(learningPaths)
-      .set(metaUpdates)
-      .where(eq(learningPaths.id, path.id))
-      .returning();
+      const [result] = await tx.update(learningPaths)
+        .set(metaUpdates)
+        .where(eq(learningPaths.id, path.id))
+        .returning();
 
-    // Replace items if provided
-    if (parsed.items) {
-      await db.delete(learningPathItems).where(eq(learningPathItems.pathId, path.id));
-      if (parsed.items.length > 0) {
-        await db.insert(learningPathItems).values(
-          parsed.items.map((item, i) => ({
-            pathId: path.id,
-            contentId: item.contentId,
-            orderIndex: i,
-            isRequired: item.isRequired,
-          })),
-        );
+      // Replace items if provided
+      if (parsed.items) {
+        await tx.delete(learningPathItems).where(eq(learningPathItems.pathId, path.id));
+        if (parsed.items.length > 0) {
+          await tx.insert(learningPathItems).values(
+            parsed.items.map((item, i) => ({
+              pathId: path.id,
+              contentId: item.contentId,
+              orderIndex: i,
+              isRequired: item.isRequired,
+            })),
+          );
+        }
       }
-    }
+
+      return result;
+    });
 
     const items = await getPathItems(path.id);
     res.json({ ...updated, items });

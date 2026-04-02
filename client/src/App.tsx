@@ -41,6 +41,7 @@ import ParentViewPage from "@/pages/ParentViewPage";
 import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/not-found";
 import { PageSkeleton } from "@/components/PageSkeleton";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
@@ -231,8 +232,14 @@ function AppContent() {
 
   return (
     <ChatContextProvider>
-      <Router />
-      {user && <ChatAssistant />}
+      <ErrorBoundary section="page">
+        <Router />
+      </ErrorBoundary>
+      {user && (
+        <ErrorBoundary section="chat assistant" compact>
+          <ChatAssistant />
+        </ErrorBoundary>
+      )}
     </ChatContextProvider>
   );
 }

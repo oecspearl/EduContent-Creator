@@ -7,6 +7,7 @@ import { BookOpen, Copy, Presentation } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { H5pContent, QuizData, FlashcardData, InteractiveVideoData, ImageHotspotData, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, VideoFinderData, PresentationData } from "@shared/schema";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { QuizPlayer } from "@/components/players/QuizPlayer";
 import { FlashcardPlayer } from "@/components/players/FlashcardPlayer";
 import { VideoPlayer } from "@/components/players/VideoPlayer";
@@ -122,6 +123,7 @@ export default function PublicPreviewPage() {
 
       {/* Content Player - Public preview doesn't track progress */}
       <main id="main-content" className="max-w-7xl mx-auto px-6 py-8" role="main">
+        <ErrorBoundary section="content player">
         {content.type === "quiz" && <QuizPlayer data={content.data as QuizData} contentId={content.id} />}
         {content.type === "flashcard" && <FlashcardPlayer data={content.data as FlashcardData} contentId={content.id} />}
         {content.type === "interactive-video" && <VideoPlayer data={content.data as InteractiveVideoData} contentId={content.id} />}
@@ -149,6 +151,7 @@ export default function PublicPreviewPage() {
             </CardContent>
           </Card>
         )}
+        </ErrorBoundary>
       </main>
 
       {/* Footer */}

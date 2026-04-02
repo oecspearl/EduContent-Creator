@@ -1,12 +1,43 @@
 import { db } from "../../db";
 import { studentAssignments, h5pContent, profiles } from "@shared/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
+import { z } from "zod";
 import { asyncHandler } from "../utils/async-handler";
 import { AuthService } from "../services/auth-service";
 import { NotificationService } from "../services/notification-service";
 import { AuditService } from "../services/audit-service";
 import { notifyUser } from "../websocket";
 import type { RouteContext } from "./types";
+
+const createClassSchema = z.object({
+  name: z.string().min(1, "Class name is required").transform(s => s.trim()),
+  description: z.string().nullable().optional().transform(s => s?.trim() || null),
+  subject: z.string().nullable().optional().transform(s => s?.trim() || null),
+  gradeLevel: z.string().nullable().optional().transform(s => s?.trim() || null),
+});
+
+const enrollStudentSchema = z.object({
+  userId: z.string().min(1, "User ID is required"),
+});
+
+const createStudentSchema = z.object({
+  firstName: z.string().min(1, "First name is required").transform(s => s.trim()),
+  lastName: z.string().min(1, "Last name is required").transform(s => s.trim()),
+  email: z.string().email("Invalid email format").transform(s => s.trim().toLowerCase()),
+  classId: z.string().min(1),
+});
+
+const assignContentSchema = z.object({
+  classId: z.string().min(1, "Class ID is required"),
+  dueDate: z.string().optional(),
+  instructions: z.string().optional().transform(s => s?.trim() || undefined),
+});
+
+const studentAssignmentSchema = z.object({
+  studentIds: z.array(z.string().min(1)).min(1, "At least one student ID is required"),
+  dueDate: z.string().optional(),
+  instructions: z.string().optional().transform(s => s?.trim() || undefined),
+});
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -32,14 +63,13 @@ export function registerClassRoutes({ app, storage, requireAuth, requireTeacher 
   const auditSvc = new AuditService();
   // CRUD (teachers only)
   app.post("/api/classes", requireTeacher, asyncHandler(async (req: any, res) => {
-    const { name, description, subject, gradeLevel } = req.body;
-    if (!name || typeof name !== "string" || !name.trim()) return res.status(400).json({ message: "Class name is required" });
+    const { name, description, subject, gradeLevel } = createClassSchema.parse(req.body);
 
     const class_ = await storage.createClass({
-      name: name.trim(),
-      description: description?.trim() || null,
-      subject: subject?.trim() || null,
-      gradeLevel: gradeLevel?.trim() || null,
+      name,
+      description,
+      subject,
+      gradeLevel,
       userId: req.session.userId!,
     });
     res.json(class_);
@@ -95,8 +125,7 @@ export function registerClassRoutes({ app, storage, requireAuth, requireTeacher 
     if (!class_) return res.status(404).json({ message: "Class not found" });
     if (class_.userId !== req.session.userId!) return res.status(403).json({ message: "Not authorized to manage enrollments" });
 
-    const { userId } = req.body;
-    if (!userId || typeof userId !== "string") return res.status(400).json({ message: "User ID is required" });
+    const { userId } = enrollStudentSchema.parse(req.body);
 
     try {
       const enrollment = await storage.createClassEnrollment({ classId: req.params.id, userId });
@@ -119,19 +148,14 @@ export function registerClassRoutes({ app, storage, requireAuth, requireTeacher 
 
   // Create student and enroll
   app.post("/api/classes/:id/students", requireTeacher, asyncHandler(async (req: any, res) => {
-    const { firstName, lastName, email } = req.body;
-    if (!firstName?.trim() || !lastName?.trim() || !email?.trim()) {
-      return res.status(400).json({ message: "First name, last name, and email are required" });
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) return res.status(400).json({ message: "Invalid email format" });
+    const { firstName, lastName, email } = createStudentSchema.parse({ ...req.body, classId: req.params.id });
 
     const class_ = await storage.getClassById(req.params.id);
     if (!class_) return res.status(404).json({ message: "Class not found" });
     if (class_.userId !== req.session.userId!) return res.status(403).json({ message: "Not authorized to manage this class" });
 
     try {
-      let user = await storage.getProfileByEmail(email.trim().toLowerCase());
+      let user = await storage.getProfileByEmail(email);
       let isNewUser = false;
 
       if (user) {
@@ -144,8 +168,8 @@ export function registerClassRoutes({ app, storage, requireAuth, requireTeacher 
         }
       } else {
         user = await storage.createProfile({
-          email: email.trim().toLowerCase(),
-          fullName: `${firstName.trim()} ${lastName.trim()}`,
+          email,
+          fullName: `${firstName} ${lastName}`,
           password: null,
           role: "student",
           authProvider: "email",
@@ -236,8 +260,7 @@ export function registerClassRoutes({ app, storage, requireAuth, requireTeacher 
     if (!content) return res.status(404).json({ message: "Content not found" });
     if (content.userId !== req.session.userId!) return res.status(403).json({ message: "Not authorized to assign this content" });
 
-    const { classId, dueDate, instructions } = req.body;
-    if (!classId || typeof classId !== "string") return res.status(400).json({ message: "Class ID is required" });
+    const { classId, dueDate, instructions } = assignContentSchema.parse(req.body);
 
     const class_ = await storage.getClassById(classId);
     if (!class_) return res.status(404).json({ message: "Class not found" });
@@ -349,7 +372,6 @@ export function registerClassRoutes({ app, storage, requireAuth, requireTeacher 
     const lastNameIndex = headers.findIndex((h) => h === "lastname" || h === "last name" || h === "last_name");
     const nameIndex = headers.findIndex((h) => h === "name" || h === "full name" || h === "fullname");
 
-    const enrollments: any[] = [];
     const errors: string[] = [];
     const targetClassId = classId;
 
@@ -362,31 +384,40 @@ export function registerClassRoutes({ app, storage, requireAuth, requireTeacher 
       if (!class_) return res.status(404).json({ message: "Class not found" });
       if (class_.userId !== req.session.userId!) return res.status(403).json({ message: "Not authorized to manage this class" });
 
-      for (let i = 1; i < lines.length; i++) {
-        const values = parseCSVLine(lines[i]).map((v) => v.trim().replace(/^"|"$/g, ""));
-        const email = values[emailIndex];
-        if (!email) { errors.push(`Row ${i + 1}: Missing email`); continue; }
+      const enrollments: any[] = [];
 
-        let user = await storage.getProfileByEmail(email);
-        if (!user) {
-          let fullName: string;
-          const firstName = firstNameIndex !== -1 ? values[firstNameIndex]?.trim() : "";
-          const lastName = lastNameIndex !== -1 ? values[lastNameIndex]?.trim() : "";
-          if (firstName || lastName) fullName = `${firstName} ${lastName}`.trim();
-          else if (nameIndex !== -1 && values[nameIndex]) fullName = values[nameIndex];
-          else fullName = email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+      await db.transaction(async (tx) => {
+        for (let i = 1; i < lines.length; i++) {
+          const values = parseCSVLine(lines[i]).map((v) => v.trim().replace(/^"|"$/g, ""));
+          const email = values[emailIndex];
+          if (!email) { errors.push(`Row ${i + 1}: Missing email`); continue; }
 
-          try {
-            user = await storage.createProfile({ email, fullName, password: null, role: "student", authProvider: "email" });
-          } catch (e: any) {
-            errors.push(`Row ${i + 1}: Failed to create user for email ${email}: ${e.message}`);
-            continue;
+          let user = await storage.getProfileByEmail(email);
+          if (!user) {
+            let fullName: string;
+            const firstName = firstNameIndex !== -1 ? values[firstNameIndex]?.trim() : "";
+            const lastName = lastNameIndex !== -1 ? values[lastNameIndex]?.trim() : "";
+            if (firstName || lastName) fullName = `${firstName} ${lastName}`.trim();
+            else if (nameIndex !== -1 && values[nameIndex]) fullName = values[nameIndex];
+            else fullName = email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+
+            try {
+              user = await storage.createProfile({ email, fullName, password: null, role: "student", authProvider: "email" });
+            } catch (e: any) {
+              errors.push(`Row ${i + 1}: Failed to create user for email ${email}: ${e.message}`);
+              continue;
+            }
           }
+          enrollments.push({ classId: targetClassId, userId: user.id });
         }
-        enrollments.push({ classId: targetClassId, userId: user.id });
-      }
 
-      if (enrollments.length > 0) await storage.bulkCreateEnrollments(enrollments);
+        if (enrollments.length > 0) await storage.bulkCreateEnrollments(enrollments);
+      });
+
+      res.json({
+        message: `Successfully enrolled ${enrollments.length} student(s)`,
+        errors: errors.length > 0 ? errors : undefined,
+      });
     } else {
       // Create new class from CSV
       const classHeaders = ["class_name", "name", "class name"];
@@ -401,80 +432,84 @@ export function registerClassRoutes({ app, storage, requireAuth, requireTeacher 
       const subjectIndex = headers.findIndex((h) => h === "subject");
       const gradeLevelIndex = headers.findIndex((h) => h === "grade_level" || h === "grade level" || h === "gradelevel");
 
-      const class_ = await storage.createClass({
-        name: className,
-        description: descIndex !== -1 ? classValues[descIndex] : null,
-        subject: subjectIndex !== -1 ? classValues[subjectIndex] : null,
-        gradeLevel: gradeLevelIndex !== -1 ? classValues[gradeLevelIndex] : null,
-        userId: req.session.userId!,
-      });
-
-      // Find student section
-      let studentStartIndex = -1;
-      let studentEmailIndex = -1;
-      let studentFirstNameIndex = -1;
-      let studentLastNameIndex = -1;
-      let studentNameIndex = -1;
-
-      for (let i = 2; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        const potentialHeaders = parseCSVLine(line).map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
-        const hasEmailHeader = potentialHeaders.some((h) => h === "email" || h === "e-mail" || h === "student_email" || h === "email address");
-        const hasNameHeader = potentialHeaders.some((h) =>
-          h === "firstname" || h === "first name" || h === "first_name" ||
-          h === "lastname" || h === "last name" || h === "last_name" ||
-          h === "name" || h === "full name" || h === "fullname",
-        );
-
-        if (hasEmailHeader && hasNameHeader) {
-          studentStartIndex = i + 1;
-          studentEmailIndex = potentialHeaders.findIndex((h) => h === "email" || h === "e-mail" || h === "student_email" || h === "email address");
-          studentFirstNameIndex = potentialHeaders.findIndex((h) => h === "firstname" || h === "first name" || h === "first_name");
-          studentLastNameIndex = potentialHeaders.findIndex((h) => h === "lastname" || h === "last name" || h === "last_name");
-          studentNameIndex = potentialHeaders.findIndex((h) => h === "name" || h === "full name" || h === "fullname");
-          break;
-        }
-      }
-
+      let class_: any;
       let enrolledCount = 0;
-      if (studentStartIndex > 0) {
-        for (let i = studentStartIndex; i < lines.length; i++) {
+
+      await db.transaction(async (tx) => {
+        class_ = await storage.createClass({
+          name: className,
+          description: descIndex !== -1 ? classValues[descIndex] : null,
+          subject: subjectIndex !== -1 ? classValues[subjectIndex] : null,
+          gradeLevel: gradeLevelIndex !== -1 ? classValues[gradeLevelIndex] : null,
+          userId: req.session.userId!,
+        });
+
+        // Find student section
+        let studentStartIndex = -1;
+        let studentEmailIndex = -1;
+        let studentFirstNameIndex = -1;
+        let studentLastNameIndex = -1;
+        let studentNameIndex = -1;
+
+        for (let i = 2; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line) continue;
-          const values = parseCSVLine(line).map((v) => v.trim().replace(/^"|"$/g, ""));
-          const email = studentEmailIndex !== -1 ? values[studentEmailIndex] : null;
-          if (!email || !email.includes("@")) { errors.push(`Row ${i + 1}: Missing or invalid email`); continue; }
+          const potentialHeaders = parseCSVLine(line).map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
+          const hasEmailHeader = potentialHeaders.some((h) => h === "email" || h === "e-mail" || h === "student_email" || h === "email address");
+          const hasNameHeader = potentialHeaders.some((h) =>
+            h === "firstname" || h === "first name" || h === "first_name" ||
+            h === "lastname" || h === "last name" || h === "last_name" ||
+            h === "name" || h === "full name" || h === "fullname",
+          );
 
-          let user = await storage.getProfileByEmail(email);
-          if (!user) {
-            let fullName: string;
-            const firstName = studentFirstNameIndex !== -1 ? values[studentFirstNameIndex]?.trim() : "";
-            const lastName = studentLastNameIndex !== -1 ? values[studentLastNameIndex]?.trim() : "";
-            if (firstName || lastName) fullName = `${firstName} ${lastName}`.trim();
-            else if (studentNameIndex !== -1 && values[studentNameIndex]) fullName = values[studentNameIndex];
-            else fullName = email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+          if (hasEmailHeader && hasNameHeader) {
+            studentStartIndex = i + 1;
+            studentEmailIndex = potentialHeaders.findIndex((h) => h === "email" || h === "e-mail" || h === "student_email" || h === "email address");
+            studentFirstNameIndex = potentialHeaders.findIndex((h) => h === "firstname" || h === "first name" || h === "first_name");
+            studentLastNameIndex = potentialHeaders.findIndex((h) => h === "lastname" || h === "last name" || h === "last_name");
+            studentNameIndex = potentialHeaders.findIndex((h) => h === "name" || h === "full name" || h === "fullname");
+            break;
+          }
+        }
+
+        if (studentStartIndex > 0) {
+          for (let i = studentStartIndex; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            const values = parseCSVLine(line).map((v) => v.trim().replace(/^"|"$/g, ""));
+            const email = studentEmailIndex !== -1 ? values[studentEmailIndex] : null;
+            if (!email || !email.includes("@")) { errors.push(`Row ${i + 1}: Missing or invalid email`); continue; }
+
+            let user = await storage.getProfileByEmail(email);
+            if (!user) {
+              let fullName: string;
+              const firstName = studentFirstNameIndex !== -1 ? values[studentFirstNameIndex]?.trim() : "";
+              const lastName = studentLastNameIndex !== -1 ? values[studentLastNameIndex]?.trim() : "";
+              if (firstName || lastName) fullName = `${firstName} ${lastName}`.trim();
+              else if (studentNameIndex !== -1 && values[studentNameIndex]) fullName = values[studentNameIndex];
+              else fullName = email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+
+              try {
+                user = await storage.createProfile({ email, fullName, password: null, role: "student", authProvider: "email" });
+              } catch (e: any) {
+                errors.push(`Row ${i + 1}: Failed to create user for ${email}: ${e.message}`);
+                continue;
+              }
+            }
 
             try {
-              user = await storage.createProfile({ email, fullName, password: null, role: "student", authProvider: "email" });
-            } catch (e: any) {
-              errors.push(`Row ${i + 1}: Failed to create user for ${email}: ${e.message}`);
-              continue;
-            }
-          }
-
-          try {
-            await storage.createClassEnrollment({ classId: class_.id, userId: user.id });
-            enrolledCount++;
-          } catch (e: any) {
-            if (!e.message?.includes("unique") && !e.message?.includes("duplicate")) {
-              errors.push(`Row ${i + 1}: Failed to enroll ${email}`);
-            } else {
+              await storage.createClassEnrollment({ classId: class_.id, userId: user.id });
               enrolledCount++;
+            } catch (e: any) {
+              if (!e.message?.includes("unique") && !e.message?.includes("duplicate")) {
+                errors.push(`Row ${i + 1}: Failed to enroll ${email}`);
+              } else {
+                enrolledCount++;
+              }
             }
           }
         }
-      }
+      });
 
       return res.json({
         message: `Successfully created class "${className}" with ${enrolledCount} student(s)`,
@@ -482,11 +517,6 @@ export function registerClassRoutes({ app, storage, requireAuth, requireTeacher 
         errors: errors.length > 0 ? errors : undefined,
       });
     }
-
-    res.json({
-      message: `Successfully enrolled ${enrollments.length} student(s)`,
-      errors: errors.length > 0 ? errors : undefined,
-    });
   }));
 
   // ─── Student-level assignments ────────────────────────────
@@ -497,51 +527,53 @@ export function registerClassRoutes({ app, storage, requireAuth, requireTeacher 
     if (!content) return res.status(404).json({ message: "Content not found" });
     if (content.userId !== req.session.userId!) return res.status(403).json({ message: "Not authorized to assign this content" });
 
-    const { studentIds, dueDate, instructions } = req.body;
-    if (!Array.isArray(studentIds) || studentIds.length === 0) {
-      return res.status(400).json({ message: "At least one student ID is required" });
-    }
+    const { studentIds, dueDate, instructions } = studentAssignmentSchema.parse(req.body);
 
-    const results = [];
-    const errors = [];
-    for (const studentId of studentIds) {
-      try {
-        const [assignment] = await db.insert(studentAssignments).values({
-          contentId: req.params.contentId,
-          studentId,
-          assignedBy: req.session.userId!,
-          dueDate: dueDate ? new Date(dueDate) : null,
-          instructions: instructions?.trim() || null,
-        }).returning();
-        results.push(assignment);
-
-        // Notify the student
-        (async () => {
-          try {
-            const notifSvc = new NotificationService();
-            await notifSvc.create(
-              studentId,
-              "new_assignment",
-              "New Assignment",
-              `You have been assigned "${content.title}"`,
-              `/preview/${req.params.contentId}`,
-            );
-            notifyUser(studentId, "new_assignment", {
-              contentTitle: content.title,
-              contentId: req.params.contentId,
-            });
-          } catch (e) { /* non-blocking */ }
-        })();
-      } catch (error: any) {
-        if (error.message?.includes("unique") || error.code === "23505") {
-          errors.push({ studentId, error: "Already assigned" });
-        } else {
-          throw error;
+    const { inserted, errors } = await db.transaction(async (tx) => {
+      const inserted: any[] = [];
+      const errors: any[] = [];
+      for (const studentId of studentIds) {
+        try {
+          const [assignment] = await tx.insert(studentAssignments).values({
+            contentId: req.params.contentId,
+            studentId,
+            assignedBy: req.session.userId!,
+            dueDate: dueDate ? new Date(dueDate) : null,
+            instructions: instructions?.trim() || null,
+          }).returning();
+          inserted.push(assignment);
+        } catch (error: any) {
+          if (error.message?.includes("unique") || error.code === "23505") {
+            errors.push({ studentId, error: "Already assigned" });
+          } else {
+            throw error; // rolls back the entire transaction
+          }
         }
       }
+      return { inserted, errors };
+    });
+
+    // Send notifications outside the transaction (non-blocking side effects)
+    for (const assignment of inserted) {
+      (async () => {
+        try {
+          const svc = new NotificationService();
+          await svc.create(
+            assignment.studentId,
+            "new_assignment",
+            "New Assignment",
+            `You have been assigned "${content.title}"`,
+            `/preview/${req.params.contentId}`,
+          );
+          notifyUser(assignment.studentId, "new_assignment", {
+            contentTitle: content.title,
+            contentId: req.params.contentId,
+          });
+        } catch (e) { console.error("Failed to send assignment notification:", e); }
+      })();
     }
 
-    res.json({ assigned: results.length, errors });
+    res.json({ assigned: inserted.length, errors });
   }));
 
   // List student-level assignments for a piece of content
