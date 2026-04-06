@@ -236,6 +236,7 @@ export type SlideContent = {
   bulletPoints?: string[];
   imageUrl?: string;
   imageAlt?: string;
+  imageQuery?: string;
   questions?: string[];
   notes?: string;
   emoji?: string;

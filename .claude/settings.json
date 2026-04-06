@@ -49,7 +49,8 @@
       "Bash(sed -i '' -E \"s/'\\\\\\), NULL, \\([0-9]+\\),/'\\), '', \\\\1,/g\" add_curriculum_data.sql)",
       "Bash(sed -n '7275,7862p' add_curriculum_data.sql)",
       "Bash(sed -n '7942,9217p' ../add_curriculum_data.sql)",
-      "Bash(sed -n '9218,10477p' ../add_curriculum_data.sql)"
+      "Bash(sed -n '9218,10477p' ../add_curriculum_data.sql)",
+      "Bash(ls tsconfig*.json)"
     ],
     "additionalDirectories": [
       "/Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/server"

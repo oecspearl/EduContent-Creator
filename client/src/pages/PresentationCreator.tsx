@@ -275,90 +275,143 @@ export default function PresentationCreator() {
       const slidesData = data.slides || [];
       console.log("Slides data:", slidesData);
 
-      let successCount = 0;
-      let failCount = 0;
-      const slidesWithImages: SlideContent[] = [];
+      const IMAGE_TIMEOUT_MS = 15_000;
+      const CONCURRENCY_LIMIT = 3;
 
-      try {
-        for (const slide of slidesData) {
-          const raw = slide.imageUrl?.trim() ?? "";
-          const alreadyImage =
-            raw.startsWith("http://") ||
-            raw.startsWith("https://") ||
-            raw.startsWith("data:image");
-          if (raw && !alreadyImage) {
-            const originalPrompt = raw;
-            let resolved = false;
+      type ImageTask = {
+        index: number;
+        slide: SlideContent;
+        originalQuery: string;
+      };
 
-            if (imageProvider === "unsplash") {
-              try {
-                const imageResponse = await apiRequest("POST", "/api/unsplash/search", {
-                  query: originalPrompt,
-                  count: 1,
-                });
-                const imageData = await imageResponse.json();
-                const photo = imageData.photos?.[0];
-                if (photo?.urls?.regular) {
-                  successCount++;
-                  resolved = true;
-                  slidesWithImages.push({
-                    ...slide,
-                    imageUrl: photo.urls.regular,
-                    imageAlt:
-                      slide.imageAlt ||
-                      photo.alt_description ||
-                      photo.description ||
-                      originalPrompt,
-                  });
-                }
-              } catch (err) {
-                console.error("Unsplash image failed for slide:", err);
-              }
-            } else {
-              const parts = [
-                "Educational illustration for a classroom presentation.",
-                topic ? `Topic: "${topic}".` : "",
-                slide.title ? `Slide title: "${slide.title}".` : "",
-                slide.imageAlt ? `Scene / accessibility: ${slide.imageAlt}.` : "",
-                `Visual focus: ${originalPrompt}.`,
-                "Style: clear, age-appropriate for students; minimal or no overlaid text unless essential.",
-              ];
-              const fullPrompt = parts.filter(Boolean).join(" ");
-              try {
-                const imageResponse = await apiRequest("POST", "/api/ai/generate-image", {
-                  prompt: fullPrompt,
-                });
-                const body = await imageResponse.json();
-                const imageUrl = body.imageUrl as string | undefined;
-                if (imageUrl) {
-                  successCount++;
-                  resolved = true;
-                  slidesWithImages.push({
-                    ...slide,
-                    imageUrl,
-                    imageAlt: slide.imageAlt || originalPrompt,
-                  });
-                }
-              } catch (err) {
-                console.error("OpenRouter image failed for slide:", err);
-              }
+      // Identify slides that need image resolution
+      const tasks: ImageTask[] = [];
+      for (let i = 0; i < slidesData.length; i++) {
+        const slide = slidesData[i];
+        const raw = slide.imageUrl?.trim() ?? "";
+        const alreadyImage =
+          raw.startsWith("http://") ||
+          raw.startsWith("https://") ||
+          raw.startsWith("data:image");
+        if (raw && !alreadyImage) {
+          tasks.push({ index: i, slide, originalQuery: raw });
+        }
+      }
+
+      // Resolve a single image with timeout
+      async function resolveImage(task: ImageTask): Promise<SlideContent> {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), IMAGE_TIMEOUT_MS);
+
+        try {
+          if (imageProvider === "unsplash") {
+            const imageResponse = await apiRequest("POST", "/api/unsplash/search", {
+              query: task.originalQuery,
+              count: 1,
+            }, { signal: controller.signal });
+            const imageData = await imageResponse.json();
+            const photo = imageData.photos?.[0];
+            if (photo?.urls?.regular) {
+              return {
+                ...task.slide,
+                imageUrl: photo.urls.regular,
+                imageAlt:
+                  task.slide.imageAlt ||
+                  photo.alt_description ||
+                  photo.description ||
+                  task.originalQuery,
+              };
             }
-
-            if (!resolved) {
-              failCount++;
-              slidesWithImages.push({
-                ...slide,
-                imageUrl: "",
-                imageAlt: slide.imageAlt || originalPrompt,
-              });
-            }
+            throw new Error("No Unsplash photo returned");
           } else {
-            slidesWithImages.push(slide);
+            const parts = [
+              "Educational illustration for a classroom presentation slide.",
+              "Format: landscape orientation, 16:9 aspect ratio.",
+              topic ? `Topic: "${topic}".` : "",
+              task.slide.title ? `Slide title: "${task.slide.title}".` : "",
+              task.slide.imageAlt ? `Scene / accessibility: ${task.slide.imageAlt}.` : "",
+              `Visual focus: ${task.originalQuery}.`,
+              "Style: clear, age-appropriate for students; minimal or no overlaid text unless essential.",
+            ];
+            const fullPrompt = parts.filter(Boolean).join(" ");
+            const imageResponse = await apiRequest("POST", "/api/ai/generate-image", {
+              prompt: fullPrompt,
+            }, { signal: controller.signal });
+            const body = await imageResponse.json();
+            const imageUrl = body.imageUrl as string | undefined;
+            if (imageUrl) {
+              return {
+                ...task.slide,
+                imageUrl,
+                imageAlt: task.slide.imageAlt || task.originalQuery,
+              };
+            }
+            throw new Error("No image URL returned from OpenRouter");
+          }
+        } finally {
+          clearTimeout(timeout);
+        }
+      }
+
+      // Run tasks with concurrency limit using worker pool
+      async function runWithConcurrency(
+        imageTasks: ImageTask[],
+        limit: number,
+      ): Promise<PromiseSettledResult<{ index: number; slide: SlideContent }>[]> {
+        const results: PromiseSettledResult<{ index: number; slide: SlideContent }>[] = [];
+        let cursor = 0;
+
+        async function worker(): Promise<void> {
+          while (true) {
+            const idx = cursor++;
+            if (idx >= imageTasks.length) break;
+            const task = imageTasks[idx];
+            try {
+              const slide = await resolveImage(task);
+              results[idx] = { status: "fulfilled", value: { index: task.index, slide } };
+            } catch (err) {
+              results[idx] = { status: "rejected", reason: err };
+            }
           }
         }
 
-        console.log("Slides with images:", slidesWithImages);
-        setSlides(slidesWithImages);
+        const workers: Promise<void>[] = [];
+        for (let i = 0; i < Math.min(limit, imageTasks.length); i++) {
+          workers.push(worker());
+        }
+        await Promise.all(workers);
+        return results;
+      }
+
+      try {
+        let successCount = 0;
+        let failCount = 0;
+        const finalSlides = [...slidesData];
+
+        if (tasks.length > 0) {
+          const results = await runWithConcurrency(tasks, CONCURRENCY_LIMIT);
+
+          for (let i = 0; i < tasks.length; i++) {
+            const result = results[i];
+            if (result?.status === "fulfilled") {
+              successCount++;
+              finalSlides[result.value.index] = result.value.slide;
+            } else {
+              failCount++;
+              const task = tasks[i];
+              console.error("Image generation failed for slide:", result?.reason);
+              // Preserve original query as imageQuery for retry, clear imageUrl
+              finalSlides[task.index] = {
+                ...task.slide,
+                imageUrl: "",
+                imageAlt: task.slide.imageAlt || task.originalQuery,
+                imageQuery: task.originalQuery,
+              };
+            }
+          }
+        }
+
+        setSlides(finalSlides);
 
         const sourceHint =
           imageProvider === "unsplash"

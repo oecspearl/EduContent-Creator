@@ -163,5 +163,5 @@ export const youtubeFullSearchSchema = z.object({
 });
 
 export const aiImageGenerationSchema = z.object({
-  prompt: z.string().min(1),
+  prompt: z.string().min(1).max(2000),
 });
