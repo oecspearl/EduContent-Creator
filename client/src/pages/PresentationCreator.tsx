@@ -1329,38 +1329,40 @@ export default function PresentationCreator() {
                                   data-testid={`textarea-slide-notes-${index}`}
                                 />
                               </div>
-                              {displaySlide.imageUrl && (
-                                <div className="bg-muted rounded overflow-hidden">
-                                  {displaySlide.imageUrl.startsWith('http') || displaySlide.imageUrl.startsWith('data:') ? (
-                                    <img 
-                                      src={displaySlide.imageUrl} 
-                                      alt={displaySlide.imageAlt || "Slide image"}
-                                      className="w-full h-auto max-h-48 object-contain"
+                              <div className="bg-muted rounded overflow-hidden">
+                                {displaySlide.imageUrl && (displaySlide.imageUrl.startsWith('http') || displaySlide.imageUrl.startsWith('data:')) && (
+                                  <img
+                                    src={displaySlide.imageUrl}
+                                    alt={displaySlide.imageAlt || "Slide image"}
+                                    className="w-full h-auto max-h-48 object-contain"
+                                  />
+                                )}
+                                <div className="p-2 space-y-2">
+                                  <div>
+                                    <Label className="text-xs flex items-center gap-1">
+                                      <ImageIcon className="h-3 w-3" />
+                                      Image URL or Search Query
+                                    </Label>
+                                    <Input
+                                      value={displaySlide.imageUrl || ""}
+                                      onChange={(e) => setEditedSlide({ ...displaySlide, imageUrl: e.target.value })}
+                                      placeholder="Paste an image URL (https://...) or enter a search query"
+                                      className="text-xs mt-1"
+                                      data-testid={`input-slide-image-${index}`}
                                     />
-                                  ) : (
-                                    <div className="p-2 text-xs">
-                                      <div className="font-medium mb-1">Image Search Query:</div>
-                                      <Input
-                                        value={displaySlide.imageUrl}
-                                        onChange={(e) => setEditedSlide({ ...displaySlide, imageUrl: e.target.value })}
-                                        placeholder="Image search query"
-                                        className="text-xs"
-                                        data-testid={`input-slide-image-${index}`}
-                                      />
-                                    </div>
-                                  )}
-                                  <div className="p-2 text-xs border-t">
-                                    <Label className="text-xs">Image Alt Text</Label>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Image Description (Alt Text)</Label>
                                     <Input
                                       value={displaySlide.imageAlt || ""}
                                       onChange={(e) => setEditedSlide({ ...displaySlide, imageAlt: e.target.value })}
-                                      placeholder="Alt text for accessibility"
-                                      className="text-xs"
+                                      placeholder="Describe the image for accessibility"
+                                      className="text-xs mt-1"
                                       data-testid={`input-slide-image-alt-${index}`}
                                     />
                                   </div>
                                 </div>
-                              )}
+                              </div>
                             </>
                           ) : (
                             <>
