@@ -14,23 +14,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle, Palette, Zap, Image as ImageIcon, Edit2, Save, X, GripVertical, Download, Settings } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle, Palette, Edit2, Save, X, GripVertical, Download, Settings } from "lucide-react";
 import type { PresentationData, SlideContent, H5pContent } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
 import { ContentMetadataFields } from "@/components/ContentMetadataFields";
-
-declare global {
-  interface Window {
-    puter?: {
-      ai: {
-        txt2img: (prompt: string, options?: { model?: string }) => Promise<HTMLImageElement>;
-      };
-    };
-  }
-}
-
-type ImageProvider = "puterjs" | "unsplash";
 
 export default function PresentationCreator() {
   const { id: contentId } = useParams();
@@ -60,7 +48,6 @@ export default function PresentationCreator() {
   const [curriculumContext, setCurriculumContext] = useState<import("@shared/schema").CurriculumContext | null>(null);
   const [presentationUrl, setPresentationUrl] = useState<string>("");
   const [colorScheme, setColorScheme] = useState<string>("blue");
-  const [imageProvider, setImageProvider] = useState<ImageProvider>("puterjs");
   const [editingSlideId, setEditingSlideId] = useState<string | null>(null);
   const [editedSlide, setEditedSlide] = useState<SlideContent | null>(null);
 
@@ -91,7 +78,6 @@ export default function PresentationCreator() {
       setPresentationId(data.presentationId || "");
       setPresentationUrl(data.presentationUrl || "");
       setColorScheme(data.colorScheme || "blue");
-      setImageProvider(data.imageProvider || "puterjs");
     }
   }, [content]);
 
@@ -126,8 +112,8 @@ export default function PresentationCreator() {
 
   const saveMutation = useMutation({
     mutationFn: async (params: { publish: boolean }) => {
-      // Strip data: URLs (base64 images from Puter.js) to stay under payload limits.
-      // Keep http Unsplash URLs as they're short enough for storage.
+      // Strip data: URLs (base64 images from OpenRouter) to stay under payload limits.
+      // Keep http(s) URLs as they're relatively short for storage.
       const saveSafeSlides = slides.map((slide: any) => {
         if (slide.imageUrl && slide.imageUrl.startsWith('data:')) {
           return { ...slide, imageUrl: slide.imageAlt || '' };
@@ -144,7 +130,6 @@ export default function PresentationCreator() {
         slides: saveSafeSlides,
         generatedDate: generatedDate || new Date().toISOString(),
         colorScheme,
-        imageProvider,
         ...(presentationId && { presentationId }),
         ...(presentationUrl && { presentationUrl }),
       };
@@ -206,7 +191,7 @@ export default function PresentationCreator() {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [title, description, subject, gradeLevel, ageRange, topic, learningOutcomes, customInstructions, slides, colorScheme, imageProvider, isPublic, autosave, isPublished]);
+  }, [title, description, subject, gradeLevel, ageRange, topic, learningOutcomes, customInstructions, slides, colorScheme, isPublic, autosave, isPublished]);
   
   const handleManualSave = () => {
     if (!title) {
@@ -244,160 +229,81 @@ export default function PresentationCreator() {
     },
     onSuccess: async (data) => {
       console.log("Generate mutation success, received data:", data);
-      let slidesData = data.slides || [];
+      const slidesData = data.slides || [];
       console.log("Slides data:", slidesData);
-      
-      // Track successful image generations and provider actually used
+
       let successCount = 0;
       let failCount = 0;
-      let usedPuterJs = false;
-      let usedUnsplash = false;
-      let fallbackOccurred = false;
-      
-      // Generate/fetch images based on selected provider
+      const slidesWithImages: SlideContent[] = [];
+
       try {
-        const slidesWithImages = await Promise.all(
-          slidesData.map(async (slide: SlideContent) => {
-            if (slide.imageUrl && !slide.imageUrl.startsWith('http')) {
-              const originalPrompt = slide.imageUrl;
-              // This is a search query/prompt, fetch/generate actual image
-              try {
-                // Helper: fetch image from Unsplash
-                const fetchUnsplashImage = async (query: string) => {
-                  const imageResponse = await apiRequest("POST", "/api/unsplash/search", {
-                    query,
-                    count: 1,
-                  });
-                  const imageData = await imageResponse.json();
-                  if (imageData.photos && imageData.photos.length > 0) {
-                    return imageData.photos[0];
-                  }
-                  return null;
-                };
+        for (const slide of slidesData) {
+          if (slide.imageUrl && !slide.imageUrl.startsWith("http")) {
+            const originalPrompt = slide.imageUrl;
+            const parts = [
+              "Educational illustration for a classroom presentation.",
+              topic ? `Topic: "${topic}".` : "",
+              slide.title ? `Slide title: "${slide.title}".` : "",
+              slide.imageAlt ? `Scene / accessibility: ${slide.imageAlt}.` : "",
+              `Visual focus: ${originalPrompt}.`,
+              "Style: clear, age-appropriate for students; minimal or no overlaid text unless essential.",
+            ];
+            const fullPrompt = parts.filter(Boolean).join(" ");
 
-                if (imageProvider === "puterjs") {
-                  // Use Puter.js AI image generation with timeout
-                  let puterSucceeded = false;
-                  if (window.puter && window.puter.ai) {
-                    try {
-                      // Race Puter.js against a 15-second timeout to prevent hanging
-                      const imageElement = await Promise.race([
-                        window.puter.ai.txt2img(originalPrompt, { model: "gpt-image-1" }),
-                        new Promise<never>((_, reject) =>
-                          setTimeout(() => reject(new Error("Puter.js timed out")), 15000)
-                        ),
-                      ]);
-
-                      successCount++;
-                      usedPuterJs = true;
-                      puterSucceeded = true;
-                      return {
-                        ...slide,
-                        imageUrl: imageElement.src,
-                        imageAlt: slide.imageAlt || originalPrompt,
-                      };
-                    } catch (puterError) {
-                      console.warn("Puter.js failed, falling back to Unsplash:", puterError);
-                    }
-                  }
-
-                  // Fallback to Unsplash if Puter.js unavailable, timed out, or errored
-                  if (!puterSucceeded) {
-                    fallbackOccurred = true;
-                    try {
-                      const photo = await fetchUnsplashImage(originalPrompt);
-                      if (photo) {
-                        successCount++;
-                        usedUnsplash = true;
-                        return {
-                          ...slide,
-                          imageUrl: photo.urls.regular,
-                          imageAlt: slide.imageAlt || photo.alt_description || photo.description || originalPrompt,
-                        };
-                      }
-                    } catch {
-                      // Unsplash also failed
-                    }
-                    failCount++;
-                    return {
-                      ...slide,
-                      imageUrl: "",
-                      imageAlt: slide.imageAlt || originalPrompt,
-                    };
-                  }
-                } else {
-                  // Use Unsplash stock photos
-                  const imageResponse = await apiRequest("POST", "/api/unsplash/search", {
-                    query: originalPrompt,
-                    count: 1,
-                  });
-                  const imageData = await imageResponse.json();
-                  
-                  if (imageData.photos && imageData.photos.length > 0) {
-                    const photo = imageData.photos[0];
-                    successCount++;
-                    usedUnsplash = true;
-                    return {
-                      ...slide,
-                      imageUrl: photo.urls.regular,
-                      imageAlt: slide.imageAlt || photo.alt_description || photo.description || originalPrompt,
-                    };
-                  } else {
-                    failCount++;
-                    return {
-                      ...slide,
-                      imageUrl: "", // Clear broken query string
-                      imageAlt: slide.imageAlt || originalPrompt,
-                    };
-                  }
-                }
-              } catch (err) {
-                console.error("Failed to fetch/generate image for slide:", err);
-                failCount++;
-                return {
+            try {
+              const imageResponse = await apiRequest("POST", "/api/ai/generate-image", {
+                prompt: fullPrompt,
+              });
+              const body = await imageResponse.json();
+              const imageUrl = body.imageUrl as string | undefined;
+              if (imageUrl) {
+                successCount++;
+                slidesWithImages.push({
                   ...slide,
-                  imageUrl: "", // Clear broken query string
+                  imageUrl,
                   imageAlt: slide.imageAlt || originalPrompt,
-                };
+                });
+                continue;
               }
+            } catch (err) {
+              console.error("OpenRouter image failed for slide:", err);
             }
-            return slide;
-          })
-        );
-        
+            failCount++;
+            slidesWithImages.push({
+              ...slide,
+              imageUrl: "",
+              imageAlt: slide.imageAlt || originalPrompt,
+            });
+          } else {
+            slidesWithImages.push(slide);
+          }
+        }
+
         console.log("Slides with images:", slidesWithImages);
         setSlides(slidesWithImages);
-        
-        // Provide accurate feedback based on what actually happened
-        let toastMessage = "";
-        if (fallbackOccurred && usedUnsplash && usedPuterJs) {
-          toastMessage = `Generated with mixed sources. ${failCount > 0 ? `${failCount} images failed to load.` : ""}`;
-        } else if (fallbackOccurred && usedUnsplash && !usedPuterJs) {
-          toastMessage = `Puter.js unavailable. Used Unsplash stock photos instead. ${failCount > 0 ? `${failCount} images failed to load.` : ""}`;
-        } else if (usedPuterJs) {
-          toastMessage = `Generated with AI images. ${failCount > 0 ? `${failCount} images failed to load.` : ""}`;
-        } else if (usedUnsplash) {
-          toastMessage = `Generated with stock photos. ${failCount > 0 ? `${failCount} images failed to load.` : ""}`;
-        } else {
-          toastMessage = "Slides generated without images.";
-        }
-        
-        toast({ 
-          title: successCount > 0 ? "Generated with Images!" : "Generated!", 
+
+        const toastMessage =
+          successCount > 0
+            ? `OpenRouter AI images: ${successCount} ok${failCount > 0 ? `, ${failCount} failed` : ""}.`
+            : failCount > 0
+              ? "Slide text generated, but no images were produced. Check OPENROUTER_API_KEY and OPENROUTER_IMAGE_MODEL."
+              : "Slides generated (no image prompts in deck).";
+
+        toast({
+          title: successCount > 0 ? "Generated with images" : "Generated",
           description: toastMessage,
           variant: failCount > 0 && successCount === 0 ? "destructive" : "default",
         });
       } catch (err) {
-        // Fallback to slides without images if complete image fetching failure
-        console.error("Complete image generation/fetch failure:", err);
+        console.error("Presentation image pass failed:", err);
         setSlides(slidesData);
-        toast({ 
-          title: "Image Generation Failed", 
-          description: "Slides content generated but all images failed to load. Both AI generation and stock photos unavailable.",
+        toast({
+          title: "Image generation failed",
+          description: "Slides were created but the image step failed. Check server logs and OpenRouter configuration.",
           variant: "destructive",
         });
       }
-      
+
       setGeneratedDate(data.generatedDate);
     },
     onError: (error: any) => {
@@ -884,30 +790,13 @@ export default function PresentationCreator() {
                 <p className="text-xs text-muted-foreground mt-1">Between 5 and 30 slides</p>
               </div>
               <div>
-                <Label htmlFor="imageProvider">Image Source</Label>
-                <Select value={imageProvider} onValueChange={(value) => setImageProvider(value as ImageProvider)}>
-                  <SelectTrigger id="imageProvider" data-testid="select-image-provider">
-                    <SelectValue placeholder="Select image source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="puterjs" data-testid="select-image-provider-puterjs">
-                      <div className="flex items-center gap-2">
-                        <Zap className="h-4 w-4" />
-                        <span>AI Generated (Free, Recommended)</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="unsplash" data-testid="select-image-provider-unsplash">
-                      <div className="flex items-center gap-2">
-                        <ImageIcon className="h-4 w-4" />
-                        <span>Stock Photos (Unsplash)</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {imageProvider === "puterjs" 
-                    ? "Free AI-generated images using Puter.js - no API key required" 
-                    : "Stock photos from Unsplash - requires internet connection"}
+                <Label>Slide images</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  After the outline is generated, images are created with{" "}
+                  <span className="font-medium text-foreground">OpenRouter</span> using{" "}
+                  <code className="text-xs bg-muted px-1 rounded">OPENROUTER_API_KEY</code> on the server.
+                  Optional: <code className="text-xs bg-muted px-1 rounded">OPENROUTER_IMAGE_MODEL</code> (default{" "}
+                  <code className="text-xs bg-muted px-1 rounded">google/gemini-2.5-flash-image</code>).
                 </p>
               </div>
               <div>

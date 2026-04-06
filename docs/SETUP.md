@@ -34,9 +34,18 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 # Get a free database from Neon: https://neon.tech
 DATABASE_URL=postgresql://user:password@host.neon.tech/dbname?sslmode=require
 
-# OpenAI API - Optional, for AI content generation
+# OpenAI API - Optional, for AI text content generation (quizzes, slide copy, etc.)
 # Get your API key from: https://platform.openai.com/api-keys
 OPENAI_API_KEY=sk-your-openai-api-key
+
+# OpenRouter - Required for AI image generation (presentations, image generator, book image pages)
+# Get your API key from: https://openrouter.ai/keys
+OPENROUTER_API_KEY=sk-or-v1-your-openrouter-key
+# Optional: image model with output_modalities including "image" (see OpenRouter docs)
+# OPENROUTER_IMAGE_MODEL=google/gemini-2.5-flash-image
+# Optional: OpenRouter app attribution headers
+# OPENROUTER_HTTP_REFERER=https://your-site.example
+# OPENROUTER_APP_TITLE=EduContent Creator
 
 # Google OAuth - Optional, for Google sign-in and Google Slides/Classroom
 # See OAUTH_SETUP_GUIDE.md for detailed setup

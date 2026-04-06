@@ -24,9 +24,12 @@ export function ImagePageEditor({ imageData, onSave }: ImagePageEditorProps) {
   const [urlInput, setUrlInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showGeneratorDialog, setShowGeneratorDialog] = useState(false);
-  const [imageSource, setImageSource] = useState<"upload" | "url" | "puterjs" | "dalle">(
-    imageData?.source || "url"
-  );
+  const [imageSource, setImageSource] = useState<"upload" | "url" | "openrouter">(() => {
+    const s = imageData?.source;
+    if (s === "puterjs" || s === "dalle" || s === "openrouter") return "openrouter";
+    if (s === "upload") return "upload";
+    return "url";
+  });
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,7 +87,7 @@ export function ImagePageEditor({ imageData, onSave }: ImagePageEditorProps) {
 
   const handleImageGenerated = (generatedUrl: string) => {
     setImageUrl(generatedUrl);
-    setImageSource("dalle"); // Default to DALL-E, but could be puterjs
+    setImageSource("openrouter");
     setShowGeneratorDialog(false);
   };
 
@@ -179,7 +182,7 @@ export function ImagePageEditor({ imageData, onSave }: ImagePageEditorProps) {
               Generate Image
             </Button>
             <p className="text-sm text-muted-foreground mt-2">
-              Use Puter.js or DALL-E to generate an image from a text description
+              Generate an image from a text description using OpenRouter on the server
             </p>
           </div>
         </TabsContent>
@@ -205,7 +208,12 @@ export function ImagePageEditor({ imageData, onSave }: ImagePageEditorProps) {
                 />
                 {imageSource && (
                   <p className="text-xs text-muted-foreground">
-                    Source: {imageSource === "upload" ? "Uploaded" : imageSource === "url" ? "URL" : imageSource === "puterjs" ? "Puter.js" : "DALL-E"}
+                    Source:{" "}
+                    {imageSource === "upload"
+                      ? "Uploaded"
+                      : imageSource === "url"
+                        ? "URL"
+                        : "AI (OpenRouter)"}
                   </p>
                 )}
               </div>

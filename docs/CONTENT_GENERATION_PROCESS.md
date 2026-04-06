@@ -218,9 +218,8 @@ PresentationCreator
   │                                      │
   ◄─ { slides: SlideContent[] } ◄────────┘
   │
-  ├─ For each slide with imageUrl:
-  │   ├─ Try Puter.js AI image generation
-  │   └─ Fallback: Unsplash search
+  ├─ For each slide with imageUrl (prompt/query, not http):
+  │   └─ POST /api/ai/generate-image → OpenRouter (chat + image modalities)
   │
   └─ Load slides into editor
 ```

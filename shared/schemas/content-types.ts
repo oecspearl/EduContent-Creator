@@ -167,7 +167,8 @@ export type ImagePageData = {
   imageUrl: string;
   imageAlt?: string;
   instructions?: string;
-  source?: "upload" | "url" | "puterjs" | "dalle";
+  /** AI-generated pages use `openrouter`. `puterjs` / `dalle` are legacy stored values. */
+  source?: "upload" | "url" | "openrouter" | "puterjs" | "dalle";
 };
 
 export type BookPage = {
@@ -261,5 +262,4 @@ export type PresentationData = {
   presentationUrl?: string;
   generatedDate: string;
   colorScheme?: string;
-  imageProvider?: "puterjs" | "unsplash";
 };

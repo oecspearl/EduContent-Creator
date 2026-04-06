@@ -26,6 +26,18 @@ import { withTimeoutMiddleware } from "../middleware/timeout";
 import { aiGenerationRateLimit, imageSearchRateLimit, presentationCreationRateLimit } from "../middleware/rate-limit";
 import { asyncHandler } from "../utils/async-handler";
 import type { RouteContext } from "./types";
+import { generateImageWithOpenRouter } from "../openrouter-image";
+
+function requireOpenRouterKey(res: any): boolean {
+  if (!process.env.OPENROUTER_API_KEY?.trim()) {
+    res.status(500).json({
+      message:
+        "OpenRouter API key is not configured. Set OPENROUTER_API_KEY for AI image generation (presentations and image tools).",
+    });
+    return false;
+  }
+  return true;
+}
 
 function requireOpenAIKey(res: any): boolean {
   if (!process.env.OPENAI_API_KEY) {
@@ -293,24 +305,16 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   }));
 
-  // AI image generation (teachers only)
+  // AI image generation via OpenRouter (teachers only)
   app.post("/api/ai/generate-image", requireTeacher, aiGenerationRateLimit, asyncHandler(async (req, res) => {
     try {
       const parsed = aiImageGenerationSchema.parse(req.body);
-      if (!requireOpenAIKey(res)) return;
+      if (!requireOpenRouterKey(res)) return;
 
-      const openai = getOpenAIClient();
-      const response = await openai.images.generate({
-        model: "dall-e-3", prompt: parsed.prompt, n: 1, size: "1024x1024", quality: "standard",
-      });
-
-      if (!response.data || response.data.length === 0) throw new Error("No image data returned from OpenAI");
-      const imageUrl = response.data[0]?.url;
-      if (!imageUrl) throw new Error("No image URL returned from OpenAI");
-
-      res.json({ imageUrl, prompt: parsed.prompt, revisedPrompt: response.data[0]?.revised_prompt });
+      const imageUrl = await generateImageWithOpenRouter(parsed.prompt.trim());
+      res.json({ imageUrl, prompt: parsed.prompt });
     } catch (error: any) {
-      console.error("OpenAI image generation error:", error);
+      console.error("OpenRouter image generation error:", error);
       if (error.name === "ZodError") return res.status(400).json({ message: "Invalid request data", errors: error.errors });
       throw error;
     }
