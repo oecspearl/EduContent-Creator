@@ -1,0 +1,24 @@
+[
+  {
+    "id": "e8a89ded-ed5a-451f-96d2-e1639d88b6a8",
+    "strand_id": "3969d14e-ddc4-47c6-a8ba-7e90413f1d55",
+    "code": "NUM.1.1",
+    "description": "Count objects to 20",
+    "grade_expectations": "Students will accurately count concrete objects up to 20",
+    "sort_order": 1,
+    "is_active": true,
+    "created_at": "2025-07-21T02:08:57.662073+00:00",
+    "updated_at": "2025-07-21T02:08:57.662073+00:00"
+  },
+  {
+    "id": "91fc6edf-4944-4f93-b255-f2c957cb7905",
+    "strand_id": "958e1ee1-9e38-445f-9360-a2c27e7df97c",
+    "code": "READ.1.1",
+    "description": "Recognize high-frequency words",
+    "grade_expectations": "Students will recognize 50 high-frequency words by sight",
+    "sort_order": 1,
+    "is_active": true,
+    "created_at": "2025-07-21T02:08:57.662073+00:00",
+    "updated_at": "2025-07-21T02:08:57.662073+00:00"
+  }
+]

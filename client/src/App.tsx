@@ -34,6 +34,7 @@ import StudentHelpPage from "@/pages/StudentHelpPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import ClassesPage from "@/pages/ClassesPage";
 import GradebookPage from "@/pages/GradebookPage";
+import StudentGradebookPage from "@/pages/StudentGradebookPage";
 import LearningPathsPage from "@/pages/LearningPathsPage";
 import StudentLearningPaths from "@/pages/StudentLearningPaths";
 import MessagesPage from "@/pages/MessagesPage";
@@ -209,6 +210,9 @@ function Router() {
       {/* Accessible to all authenticated users */}
       <Route path="/my-learning-paths">
         <ProtectedRoute component={StudentLearningPaths} />
+      </Route>
+      <Route path="/my-grades">
+        <ProtectedRoute component={StudentGradebookPage} />
       </Route>
       <Route path="/messages">
         <ProtectedRoute component={MessagesPage} />

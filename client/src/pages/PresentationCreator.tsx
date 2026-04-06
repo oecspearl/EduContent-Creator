@@ -57,6 +57,7 @@ export default function PresentationCreator() {
   const [autosave, setAutosave] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [presentationId, setPresentationId] = useState<string>("");
+  const [curriculumContext, setCurriculumContext] = useState<import("@shared/schema").CurriculumContext | null>(null);
   const [presentationUrl, setPresentationUrl] = useState<string>("");
   const [colorScheme, setColorScheme] = useState<string>("blue");
   const [imageProvider, setImageProvider] = useState<ImageProvider>("puterjs");
@@ -237,6 +238,7 @@ export default function PresentationCreator() {
         learningOutcomes: learningOutcomes.filter(o => o.trim()),
         numberOfSlides,
         ...(customInstructions && { customInstructions }),
+        ...(curriculumContext && { curriculumContext }),
       });
       return await response.json();
     },
@@ -773,6 +775,8 @@ export default function PresentationCreator() {
                 onSubjectChange={setSubject}
                 onGradeLevelChange={setGradeLevel}
                 onAgeRangeChange={setAgeRange}
+                curriculumContext={curriculumContext}
+                onCurriculumChange={setCurriculumContext}
               />
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div className="space-y-0.5">

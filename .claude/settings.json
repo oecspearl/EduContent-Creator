@@ -32,7 +32,24 @@
       "Read(//Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/client/src/pages/**)",
       "Bash(find /Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/client/src -name context* -o -name *context*)",
       "Bash(ls /Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/client/vite.config.*)",
-      "Bash(find /Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main -type f -name *ErrorBoundary* -o -name *error.boundary*)"
+      "Bash(find /Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main -type f -name *ErrorBoundary* -o -name *error.boundary*)",
+      "Bash(node migrations/generate_curriculum_data.js)",
+      "Bash(node migrations/generate_curriculum_data.cjs)",
+      "Bash(sed -n '12,115p' add_curriculum_data.sql)",
+      "Bash(sed -n '117,575p' add_curriculum_data.sql)",
+      "Bash(sed -n '577,5940p' add_curriculum_data.sql)",
+      "Bash(sed -n '5942,6638p' add_curriculum_data.sql)",
+      "Bash(sed -n '6640,7273p' add_curriculum_data.sql)",
+      "Bash(du -h *.sql)",
+      "Bash(sed -n '1,1560p' 11_legacy_scos.sql)",
+      "Bash(sed -n '1561,$p' 11_legacy_scos.sql)",
+      "Bash(sed -n '1,1270p' 08_learning_standards.sql)",
+      "Bash(sed -n '1271,$p' 08_learning_standards.sql)",
+      "Bash(ls -lhS *.sql)",
+      "Bash(sed -i '' -E \"s/'\\\\\\), NULL, \\([0-9]+\\),/'\\), '', \\\\1,/g\" add_curriculum_data.sql)",
+      "Bash(sed -n '7275,7862p' add_curriculum_data.sql)",
+      "Bash(sed -n '7942,9217p' ../add_curriculum_data.sql)",
+      "Bash(sed -n '9218,10477p' ../add_curriculum_data.sql)"
     ],
     "additionalDirectories": [
       "/Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/server"

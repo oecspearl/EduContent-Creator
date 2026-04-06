@@ -87,35 +87,34 @@ export class AnalyticsRepository {
   async getContentAnalytics(contentId: string, content: any): Promise<any> {
     if (!content) return null;
 
-    const progressStats = await db
-      .select({
+    // Run all 4 queries in parallel instead of sequentially
+    const [progressStats, quizStats, interactionStats, recentProgress] = await Promise.all([
+      db.select({
         uniqueViewers: count(learnerProgress.userId),
         avgCompletion: avg(learnerProgress.completionPercentage),
         totalCompleted: sum(sql`CASE WHEN ${learnerProgress.completionPercentage} >= 100 THEN 1 ELSE 0 END`),
       })
-      .from(learnerProgress)
-      .where(eq(learnerProgress.contentId, contentId));
+        .from(learnerProgress)
+        .where(eq(learnerProgress.contentId, contentId)),
 
-    const quizStats = await db
-      .select({
+      db.select({
         totalAttempts: count(quizAttempts.id),
         avgScore: avg(quizAttempts.score),
         avgPercentage: sql<number>`AVG(CAST(${quizAttempts.score} AS FLOAT) / NULLIF(${quizAttempts.totalQuestions}, 0) * 100)`,
       })
-      .from(quizAttempts)
-      .where(eq(quizAttempts.contentId, contentId));
+        .from(quizAttempts)
+        .where(eq(quizAttempts.contentId, contentId)),
 
-    const interactionStats = await db
-      .select({ totalInteractions: count(interactionEvents.id) })
-      .from(interactionEvents)
-      .where(eq(interactionEvents.contentId, contentId));
+      db.select({ totalInteractions: count(interactionEvents.id) })
+        .from(interactionEvents)
+        .where(eq(interactionEvents.contentId, contentId)),
 
-    const recentProgress = await db
-      .select()
-      .from(learnerProgress)
-      .where(eq(learnerProgress.contentId, contentId))
-      .orderBy(desc(learnerProgress.lastAccessedAt))
-      .limit(10);
+      db.select()
+        .from(learnerProgress)
+        .where(eq(learnerProgress.contentId, contentId))
+        .orderBy(desc(learnerProgress.lastAccessedAt))
+        .limit(10),
+    ]);
 
     return {
       content,
@@ -133,27 +132,48 @@ export class AnalyticsRepository {
   }
 
   async getUserContentAnalytics(userContent: any[]): Promise<any[]> {
-    const analyticsPromises = userContent.map(async (content) => {
-      const progressStats = await db
-        .select({
-          uniqueViewers: count(learnerProgress.userId),
-          avgCompletion: avg(learnerProgress.completionPercentage),
-        })
+    if (userContent.length === 0) return [];
+
+    const contentIds = userContent.map(c => c.id);
+
+    // 3 batch queries instead of 3 × N individual queries
+    const [allProgressStats, allQuizStats, allInteractionStats] = await Promise.all([
+      db.select({
+        contentId: learnerProgress.contentId,
+        uniqueViewers: count(learnerProgress.userId),
+        avgCompletion: avg(learnerProgress.completionPercentage),
+      })
         .from(learnerProgress)
-        .where(eq(learnerProgress.contentId, content.id));
+        .where(inArray(learnerProgress.contentId, contentIds))
+        .groupBy(learnerProgress.contentId),
 
-      const quizStats = await db
-        .select({
-          totalAttempts: count(quizAttempts.id),
-          avgScore: avg(quizAttempts.score),
-        })
+      db.select({
+        contentId: quizAttempts.contentId,
+        totalAttempts: count(quizAttempts.id),
+        avgScore: avg(quizAttempts.score),
+      })
         .from(quizAttempts)
-        .where(eq(quizAttempts.contentId, content.id));
+        .where(inArray(quizAttempts.contentId, contentIds))
+        .groupBy(quizAttempts.contentId),
 
-      const interactionStats = await db
-        .select({ totalInteractions: count(interactionEvents.id) })
+      db.select({
+        contentId: interactionEvents.contentId,
+        totalInteractions: count(interactionEvents.id),
+      })
         .from(interactionEvents)
-        .where(eq(interactionEvents.contentId, content.id));
+        .where(inArray(interactionEvents.contentId, contentIds))
+        .groupBy(interactionEvents.contentId),
+    ]);
+
+    // Build lookup maps
+    const progressMap = new Map(allProgressStats.map(s => [s.contentId, s]));
+    const quizMap = new Map(allQuizStats.map(s => [s.contentId, s]));
+    const interactionMap = new Map(allInteractionStats.map(s => [s.contentId, s]));
+
+    return userContent.map(content => {
+      const ps = progressMap.get(content.id);
+      const qs = quizMap.get(content.id);
+      const is = interactionMap.get(content.id);
 
       return {
         contentId: content.id,
@@ -161,15 +181,13 @@ export class AnalyticsRepository {
         type: content.type,
         isPublished: content.isPublished,
         createdAt: content.createdAt,
-        uniqueViewers: Number(progressStats[0]?.uniqueViewers || 0),
-        avgCompletion: Number(progressStats[0]?.avgCompletion || 0),
-        totalAttempts: Number(quizStats[0]?.totalAttempts || 0),
-        avgScore: Number(quizStats[0]?.avgScore || 0),
-        totalInteractions: Number(interactionStats[0]?.totalInteractions || 0),
+        uniqueViewers: Number(ps?.uniqueViewers || 0),
+        avgCompletion: Number(ps?.avgCompletion || 0),
+        totalAttempts: Number(qs?.totalAttempts || 0),
+        avgScore: Number(qs?.avgScore || 0),
+        totalInteractions: Number(is?.totalInteractions || 0),
       };
     });
-
-    return await Promise.all(analyticsPromises);
   }
 
   async getContentLearners(contentId: string): Promise<any[]> {

@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useBreadcrumbs } from "@/hooks/useBreadcrumbs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { H5pContent, ContentType } from "@shared/schema";
+import type { H5pContent, ContentType, CurriculumContext } from "@shared/schema";
 
 /** Route path segment for each content type (used for navigation after first save). */
 const ROUTE_SEGMENTS: Record<ContentType, string> = {
@@ -63,6 +63,7 @@ export function useContentEditor<TData>(options: UseContentEditorOptions<TData>)
   const [isPublic, setIsPublic] = useState(false);
   const [autosave, setAutosave] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [curriculumContext, setCurriculumContext] = useState<CurriculumContext | null>(null);
 
   // Track whether populateFromContent has already run for this content
   const populatedRef = useRef<string | null>(null);
@@ -193,6 +194,7 @@ export function useContentEditor<TData>(options: UseContentEditorOptions<TData>)
     isPublic, setIsPublicWithAutoPublish,
     autosave, setAutosave,
     isSaving,
+    curriculumContext, setCurriculumContext,
 
     // Actions
     handleManualSave,

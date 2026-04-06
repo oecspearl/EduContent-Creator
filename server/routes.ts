@@ -22,6 +22,7 @@ import { registerLearningPathRoutes } from "./routes/learning-paths";
 import { registerStudentGroupRoutes } from "./routes/student-groups";
 import { registerParentViewRoutes } from "./routes/parent-view";
 import { registerRubricRoutes } from "./routes/rubrics";
+import { registerCurriculumRoutes } from "./routes/curriculum";
 import type { AuthMiddleware } from "./routes/types";
 
 // Type augmentation for session
@@ -148,6 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerStudentGroupRoutes(ctx);
   registerParentViewRoutes(ctx);
   registerRubricRoutes(ctx);
+  registerCurriculumRoutes(ctx);
 
   const httpServer = createServer(app);
   setupWebSocket(httpServer);

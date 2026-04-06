@@ -8,17 +8,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Sparkles, Loader2, Plus, Trash2 } from "lucide-react";
-import type { ContentType } from "@shared/schema";
+import { Sparkles, Loader2, Plus, Trash2, BookOpen } from "lucide-react";
+import type { ContentType, CurriculumContext } from "@shared/schema";
 
 type AIGenerationModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   contentType: ContentType;
   onGenerated: (data: any) => void;
+  curriculumContext?: CurriculumContext | null;
 };
 
-export function AIGenerationModal({ open, onOpenChange, contentType, onGenerated }: AIGenerationModalProps) {
+export function AIGenerationModal({ open, onOpenChange, contentType, onGenerated, curriculumContext }: AIGenerationModalProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [formData, setFormData] = useState({
@@ -77,6 +78,7 @@ export function AIGenerationModal({ open, onOpenChange, contentType, onGenerated
       const response = await apiRequest("POST", "/api/ai/generate", {
         contentType,
         ...formData,
+        ...(curriculumContext ? { curriculumContext } : {}),
       });
 
       const data = await response.json();
@@ -129,6 +131,23 @@ export function AIGenerationModal({ open, onOpenChange, contentType, onGenerated
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {curriculumContext && (
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+              <BookOpen className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <div className="text-xs space-y-1">
+                <p className="font-medium text-primary">Curriculum-Aligned Generation</p>
+                <p className="text-muted-foreground">
+                  <strong>ELO:</strong> {curriculumContext.eloText}
+                </p>
+                {curriculumContext.scoTexts && curriculumContext.scoTexts.length > 0 && (
+                  <p className="text-muted-foreground">
+                    <strong>SCOs:</strong> {curriculumContext.scoTexts.join("; ")}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="topic">Topic *</Label>
             <Input

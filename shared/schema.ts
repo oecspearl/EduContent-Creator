@@ -44,6 +44,7 @@ export {
   insertClassSchema,
   insertClassEnrollmentSchema,
   insertContentAssignmentSchema,
+  curriculumContextSchema,
   presentationGenerationSchema,
   aiGenerationSchema,
   videoFinderPedagogySchema,
@@ -95,8 +96,9 @@ import type {
   insertProfileSchema, insertH5pContentSchema, insertContentShareSchema,
   insertLearnerProgressSchema, insertQuizAttemptSchema, insertInteractionEventSchema,
   insertChatMessageSchema, insertClassSchema, insertClassEnrollmentSchema,
-  insertContentAssignmentSchema, presentationGenerationSchema, aiGenerationSchema,
-  videoFinderPedagogySchema, interactiveVideoGenerationSchema, chatRequestSchema,
+  insertContentAssignmentSchema, curriculumContextSchema, presentationGenerationSchema,
+  aiGenerationSchema, videoFinderPedagogySchema, interactiveVideoGenerationSchema,
+  chatRequestSchema,
 } from "./schemas/api-schemas";
 
 export type Profile = typeof profiles.$inferSelect;
@@ -120,6 +122,7 @@ export type InsertClassEnrollment = z.infer<typeof insertClassEnrollmentSchema>;
 export type ContentAssignment = typeof contentAssignments.$inferSelect;
 export type InsertContentAssignment = z.infer<typeof insertContentAssignmentSchema>;
 
+export type CurriculumContext = z.infer<typeof curriculumContextSchema>;
 export type PresentationGenerationRequest = z.infer<typeof presentationGenerationSchema>;
 export type AIGenerationRequest = z.infer<typeof aiGenerationSchema>;
 export type VideoFinderPedagogyRequest = z.infer<typeof videoFinderPedagogySchema>;

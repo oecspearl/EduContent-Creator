@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { AIGenerationRequest, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, PresentationGenerationRequest, SlideContent } from "@shared/schema";
+import type { AIGenerationRequest, CurriculumContext, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, PresentationGenerationRequest, SlideContent } from "@shared/schema";
 import { callOpenAIJSON } from "./utils/openai-helper";
 
 // This is using OpenAI's API, which points to OpenAI's API servers and requires your own API key.
@@ -22,6 +22,27 @@ export function getOpenAIClient() {
 const EDUCATOR_SYSTEM = (role: string) =>
   `You are an expert educator creating ${role}. Always respond with valid JSON.`;
 
+function buildCurriculumBlock(ctx?: CurriculumContext): string {
+  if (!ctx) return "";
+  const lines = [
+    "\n\nOECS HARMONISED PRIMARY CURRICULUM ALIGNMENT:",
+    `- Subject: ${ctx.subject}`,
+    `- Grade: ${ctx.grade}`,
+    `- Strand: ${ctx.strand}`,
+    `- Essential Learning Outcome (ELO): ${ctx.eloText}`,
+  ];
+  if (ctx.scoTexts && ctx.scoTexts.length > 0) {
+    lines.push("- Specific Curriculum Outcomes (SCOs):");
+    ctx.scoTexts.forEach((sco, i) => lines.push(`  ${i + 1}. ${sco}`));
+  }
+  lines.push(
+    "",
+    "IMPORTANT: All generated content MUST directly align with the curriculum outcomes listed above.",
+    "Ensure questions, activities, and explanations target the specific skills and knowledge described in the ELO and SCOs.",
+  );
+  return lines.join("\n");
+}
+
 export async function generateQuizQuestions(request: AIGenerationRequest): Promise<QuizQuestion[]> {
   const numberOfOptions = request.numberOfOptions || 4;
   const optionPlaceholders = Array.from({ length: numberOfOptions }, (_, i) => `"option${i + 1}"`).join(", ");
@@ -32,7 +53,7 @@ Requirements:
 - Mix of multiple-choice (with ${numberOfOptions} options), true/false, and fill-in-the-blank questions
 - Each question should have a correct answer and an explanation
 - Make questions educational and engaging
-${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
+${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}${buildCurriculumBlock(request.curriculumContext)}
 
 Respond in JSON format with an array of questions following this structure:
 {
@@ -62,7 +83,7 @@ Requirements:
 - Back: definition, explanation, or answer
 - Include a category for each card
 - Make them educational and memorable
-${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
+${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}${buildCurriculumBlock(request.curriculumContext)}
 
 Respond in JSON format:
 {
@@ -147,7 +168,7 @@ CONTEXT:
 - Topic: "${request.topic}"
 - Difficulty Level: ${request.difficulty}${request.gradeLevel ? `\n- Grade Level: ${request.gradeLevel}` : ""}
 - Video Duration: ${Math.floor(totalSeconds / 60)} minutes ${totalSeconds % 60} seconds${timestampGuidance}
-${request.additionalContext ? `\n- Additional Requirements: ${request.additionalContext}` : ""}${videoInfo}
+${request.additionalContext ? `\n- Additional Requirements: ${request.additionalContext}` : ""}${buildCurriculumBlock(request.curriculumContext)}${videoInfo}
 
 HOTSPOT REQUIREMENTS:
 1. **Type Distribution**:
@@ -272,7 +293,7 @@ Requirements:
 - Include x,y coordinates (as percentages 0-100) that would make sense for a typical educational diagram
 - Provide title and detailed description
 - Make them educational and informative
-${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
+${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}${buildCurriculumBlock(request.curriculumContext)}
 
 Respond in JSON format:
 {
@@ -301,7 +322,7 @@ Requirements:
 - Create ${request.numberOfItems} draggable items that belong to these zones
 - Each item should have a clear association with one zone
 - Make it educational and intuitive
-${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
+${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}${buildCurriculumBlock(request.curriculumContext)}
 
 Respond in JSON format:
 {
@@ -333,7 +354,7 @@ Requirements:
 - For each blank, provide correct answers (including acceptable variations)
 - Optionally include hints
 - Make it educational and clear
-${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
+${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}${buildCurriculumBlock(request.curriculumContext)}
 
 Respond in JSON format:
 {
@@ -360,7 +381,7 @@ Requirements:
 - Each pair should have two matching items (term-definition, question-answer, etc.)
 - Make the matches clear and educational
 - Content should be concise to fit on cards
-${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
+${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}${buildCurriculumBlock(request.curriculumContext)}
 
 Respond in JSON format:
 {
@@ -394,7 +415,7 @@ Requirements:
 - Progress logically from page to page
 - Make content engaging and educational
 - Keep each page focused on one concept
-${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}
+${request.additionalContext ? `\nAdditional context: ${request.additionalContext}` : ""}${buildCurriculumBlock(request.curriculumContext)}
 
 Respond in JSON format:
 {
@@ -468,12 +489,14 @@ export async function generatePresentation(request: PresentationGenerationReques
     ? `\n\nAdditional Teacher Instructions:\n${request.customInstructions}\n\nPlease carefully follow these custom instructions from the teacher when creating the presentation.`
     : '';
 
+  const curriculumSection = buildCurriculumBlock(request.curriculumContext);
+
   const contentSlideCount = request.numberOfSlides - 6; // title + outcomes + questions + reflection + summary + closing
 
   const prompt = `Create a pedagogically sound, visually varied presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
 
 Learning Outcomes:
-${learningOutcomesText}${customInstructionsSection}
+${learningOutcomesText}${customInstructionsSection}${curriculumSection}
 
 Create exactly ${request.numberOfSlides} slides using a MIX of these slide types for visual variety:
 

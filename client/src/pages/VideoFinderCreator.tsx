@@ -33,6 +33,7 @@ export default function VideoFinderCreator() {
   const [gradeLevel, setGradeLevel] = useState("");
   const [ageRange, setAgeRange] = useState("");
   const [videoCount, setVideoCount] = useState(10);
+  const [curriculumContext, setCurriculumContext] = useState<import("@shared/schema").CurriculumContext | null>(null);
   const [searchResults, setSearchResults] = useState<VideoResult[]>([]);
   const [selectedVideoIds, setSelectedVideoIds] = useState<string[]>([]);
   const [searchDate, setSearchDate] = useState("");
@@ -431,6 +432,8 @@ export default function VideoFinderCreator() {
                   onSubjectChange={setSubject}
                   onGradeLevelChange={setGradeLevel}
                   onAgeRangeChange={setAgeRange}
+                  curriculumContext={curriculumContext}
+                  onCurriculumChange={setCurriculumContext}
                 />
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="space-y-0.5">

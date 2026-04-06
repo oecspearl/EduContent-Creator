@@ -261,6 +261,8 @@ export default function InteractiveVideoCreator() {
                 onSubjectChange={editor.setSubject}
                 onGradeLevelChange={editor.setGradeLevel}
                 onAgeRangeChange={editor.setAgeRange}
+                curriculumContext={editor.curriculumContext}
+                onCurriculumChange={editor.setCurriculumContext}
               />
               <div className="space-y-2">
                 <Label htmlFor="videoUrl">YouTube Video URL *</Label>
@@ -743,6 +745,7 @@ export default function InteractiveVideoCreator() {
         onOpenChange={setShowAIModal}
         contentType="interactive-video"
         onGenerated={handleAIGenerated}
+        curriculumContext={editor.curriculumContext}
       />
       <InteractiveVideoAIGenerator
         open={showEnhancedAIModal}

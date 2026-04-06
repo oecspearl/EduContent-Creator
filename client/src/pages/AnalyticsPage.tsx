@@ -86,28 +86,38 @@ export default function AnalyticsPage() {
   const [analyticsTab, setAnalyticsTab] = useState<"overview" | "questions" | "performance" | "distribution">("overview");
   const breadcrumbs = useBreadcrumbs();
 
-  const { data: analytics, isLoading } = useQuery<any[]>({
+  const { data: analytics, isLoading, isError } = useQuery<any[]>({
     queryKey: ["/api/analytics/overview"],
+    staleTime: 30_000, // cache for 30s to avoid re-fetching on every tab switch
+    retry: 2,          // retry twice on failure before showing error
   });
 
   const { data: learners, isLoading: isLoadingLearners } = useQuery<any[]>({
     queryKey: ["/api/analytics/content", selectedContentId, "learners"],
     enabled: !!selectedContentId,
+    staleTime: 30_000,
+    retry: 2,
   });
 
   const { data: questionAnalytics, isLoading: isLoadingQuestions } = useQuery<any>({
     queryKey: ["/api/analytics/content", selectedContentId, "questions"],
     enabled: !!selectedContentId && analyticsTab === "questions",
+    staleTime: 30_000,
+    retry: 2,
   });
 
   const { data: performanceData, isLoading: isLoadingPerformance } = useQuery<any>({
     queryKey: ["/api/analytics/content", selectedContentId, "performance"],
     enabled: !!selectedContentId && analyticsTab === "performance",
+    staleTime: 30_000,
+    retry: 2,
   });
 
   const { data: scoreDistribution, isLoading: isLoadingDistribution } = useQuery<any>({
     queryKey: ["/api/analytics/content", selectedContentId, "score-distribution"],
     enabled: !!selectedContentId && analyticsTab === "distribution",
+    staleTime: 30_000,
+    retry: 2,
   });
 
   const handleLogout = async () => {
@@ -227,6 +237,19 @@ export default function AnalyticsPage() {
             </div>
             <Skeleton className="h-96 rounded-lg" />
           </div>
+        ) : isError ? (
+          <Card className="border-destructive/30">
+            <CardContent className="py-12 text-center">
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-3" />
+              <p className="text-lg font-medium">Failed to load analytics</p>
+              <p className="text-sm text-muted-foreground mt-1 mb-4">
+                There was a problem fetching your analytics data. This can happen during high traffic or database maintenance.
+              </p>
+              <Button variant="outline" onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <>
             {/* Summary Cards */}

@@ -1,0 +1,3110 @@
+[
+  {
+    "id": "MATH-G1-NS-ELO1",
+    "strand_id": "MATH-G1-NS",
+    "elo_text": "Using whole numbers - learners will meaningfully sequence and use a range of counting and grouping strategies.",
+    "elo_order": 1,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-NS-ELO2",
+    "strand_id": "MATH-G1-NS",
+    "elo_text": "Learners will recognise, represent and partition whole numbers up to 20",
+    "elo_order": 2,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-NS-ELO3",
+    "strand_id": "MATH-G1-NS",
+    "elo_text": "Students will be able to demonstrate their understanding of numbers and their values by comparing and ordering quantities up to 20 ",
+    "elo_order": 3,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-NS-ELO4",
+    "strand_id": "MATH-G1-NS",
+    "elo_text": "Learner’s will comprehend the importance of the number ten and its role when counting from eleven to nineteen, as well as creating and solving simple problems involving place value",
+    "elo_order": 4,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-ON-ELO1",
+    "strand_id": "MATH-G1-ON",
+    "elo_text": "Additive Thinking- Learners will understand the meaning of addition and subtraction and how they relate.",
+    "elo_order": 5,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-ON-ELO2",
+    "strand_id": "MATH-G1-ON",
+    "elo_text": "Additive Thinking - Compute Fluently",
+    "elo_order": 6,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-ON-ELO3",
+    "strand_id": "MATH-G1-ON",
+    "elo_text": "Multiplicative thinking - Learners will understand the meaning of multiplication and division and how they relate.",
+    "elo_order": 7,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-PR-ELO1",
+    "strand_id": "MATH-G1-PR",
+    "elo_text": "Recognizing, Describing and Extending Patterns - Describe, create, extend and generalise patterns",
+    "elo_order": 8,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-PR-ELO2",
+    "strand_id": "MATH-G1-PR",
+    "elo_text": "Learners will recognize, describe and extend for increasing and decreasing patterns",
+    "elo_order": 9,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-PR-ELO3",
+    "strand_id": "MATH-G1-PR",
+    "elo_text": "Variables and Relationships - Representing Unknowns",
+    "elo_order": 10,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-PR-ELO4",
+    "strand_id": "MATH-G1-PR",
+    "elo_text": "Variables and Relationships - Understanding and representing equivalence",
+    "elo_order": 11,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-PR-ELO5",
+    "strand_id": "MATH-G1-PR",
+    "elo_text": "Variables and Relationships - Writing Expressions and Equations",
+    "elo_order": 12,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-GT-ELO1",
+    "strand_id": "MATH-G1-GT",
+    "elo_text": "Explore and Analyze Geometric Shapes and Relationships   - Developing spatial sense",
+    "elo_order": 13,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-GT-ELO2",
+    "strand_id": "MATH-G1-GT",
+    "elo_text": "Explore and Analyze Geometric Shapes and Relationships - Explore and Analyze Geometric Shapes and Relationships   - Sorting, patterning, and building with 2D & 3D Shapes  ",
+    "elo_order": 14,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-GT-ELO3",
+    "strand_id": "MATH-G1-GT",
+    "elo_text": "Recognizing, Naming and Describing Shapes   - Analysing and describing shapes",
+    "elo_order": 15,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-GT-ELO4",
+    "strand_id": "MATH-G1-GT",
+    "elo_text": "Recognizing, Naming and Describing Shapes   - Naming 2D & 3D shapes  ",
+    "elo_order": 16,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-GT-ELO5",
+    "strand_id": "MATH-G1-GT",
+    "elo_text": "Recognizing, Naming and Describing Shapes   – Describing relationships between and among shapes",
+    "elo_order": 17,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-GT-ELO6",
+    "strand_id": "MATH-G1-GT",
+    "elo_text": "Developing spatial sense   - Composing, Decomposing and Transforming Shapes - Combining Shapes",
+    "elo_order": 18,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-GT-ELO7",
+    "strand_id": "MATH-G1-GT",
+    "elo_text": "Composing,   Decomposing and Transforming Shapes – Deconstructing Shapes",
+    "elo_order": 19,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-GT-ELO8",
+    "strand_id": "MATH-G1-GT",
+    "elo_text": "Composing, Decomposing and Transforming Shapes   – Transforming Shapes",
+    "elo_order": 20,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-M-ELO1",
+    "strand_id": "MATH-G1-M",
+    "elo_text": "Understanding What and How We Measure   - Developing an understanding of measurable attributes.",
+    "elo_order": 21,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-M-ELO2",
+    "strand_id": "MATH-G1-M",
+    "elo_text": "Understanding What and How We Measure - Comparing and ordering based on measurable attributes",
+    "elo_order": 22,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-M-ELO3",
+    "strand_id": "MATH-G1-M",
+    "elo_text": "Understanding What and How We Measure - Developing and applying non-standard units of measure.",
+    "elo_order": 23,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-M-ELO4",
+    "strand_id": "MATH-G1-M",
+    "elo_text": "Understanding What and How We Measure - Developing and applying standard units of measure.",
+    "elo_order": 24,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-DH-ELO1",
+    "strand_id": "MATH-G1-DH",
+    "elo_text": "Collecting, Organising and Displaying Data - Formulating questions that can be answered with data",
+    "elo_order": 25,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-DH-ELO2",
+    "strand_id": "MATH-G1-DH",
+    "elo_text": "Collecting, Organising and Displaying Data - Collecting, organising, displaying and communicating data",
+    "elo_order": 26,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-DH-ELO3",
+    "strand_id": "MATH-G1-DH",
+    "elo_text": "Using Statistical Methods to Analyze Data - Describing data sets",
+    "elo_order": 27,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-DH-ELO4",
+    "strand_id": "MATH-G1-DH",
+    "elo_text": "Using Statistical Methods to Analyze Data - Developing and applying methods to analyse data sets",
+    "elo_order": 28,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G1-DH-ELO5",
+    "strand_id": "MATH-G1-DH",
+    "elo_text": "Understanding and Applying Concepts of Probability - Predicting and describing the likelihood of an events.",
+    "elo_order": 29,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G1-LS-ELO1",
+    "strand_id": "LANG-G1-LS",
+    "elo_text": "The learner will explore, use, and critically apply oral language for pleasure, personal growth, to form and foster relationships and, to develop an appreciation of and celebration of culture and of oral languages.",
+    "elo_order": 30,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G1-RV-ELO1",
+    "strand_id": "LANG-G1-RV",
+    "elo_text": "The learner will demonstrate a variety of ways to use background knowledge and interests to select and engage critically with a range of culturally diverse paper-based, visual, and digital texts for pleasure and personal growth.",
+    "elo_order": 31,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G1-RV-ELO2",
+    "strand_id": "LANG-G1-RV",
+    "elo_text": "The learner will interact with understanding and critical thought to a variety of genres and text forms using comprehension strategies, vocabulary, language structures, and graphophonic cues.",
+    "elo_order": 32,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G1-RV-ELO3",
+    "strand_id": "LANG-G1-RV",
+    "elo_text": "Students will develop their understanding of how an author’s purpose and style, genre, text form, text features and choice of vocabulary, language, influence the meaning of text and define the author’s craft.",
+    "elo_order": 33,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G1-WR-ELO1",
+    "strand_id": "LANG-G1-WR",
+    "elo_text": "Learners will generate, gather and organize thoughts to explore, clarify and reflect on ideas, feelings and experiences as they create a written or representative draft, independently and collaboratively, for a range of audiences and purposes.",
+    "elo_order": 34,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G1-WR-ELO2",
+    "strand_id": "LANG-G1-WR",
+    "elo_text": "learners will revise the organization, and language use (vocabulary and grammar) of drafted writing or representation, collaboratively and independently, for a variety of purposes and audiences.",
+    "elo_order": 35,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G1-WR-ELO3",
+    "strand_id": "LANG-G1-WR",
+    "elo_text": "learners will use their knowledge of spoken language, written language and writing conventions to refine the precision and enhance the meaning and clarity of their written work.",
+    "elo_order": 36,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G1-WLS-ELO1",
+    "strand_id": "SCIENCE-G1-WLS",
+    "elo_text": "Learners will be able to plan and conduct investigations to provide evidence that vibrating materials can make sound and that sound can make materials vibrate.",
+    "elo_order": 37,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G1-WLS-ELO2",
+    "strand_id": "SCIENCE-G1-WLS",
+    "elo_text": "Make observations to construct an evidence-based account, that objects can be seen only when illuminated.",
+    "elo_order": 38,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G1-WLS-ELO3",
+    "strand_id": "SCIENCE-G1-WLS",
+    "elo_text": "Plan and conduct an investigation to determine the effect of placing objects made with different materials in the path of a beam of light.",
+    "elo_order": 39,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G1-WLS-ELO4",
+    "strand_id": "SCIENCE-G1-WLS",
+    "elo_text": "Use tools and materials to design and build a device that uses light or sound to solve the problem of communicating over a distance.",
+    "elo_order": 40,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G1-SFI-ELO1",
+    "strand_id": "SCIENCE-G1-SFI",
+    "elo_text": "Use materials to design a solution to a human problem by mimicking how plants and/or animals use their external parts to help them survive, grow and meet their needs.",
+    "elo_order": 41,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G1-SFI-ELO2",
+    "strand_id": "SCIENCE-G1-SFI",
+    "elo_text": "Read texts and use media to determine patterns in behaviour of parent and offspring that help offspring survive.",
+    "elo_order": 42,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G1-SFI-ELO3",
+    "strand_id": "SCIENCE-G1-SFI",
+    "elo_text": "Make observations to construct an evidence-based account that young plants and animals are like, but not exactly like their parents. ",
+    "elo_order": 43,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G1-SS-ELO1",
+    "strand_id": "SCIENCE-G1-SS",
+    "elo_text": "Use observations of the sun, moon, and stars to describe patterns that can be predicted.",
+    "elo_order": 44,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G1-SS-ELO2",
+    "strand_id": "SCIENCE-G1-SS",
+    "elo_text": "Make observations at different times of the year to relate the amount of daylight to the time of year.",
+    "elo_order": 45,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-HCT-ELO1",
+    "strand_id": "SS-G1-HCT",
+    "elo_text": "To understand that our celebrations help us build pride in our identity.",
+    "elo_order": 46,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-CP-ELO1",
+    "strand_id": "SS-G1-CP",
+    "elo_text": "To understand that we have roles and responsibilities in our families, school, and community - Section 1: What are our roles and responsibilities in our Family?",
+    "elo_order": 47,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-CP-ELO2",
+    "strand_id": "SS-G1-CP",
+    "elo_text": "To understand that we have roles and responsibilities in our families, school, and community - Section 2: What are our roles and responsibilities in our extended Family?",
+    "elo_order": 48,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-CP-ELO3",
+    "strand_id": "SS-G1-CP",
+    "elo_text": "To understand that we have roles and responsibilities in our families, school, and community - Section 3: What are our roles and responsibilities in our Family and School?",
+    "elo_order": 49,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-CP-ELO4",
+    "strand_id": "SS-G1-CP",
+    "elo_text": "To understand that we have roles and responsibilities in our families, school, and community - Section 4: Who are leaders and what is their role?",
+    "elo_order": 50,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-CP-ELO5",
+    "strand_id": "SS-G1-CP",
+    "elo_text": "To understand that we have roles and responsibilities in our families, school, and community - Section 5: What are our roles and responsibilities in of adults?",
+    "elo_order": 51,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-ST-ELO1",
+    "strand_id": "SS-G1-ST",
+    "elo_text": "To understand how we shape the local environment and the local environment shapes who we are and how we live. - Section 1: What is a Neighbourhood?",
+    "elo_order": 52,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-ST-ELO2",
+    "strand_id": "SS-G1-ST",
+    "elo_text": "To understand how we shape the local environment and the local environment shapes who we are and how we live. - Section 2: How does where we live impact us?",
+    "elo_order": 53,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-ST-ELO3",
+    "strand_id": "SS-G1-ST",
+    "elo_text": "To understand how we shape the local environment and the local environment shapes who we are and how we live. - Section 3: What is cardinal direction and how is it useful to me?",
+    "elo_order": 54,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-ST-ELO4",
+    "strand_id": "SS-G1-ST",
+    "elo_text": "To understand how we shape the local environment and the local environment shapes who we are and how we live. - Section 4: How do we interact with our local environment?",
+    "elo_order": 55,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-ST-ELO5",
+    "strand_id": "SS-G1-ST",
+    "elo_text": "To understand how we shape the local environment and the local environment shapes who we are and how we live. - Section 5: How do we stay safe where we live?",
+    "elo_order": 56,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-EDM-ELO1",
+    "strand_id": "SS-G1-EDM",
+    "elo_text": "To be aware that we all have things we need and things we want - Section 1: What are needs, wants, goods and services?",
+    "elo_order": 57,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-EDM-ELO2",
+    "strand_id": "SS-G1-EDM",
+    "elo_text": "To be aware that we all have things we need and things we want - Section 2: What are examples of goods and services and how do we obtain them?",
+    "elo_order": 58,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-EDM-ELO3",
+    "strand_id": "SS-G1-EDM",
+    "elo_text": "To be aware that we all have things we need and things we want - Section 3: What are resources and how do we obtain and manage them?",
+    "elo_order": 59,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G1-EDM-ELO4",
+    "strand_id": "SS-G1-EDM",
+    "elo_text": "To be aware that we all have things we need and things we want - Section 4: How do we travel safely?",
+    "elo_order": 60,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-NS-ELO1",
+    "strand_id": "MATH-G2-NS",
+    "elo_text": "Whole Number - Saying Number Sequence, Meaningful Counting and Skip Counting",
+    "elo_order": 61,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-NS-ELO2",
+    "strand_id": "MATH-G2-NS",
+    "elo_text": "Whole Number - Representing and Partitioning Quantities",
+    "elo_order": 62,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-NS-ELO3",
+    "strand_id": "MATH-G2-NS",
+    "elo_text": "Whole Number - Comparing and ordering quantities",
+    "elo_order": 63,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-NS-ELO4",
+    "strand_id": "MATH-G2-NS",
+    "elo_text": "Whole Number - Place Value",
+    "elo_order": 64,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-NS-ELO5",
+    "strand_id": "MATH-G2-NS",
+    "elo_text": "Fractions, Decimals and Rational Numbers - Representing Fraction",
+    "elo_order": 65,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-NS-ELO6",
+    "strand_id": "MATH-G2-NS",
+    "elo_text": "Fractions, Decimals and Rational Numbers - Comparing and Ordering Fractions",
+    "elo_order": 66,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-ON-ELO1",
+    "strand_id": "MATH-G2-ON",
+    "elo_text": "Additive Thinking - Understanding the meaning of addition and subtraction and how they relate.",
+    "elo_order": 67,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-ON-ELO2",
+    "strand_id": "MATH-G2-ON",
+    "elo_text": "Additive Thinking - Compute Fluently",
+    "elo_order": 68,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-ON-ELO3",
+    "strand_id": "MATH-G2-ON",
+    "elo_text": "Multiplicative Thinking - Understanding the meaning of multiplication and division and how they relate",
+    "elo_order": 69,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-PR-ELO1",
+    "strand_id": "MATH-G2-PR",
+    "elo_text": "Learners will create and extend simple patterns, repeating and growing patterns.",
+    "elo_order": 70,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-PR-ELO2",
+    "strand_id": "MATH-G2-PR",
+    "elo_text": "Recognizing, Describing and Extending Patterns - Increasing and Decreasing Patterns",
+    "elo_order": 71,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-PR-ELO3",
+    "strand_id": "MATH-G2-PR",
+    "elo_text": "Identify when symbols are being used as variables, and describe how they are being used.",
+    "elo_order": 72,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-PR-ELO4",
+    "strand_id": "MATH-G2-PR",
+    "elo_text": "Variables and Relationships - Understanding and representing equivalence.",
+    "elo_order": 73,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-PR-ELO5",
+    "strand_id": "MATH-G2-PR",
+    "elo_text": "Variables and Relationships - Writing Expressions and Equations",
+    "elo_order": 74,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-GT-ELO1",
+    "strand_id": "MATH-G2-GT",
+    "elo_text": "Exploring and Analyzing Geometric Shapes and Relationships- Developing Spatial Sense",
+    "elo_order": 75,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-GT-ELO2",
+    "strand_id": "MATH-G2-GT",
+    "elo_text": "Exploring and Analyzing Geometric Shapes and Relationships - Sorting, patterning, and building with 2D and 3D Shapes.",
+    "elo_order": 76,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-GT-ELO3",
+    "strand_id": "MATH-G2-GT",
+    "elo_text": "Recognizing, Naming and Describing Shapes - Analyzing and describing shapes",
+    "elo_order": 77,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-GT-ELO4",
+    "strand_id": "MATH-G2-GT",
+    "elo_text": "Recognizing, Naming and Describing Shapes - Naming 2D & 3D shapes",
+    "elo_order": 78,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-GT-ELO5",
+    "strand_id": "MATH-G2-GT",
+    "elo_text": "Recognizing, Naming and Describing Shapes - Describing relationships between and among shapes",
+    "elo_order": 79,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-GT-ELO6",
+    "strand_id": "MATH-G2-GT",
+    "elo_text": "Composing, Decomposing and Transforming Shapes - Combining Shapes",
+    "elo_order": 80,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-GT-ELO7",
+    "strand_id": "MATH-G2-GT",
+    "elo_text": "Composing, Decomposing and Transforming Shapes - Deconstructing Shapes",
+    "elo_order": 81,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-GT-ELO8",
+    "strand_id": "MATH-G2-GT",
+    "elo_text": "Composing, Decomposing and Transforming Shapes - Transforming Shapes",
+    "elo_order": 82,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-M-ELO1",
+    "strand_id": "MATH-G2-M",
+    "elo_text": "Understanding What and How We Measure - Developing an understanding of measurable attributes",
+    "elo_order": 83,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-M-ELO2",
+    "strand_id": "MATH-G2-M",
+    "elo_text": "Understanding What and How We Measure - Comparing and ordering based on measurable attributes",
+    "elo_order": 84,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-M-ELO3",
+    "strand_id": "MATH-G2-M",
+    "elo_text": "Understanding What and How We Measure - Developing and applying non-standard units of measure",
+    "elo_order": 85,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-M-ELO4",
+    "strand_id": "MATH-G2-M",
+    "elo_text": "Understanding What and How We Measure - Developing and applying standard units of measurement",
+    "elo_order": 86,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-M-ELO5",
+    "strand_id": "MATH-G2-M",
+    "elo_text": "Applying Techniques, Tools and Formulae for Measuring - Developing personal referents for measuring attributes",
+    "elo_order": 87,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-M-ELO6",
+    "strand_id": "MATH-G2-M",
+    "elo_text": "Applying Techniques, Tools and Formulae for Measuring - Using tools to measure attribute",
+    "elo_order": 88,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-M-ELO7",
+    "strand_id": "MATH-G2-M",
+    "elo_text": "Applying Techniques, Tools and Formulae for Measuring - Developing and applying formulae for measuring",
+    "elo_order": 89,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-DH-ELO1",
+    "strand_id": "MATH-G2-DH",
+    "elo_text": "Learners will develop statistical literacy by recognizing topics for investigation and formulating simple questions that can be answered with data.",
+    "elo_order": 90,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-DH-ELO2",
+    "strand_id": "MATH-G2-DH",
+    "elo_text": "Collecting, Organising and Displaying Data - Collecting, organising, displaying and communicating data.",
+    "elo_order": 91,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-DH-ELO3",
+    "strand_id": "MATH-G2-DH",
+    "elo_text": "Using Statistical Methods to Analyze Data - Describing data sets",
+    "elo_order": 92,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-DH-ELO4",
+    "strand_id": "MATH-G2-DH",
+    "elo_text": "Using Statistical Methods to Analyse Data - Developing and applying methods to analyse data sets.",
+    "elo_order": 93,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G2-DH-ELO5",
+    "strand_id": "MATH-G2-DH",
+    "elo_text": "Using Statistical Methods to Analyse Data - Predicting and describing the likelihood of events.",
+    "elo_order": 94,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G2-LS-ELO1",
+    "strand_id": "LANG-G2-LS",
+    "elo_text": "The learner will explore, use, and critically apply oral language for pleasure, personal growth, to form and foster relationships and to develop an appreciation and celebration of culture and of oral languages.",
+    "elo_order": 95,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G2-RV-ELO1",
+    "strand_id": "LANG-G2-RV",
+    "elo_text": "The learner will demonstrate a variety of ways to select and engage critically with a range of culturally diverse paper based, visual and digital texts for a variety of purposes, including pleasure, and personal growth.",
+    "elo_order": 96,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G2-RV-ELO2",
+    "strand_id": "LANG-G2-RV",
+    "elo_text": "The learner will demonstrate a variety of ways to use background knowledge and interests to select and engage critically with a range of culturally diverse paper based, visual, and digital texts for pleasure and personal growth.",
+    "elo_order": 97,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G2-RV-ELO3",
+    "strand_id": "LANG-G2-RV",
+    "elo_text": "Students will develop their understanding of how an author’s purpose and style, genre, text form, text features and choice of vocabulary, and language influence the meaning of text and define the author’s craft.",
+    "elo_order": 98,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G2-WR-ELO1",
+    "strand_id": "LANG-G2-WR",
+    "elo_text": "The learner will generate, gather, and organize thoughts to explore, clarify and reflect on ideas, feelings, and experiences as they create a written or representative draft, independently and collaboratively, for a range of audiences and purposes.",
+    "elo_order": 99,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G2-WR-ELO2",
+    "strand_id": "LANG-G2-WR",
+    "elo_text": "The learner will revise the organization, and language use (vocabulary and grammar) drafted writing or representation, collaboratively and independently, for a variety of purposes and audiences.",
+    "elo_order": 100,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G2-WR-ELO3",
+    "strand_id": "LANG-G2-WR",
+    "elo_text": "The learner will use their knowledge of spoken language, written language and writing conventions to refine the precision and enhance the meaning and clarity of their written work.",
+    "elo_order": 101,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G2-SPM-ELO1",
+    "strand_id": "SCIENCE-G2-SPM",
+    "elo_text": "Plan and conduct an investigation to describe and classify different kinds of materials by their observable properties.",
+    "elo_order": 102,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G2-SPM-ELO2",
+    "strand_id": "SCIENCE-G2-SPM",
+    "elo_text": "Analyze data obtained from testing different materials to determine which materials have the properties that are best suited for an intended purpose.",
+    "elo_order": 103,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G2-SPM-ELO3",
+    "strand_id": "SCIENCE-G2-SPM",
+    "elo_text": "Make observations to construct an evidence-based account of how an object made of a small set of pieces can be disassembled and made into a new object.",
+    "elo_order": 104,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G2-SPM-ELO4",
+    "strand_id": "SCIENCE-G2-SPM",
+    "elo_text": "Construct an argument with evidence that some changes caused by heating or cooling can be reversed and some cannot.",
+    "elo_order": 105,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G2-IRE-ELO1",
+    "strand_id": "SCIENCE-G2-IRE",
+    "elo_text": "Plan and conduct an investigation to determine if plants need sunlight and water to grow.",
+    "elo_order": 106,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G2-IRE-ELO2",
+    "strand_id": "SCIENCE-G2-IRE",
+    "elo_text": "Develop a simple model that mimics the function of an animal in dispersing seeds or pollinating plants. Make observations of plants and animals to compare the diversity of life in different habitats",
+    "elo_order": 107,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G2-ES-ELO1",
+    "strand_id": "SCIENCE-G2-ES",
+    "elo_text": "Use information from several sources to provide evidence that Earth events can occur quickly or slowly.",
+    "elo_order": 108,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G2-ES-ELO2",
+    "strand_id": "SCIENCE-G2-ES",
+    "elo_text": "Compare multiple solutions designed to slow or prevent wind or water from changing the shape of the land.",
+    "elo_order": 109,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G2-ES-ELO3",
+    "strand_id": "SCIENCE-G2-ES",
+    "elo_text": "Develop a model to represent the shapes and kinds of land and bodies of water in an area.",
+    "elo_order": 110,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G2-ES-ELO4",
+    "strand_id": "SCIENCE-G2-ES",
+    "elo_text": "Obtain information to identify where water is found on Earth and that it can be solid or liquid",
+    "elo_order": 111,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G2-ED-ELO1",
+    "strand_id": "SCIENCE-G2-ED",
+    "elo_text": "Ask questions, make observations, and gather information about a situation people want to change to define a simple problem that can be solved through the development of a new or improved object or tool",
+    "elo_order": 112,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G2-ED-ELO2",
+    "strand_id": "SCIENCE-G2-ED",
+    "elo_text": "Develop a simple sketch, drawing, or physical model to illustrate how the shape of an object helps it function as needed to solve a given problem.",
+    "elo_order": 113,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G2-ED-ELO3",
+    "strand_id": "SCIENCE-G2-ED",
+    "elo_text": "Analyze data from tests of at least two objects designed to solve the same problem to compare the strengths and weaknesses of how each performs.",
+    "elo_order": 114,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-HCT-ELO1",
+    "strand_id": "SS-G2-HCT",
+    "elo_text": "To Appreciate How Our Past and Present Shape Our Identity Section 1 – Our Ancestors ",
+    "elo_order": 115,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-HCT-ELO2",
+    "strand_id": "SS-G2-HCT",
+    "elo_text": "To Appreciate How Our Past and Present Shape Our Identity Section 2 – Our Families ",
+    "elo_order": 116,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-HCT-ELO3",
+    "strand_id": "SS-G2-HCT",
+    "elo_text": "To Appreciate How Our Past and Present Shape Our Identity Section 3 – Family Interactions ",
+    "elo_order": 117,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-HCT-ELO4",
+    "strand_id": "SS-G2-HCT",
+    "elo_text": "To Appreciate How Our Past and Present Shape Our Identity Section 4 – Family Occasions ",
+    "elo_order": 118,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-HCT-ELO5",
+    "strand_id": "SS-G2-HCT",
+    "elo_text": "To Appreciate How Our Past and Present Shape Our Identity Section 5 – Our Festivals ",
+    "elo_order": 119,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-HCT-ELO6",
+    "strand_id": "SS-G2-HCT",
+    "elo_text": "To Appreciate How Our Past and Present Shape Our Identity Section 6 – Historical Sites",
+    "elo_order": 120,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-ST-ELO1",
+    "strand_id": "SS-G2-ST",
+    "elo_text": "Understand that our islands are made up of many diverse regions and communities Section 1 – Locating My Community",
+    "elo_order": 121,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-ST-ELO2",
+    "strand_id": "SS-G2-ST",
+    "elo_text": "Understand that our islands are made up of many diverse regions and communities Section 2 – Features of My Community",
+    "elo_order": 122,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-ST-ELO3",
+    "strand_id": "SS-G2-ST",
+    "elo_text": "Understand that our islands are made up of many diverse regions and communities Section 3 – Locating My Community",
+    "elo_order": 123,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-ST-ELO4",
+    "strand_id": "SS-G2-ST",
+    "elo_text": "Understand that our islands are made up of many diverse regions and communities Section 4 – Plants and Animals in the Community",
+    "elo_order": 124,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-ST-ELO5",
+    "strand_id": "SS-G2-ST",
+    "elo_text": "Understand that our islands are made up of many diverse regions and communities Section 5 – Weather",
+    "elo_order": 125,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-ST-ELO6",
+    "strand_id": "SS-G2-ST",
+    "elo_text": "Understand that our islands are made up of many diverse regions and communities Section 6 – The Environment as a Resource",
+    "elo_order": 126,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-ST-ELO7",
+    "strand_id": "SS-G2-ST",
+    "elo_text": "Understand that our islands are made up of many diverse regions and communities Section 7 – Caring for the Environment",
+    "elo_order": 127,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-CP-ELO1",
+    "strand_id": "SS-G2-CP",
+    "elo_text": "Understand how our rights and responsibilities are important for building strong communities Section 1 – Keeping our Neighbours Safe and Healthy",
+    "elo_order": 128,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-CP-ELO2",
+    "strand_id": "SS-G2-CP",
+    "elo_text": "Understand how our rights and responsibilities are important for building strong communities Section 2 – Resolving Conflict in our Communities",
+    "elo_order": 129,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-CP-ELO3",
+    "strand_id": "SS-G2-CP",
+    "elo_text": "Understand how our rights and responsibilities are important for building strong communities Section 3 – Governing the Community",
+    "elo_order": 130,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-CP-ELO4",
+    "strand_id": "SS-G2-CP",
+    "elo_text": "Understand how our rights and responsibilities are important for building strong communities Section 4 – Accidents at Home and in the Community",
+    "elo_order": 131,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-CP-ELO5",
+    "strand_id": "SS-G2-CP",
+    "elo_text": "Understand how our rights and responsibilities are important for building strong communities Section 5 – Safety in the Community",
+    "elo_order": 132,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-EDM-ELO1",
+    "strand_id": "SS-G2-EDM",
+    "elo_text": "Understand how our communities provide goods and services to meet our needs and wants Section 1 – Human Resources",
+    "elo_order": 133,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-EDM-ELO2",
+    "strand_id": "SS-G2-EDM",
+    "elo_text": "Understand how our communities provide goods and services to meet our needs and wants Section 2 – Resources: Our Land",
+    "elo_order": 134,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-EDM-ELO3",
+    "strand_id": "SS-G2-EDM",
+    "elo_text": "Understand how our communities provide goods and services to meet our needs and wants Section 3 – People in the Community: Community Workers",
+    "elo_order": 135,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-EDM-ELO4",
+    "strand_id": "SS-G2-EDM",
+    "elo_text": "Understand how our communities provide goods and services to meet our needs and wants Section 4 – Goods and Services",
+    "elo_order": 136,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-EDM-ELO5",
+    "strand_id": "SS-G2-EDM",
+    "elo_text": "Understand how our communities provide goods and services to meet our needs and wants Section 5 – Jobs in the Community",
+    "elo_order": 137,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G2-EDM-ELO6",
+    "strand_id": "SS-G2-EDM",
+    "elo_text": "Understand how our communities provide goods and services to meet our needs and wants Section 6 – Work Place Rules",
+    "elo_order": 138,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-NS-ELO1",
+    "strand_id": "MATH-G3-NS",
+    "elo_text": "Whole Number – Saying Number Sequence, Meaningful Counting and Skip Counting",
+    "elo_order": 139,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-NS-ELO2",
+    "strand_id": "MATH-G3-NS",
+    "elo_text": "Whole Number – Representing and Partitioning Quantities",
+    "elo_order": 140,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-NS-ELO3",
+    "strand_id": "MATH-G3-NS",
+    "elo_text": "Whole Number – Comparing and Ordering Quantities",
+    "elo_order": 141,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-NS-ELO4",
+    "strand_id": "MATH-G3-NS",
+    "elo_text": "Whole Number – Understanding Place Value",
+    "elo_order": 142,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-NS-ELO5",
+    "strand_id": "MATH-G3-NS",
+    "elo_text": "Fractions, Decimals and Rational Numbers– Representing Fractions",
+    "elo_order": 143,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-NS-ELO6",
+    "strand_id": "MATH-G3-NS",
+    "elo_text": "Fractions, Decimals and Rational Numbers – Comparing and Ordering Fractions",
+    "elo_order": 144,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-NS-ELO7",
+    "strand_id": "MATH-G3-NS",
+    "elo_text": "Fractions, Decimals and Rational Numbers – Representing Decimals",
+    "elo_order": 145,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-ON-ELO1",
+    "strand_id": "MATH-G3-ON",
+    "elo_text": "Additive Thinking – Understanding the Meaning of Addition and Subtraction and how they Related",
+    "elo_order": 146,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-ON-ELO2",
+    "strand_id": "MATH-G3-ON",
+    "elo_text": "Additive Thinking – Compute Fluently using Operations (+, –)",
+    "elo_order": 147,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-ON-ELO3",
+    "strand_id": "MATH-G3-ON",
+    "elo_text": "Additive Thinking – Make a Reasonable Estimation When Using Operations",
+    "elo_order": 148,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-ON-ELO4",
+    "strand_id": "MATH-G3-ON",
+    "elo_text": "Multiplicative Thinking – Understanding the Meaning of Multiplication and Division and How They Relate",
+    "elo_order": 149,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-ON-ELO5",
+    "strand_id": "MATH-G3-ON",
+    "elo_text": "Multiplicative Thinking – Compute Fluently with Operations (x&÷)",
+    "elo_order": 150,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-ON-ELO6",
+    "strand_id": "MATH-G3-ON",
+    "elo_text": "Multiplicative Thinking-Make Reasonable Estimation When Using the Four Basic Operations",
+    "elo_order": 151,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-PR-ELO1",
+    "strand_id": "MATH-G3-PR",
+    "elo_text": "Recognizing, describing and extending patterns – Repeating Patterns",
+    "elo_order": 152,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-PR-ELO2",
+    "strand_id": "MATH-G3-PR",
+    "elo_text": "Recognizing, describing and extending patterns – Increasing and Decreasing Patterns",
+    "elo_order": 153,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-PR-ELO3",
+    "strand_id": "MATH-G3-PR",
+    "elo_text": "Variables and Relationships – Representing Unknowns",
+    "elo_order": 154,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-PR-ELO4",
+    "strand_id": "MATH-G3-PR",
+    "elo_text": "Variables and Relationships – Understanding and Representing Equivalence",
+    "elo_order": 155,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-PR-ELO5",
+    "strand_id": "MATH-G3-PR",
+    "elo_text": "Variables and Relationships – Writing Expressions and Equations: \r\nCan represent and explain, concretely and in writing, the preservation of equality in addition and subtraction using simple, open sentences.",
+    "elo_order": 156,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-PR-ELO6",
+    "strand_id": "MATH-G3-PR",
+    "elo_text": "Modelling Quantitative Relationships and Analyzing Change – Modelling Patterns and Relationships with Equations and Functions",
+    "elo_order": 157,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-PR-ELO7",
+    "strand_id": "MATH-G3-PR",
+    "elo_text": "Modelling Quantitative Relationships and Analyzing Change – Representing Functions and Relationships",
+    "elo_order": 158,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-PR-ELO8",
+    "strand_id": "MATH-G3-PR",
+    "elo_text": "Modelling Quantitative Relationships and Analyzing Change – Solving Problems with Functions and Relationships",
+    "elo_order": 159,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-GT-ELO1",
+    "strand_id": "MATH-G3-GT",
+    "elo_text": "Explore and Analyze Geometric shapes and Relationships-Developing a spatial sense.",
+    "elo_order": 160,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-GT-ELO2",
+    "strand_id": "MATH-G3-GT",
+    "elo_text": "Explore and analyze Geometric Shapes and Relationships: Sorting, patterning and building 2D and 3D Shapes",
+    "elo_order": 161,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-GT-ELO3",
+    "strand_id": "MATH-G3-GT",
+    "elo_text": "Recognizing, naming and Describing Shapes- Analysing and Describing Shapes",
+    "elo_order": 162,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-GT-ELO4",
+    "strand_id": "MATH-G3-GT",
+    "elo_text": "Recognizing, Naming and Describing Shapes - Naming 2-D and 3-D Shapes",
+    "elo_order": 163,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-GT-ELO5",
+    "strand_id": "MATH-G3-GT",
+    "elo_text": "Recognizing, naming and Describing Shapes- describing relationships between and among shapes",
+    "elo_order": 164,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-GT-ELO6",
+    "strand_id": "MATH-G3-GT",
+    "elo_text": "Composing , Decomposing and Transforming Shapes- Combining Shapes",
+    "elo_order": 165,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-GT-ELO7",
+    "strand_id": "MATH-G3-GT",
+    "elo_text": "Learners will be able to compose, decompose and transform shapes - deconstructing shapes",
+    "elo_order": 166,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-GT-ELO8",
+    "strand_id": "MATH-G3-GT",
+    "elo_text": "Composing, Decomposing and Transforming Shapes-Transforming Shapes",
+    "elo_order": 167,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-M-ELO1",
+    "strand_id": "MATH-G3-M",
+    "elo_text": "Understanding what and how we are measure-Developing an understanding of measurable attributes.",
+    "elo_order": 168,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-M-ELO2",
+    "strand_id": "MATH-G3-M",
+    "elo_text": "Comparing and ordering based on measurable attributes",
+    "elo_order": 169,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-M-ELO3",
+    "strand_id": "MATH-G3-M",
+    "elo_text": "Developing and applying non-standard units of measure",
+    "elo_order": 170,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-M-ELO4",
+    "strand_id": "MATH-G3-M",
+    "elo_text": "Learners will be able to understand what and how we measure by applying standard units of measurement. + Applying Techniques, Tools and Formulas for Measuring – Developing Personal Referents for Measuring Attributes",
+    "elo_order": 171,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-DH-ELO1",
+    "strand_id": "MATH-G3-DH",
+    "elo_text": "Collecting, Organising and Displaying Data - Formulating questions that can be answered with data",
+    "elo_order": 172,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-DH-ELO2",
+    "strand_id": "MATH-G3-DH",
+    "elo_text": "Collecting, Organising and Displaying Data - Collecting, organizing, displaying and communicating data.",
+    "elo_order": 173,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-DH-ELO3",
+    "strand_id": "MATH-G3-DH",
+    "elo_text": "Using Statistical Methods to Analyse Data - Describing sets.",
+    "elo_order": 174,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-DH-ELO4",
+    "strand_id": "MATH-G3-DH",
+    "elo_text": "Using Statistical Methods to Analyse Data - Developing and applying methods to analyse data sets.",
+    "elo_order": 175,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-DH-ELO5",
+    "strand_id": "MATH-G3-DH",
+    "elo_text": "Evaluating Inferences and Making Predictions Based on Data - Making inferences with data sets.",
+    "elo_order": 176,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-CP-ELO1",
+    "strand_id": "SS-G3-CP",
+    "elo_text": "To appreciate that we shape and are influenced by national pride: National Symbols",
+    "elo_order": 214,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-DH-ELO6",
+    "strand_id": "MATH-G3-DH",
+    "elo_text": "Evaluating Inferences and Making Predictions Based on Data - Making and testing conjectures based on data sets",
+    "elo_order": 177,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-DH-ELO7",
+    "strand_id": "MATH-G3-DH",
+    "elo_text": "Evaluating Inferences and Making Predictions Based on Data - Evaluating data descriptions and reports",
+    "elo_order": 178,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-DH-ELO8",
+    "strand_id": "MATH-G3-DH",
+    "elo_text": "Understanding and Applying Concepts of Probability - Predicting and describing the likelihood of events.",
+    "elo_order": 179,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G3-DH-ELO9",
+    "strand_id": "MATH-G3-DH",
+    "elo_text": "Understanding and Applying Concepts of Probability - Calculating Probabilities",
+    "elo_order": 180,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G3-LS-ELO1",
+    "strand_id": "LANG-G3-LS",
+    "elo_text": "The learner will explore, use, and critically apply oral language for pleasure, personal growth, to foster relationships and to develop an appreciation and celebration of culture and oral languages.",
+    "elo_order": 181,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G3-RV-ELO1",
+    "strand_id": "LANG-G3-RV",
+    "elo_text": "Learners will demonstrate a variety of ways to use background knowledge and interests to select and engage critically with a range of culturally diverse paper-based, visual, and digital texts for pleasure and personal growth.",
+    "elo_order": 182,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G3-RV-ELO2",
+    "strand_id": "LANG-G3-RV",
+    "elo_text": "Students will interact meaningfully with a variety of genres using background knowledge, comprehension strategies, vocabulary, and graphophonic cues.",
+    "elo_order": 183,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G3-RV-ELO3",
+    "strand_id": "LANG-G3-RV",
+    "elo_text": "Learners will develop their understanding of how an author’s choice of vocabulary, language, genre, text form, text features and style influence the meaning of text and define the author’s craft.",
+    "elo_order": 184,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G3-WR-ELO1",
+    "strand_id": "LANG-G3-WR",
+    "elo_text": "Learners will generate, gather, and organize thoughts to explore, clarify and reflect on thoughts, feelings, and experiences as they create a written or representative draft, independently and collaboratively, for a range of audiences and purposes.",
+    "elo_order": 185,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G3-WR-ELO2",
+    "strand_id": "LANG-G3-WR",
+    "elo_text": "Learners will revise the organization and language use in drafted writing or representation, collaboratively and independently, for a variety of purposes and audiences",
+    "elo_order": 186,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G3-WR-ELO3",
+    "strand_id": "LANG-G3-WR",
+    "elo_text": "Learners will use their knowledge of spoken language, written language and writing conventions to refine the precision and enhance the meaning and clarity of their written work.",
+    "elo_order": 187,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-FI-ELO1",
+    "strand_id": "SCIENCE-G3-FI",
+    "elo_text": "Plan and conduct an investigation to provide evidence of the effects of balanced and unbalanced forces on the motion of an object.",
+    "elo_order": 188,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-FI-ELO2",
+    "strand_id": "SCIENCE-G3-FI",
+    "elo_text": "Make observations and/or measurements of an object’s motion to provide evidence that a pattern can be used to predict future motion.",
+    "elo_order": 189,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-FI-ELO3",
+    "strand_id": "SCIENCE-G3-FI",
+    "elo_text": "Ask questions to determine cause and effect relationships of electric or magnetic interactions between two objects not in contact with each other.",
+    "elo_order": 190,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-FI-ELO4",
+    "strand_id": "SCIENCE-G3-FI",
+    "elo_text": "Define a simple design problem that can be solved by applying scientific ideas about magnets.",
+    "elo_order": 191,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-IRE-ELO1",
+    "strand_id": "SCIENCE-G3-IRE",
+    "elo_text": "Construct an argument that some animals form groups that help members survive",
+    "elo_order": 192,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-IRE-ELO2",
+    "strand_id": "SCIENCE-G3-IRE",
+    "elo_text": "Construct an argument with evidence that in a particular habitat some organisms can survive well, some survive less well, and some cannot survive at all.",
+    "elo_order": 193,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-IRE-ELO3",
+    "strand_id": "SCIENCE-G3-IRE",
+    "elo_text": "Make a claim about the merit of a solution to a problem caused when the environment changes and the types of plants and animals that live there may change.",
+    "elo_order": 194,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-IVT-ELO1",
+    "strand_id": "SCIENCE-G3-IVT",
+    "elo_text": "Develop models to describe that organisms have unique and diverse life cycles but all have in common birth, growth, reproduction, and death. ",
+    "elo_order": 195,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-IVT-ELO2",
+    "strand_id": "SCIENCE-G3-IVT",
+    "elo_text": "Analyze and interpret data to provide evidence that plants and animals have traits inherited from parents and that variation of these traits exists in a group of similar organisms.",
+    "elo_order": 196,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-IVT-ELO3",
+    "strand_id": "SCIENCE-G3-IVT",
+    "elo_text": "Use evidence to support the explanation that traits can be influenced by the environment.",
+    "elo_order": 197,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-IVT-ELO4",
+    "strand_id": "SCIENCE-G3-IVT",
+    "elo_text": "Use evidence to construct an explanation for how the variations in characteristics among individuals of the same species may provide advantages in surviving, finding mates, and reproducing.",
+    "elo_order": 198,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-WC-ELO1",
+    "strand_id": "SCIENCE-G3-WC",
+    "elo_text": "Represent data in tables and graphical displays to describe typical weather conditions expected during a particular season",
+    "elo_order": 199,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-WC-ELO2",
+    "strand_id": "SCIENCE-G3-WC",
+    "elo_text": "Obtain and combine information to describe climates in different regions of the world.",
+    "elo_order": 200,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G3-WC-ELO3",
+    "strand_id": "SCIENCE-G3-WC",
+    "elo_text": "•\tWeather: Make a claim about the merit of a design solution that reduces the impacts of a weather-related hazard.\r\n•\tEngineering: Define a simple design problem reflecting a need or a want that includes specified criteria for success and constraints on materials, time, or cost.",
+    "elo_order": 201,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-HCT-ELO1",
+    "strand_id": "SS-G3-HCT",
+    "elo_text": "To understand the ways in which our island’s peoples’ nurtures respect for diversity: Our Ancestors",
+    "elo_order": 202,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-HCT-ELO2",
+    "strand_id": "SS-G3-HCT",
+    "elo_text": "To understand the ways in which our island’s peoples’ nurtures respect for diversity: Origin of our Island People",
+    "elo_order": 203,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-HCT-ELO3",
+    "strand_id": "SS-G3-HCT",
+    "elo_text": "To understand the ways in which our island’s peoples’ nurtures respect for diversity: Culture and Heritage",
+    "elo_order": 204,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-HCT-ELO4",
+    "strand_id": "SS-G3-HCT",
+    "elo_text": "To understand the ways in which our island’s peoples’ nurtures respect for diversity: Local Island Dialects",
+    "elo_order": 205,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-HCT-ELO5",
+    "strand_id": "SS-G3-HCT",
+    "elo_text": "To understand the ways in which our island’s peoples’ nurtures respect for diversity: Cultural Contributions",
+    "elo_order": 206,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-HCT-ELO6",
+    "strand_id": "SS-G3-HCT",
+    "elo_text": "To understand the ways in which our island’s peoples’ nurtures respect for diversity: Music Changes Over Time",
+    "elo_order": 207,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-ST-ELO1",
+    "strand_id": "SS-G3-ST",
+    "elo_text": "To appreciate how our people are shaped by geographic factors such as our tropical climate, island environment and natural hazards: Relative Location",
+    "elo_order": 208,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-ST-ELO2",
+    "strand_id": "SS-G3-ST",
+    "elo_text": "To appreciate how our people are shaped by geographic factors such as our tropical climate, island environment and natural hazards: Water Bodies",
+    "elo_order": 209,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-ST-ELO3",
+    "strand_id": "SS-G3-ST",
+    "elo_text": "To appreciate how our people are shaped by geographic factors such as our tropical climate, island environment and natural hazards: Importance of Water Bodies",
+    "elo_order": 210,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-ST-ELO4",
+    "strand_id": "SS-G3-ST",
+    "elo_text": "To appreciate how our people are shaped by geographic factors such as our tropical climate, island environment and natural hazards: Our Seasons",
+    "elo_order": 211,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-ST-ELO5",
+    "strand_id": "SS-G3-ST",
+    "elo_text": "To appreciate how our people are shaped by geographic factors such as our tropical climate, island environment and natural hazards: Natural Hazards",
+    "elo_order": 212,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-ST-ELO6",
+    "strand_id": "SS-G3-ST",
+    "elo_text": "To appreciate how our people are shaped by geographic factors such as our tropical climate, island environment and natural hazards: Preparing for Natural Hazards",
+    "elo_order": 213,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-CP-ELO2",
+    "strand_id": "SS-G3-CP",
+    "elo_text": "To appreciate that we shape and are influenced by national pride: Our National Anthem and Pledge",
+    "elo_order": 215,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-CP-ELO3",
+    "strand_id": "SS-G3-CP",
+    "elo_text": "To appreciate that we shape and are influenced by national pride: National bird and tree",
+    "elo_order": 216,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-CP-ELO4",
+    "strand_id": "SS-G3-CP",
+    "elo_text": "To appreciate that we shape and are influenced by national pride: Our National Heroes",
+    "elo_order": 217,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-EDM-ELO1",
+    "strand_id": "SS-G3-EDM",
+    "elo_text": "To understand how our natural and human resources shape our island identity: Economic Activities",
+    "elo_order": 218,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-EDM-ELO2",
+    "strand_id": "SS-G3-EDM",
+    "elo_text": "To understand how our natural and human resources shape our island identity: Culture and Economy",
+    "elo_order": 219,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-EDM-ELO3",
+    "strand_id": "SS-G3-EDM",
+    "elo_text": "To understand how our natural and human resources shape our island identity: Population",
+    "elo_order": 220,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G3-EDM-ELO4",
+    "strand_id": "SS-G3-EDM",
+    "elo_text": "To understand how our natural and human resources shape our island identity: Impact of Migration",
+    "elo_order": 221,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-NS-ELO1",
+    "strand_id": "MATH-G4-NS",
+    "elo_text": "Whole Number – Saying Number Sequence, Meaningful Counting and Skip Counting",
+    "elo_order": 222,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-NS-ELO2",
+    "strand_id": "MATH-G4-NS",
+    "elo_text": "Whole Number – Representing and Partitioning Quantities",
+    "elo_order": 223,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-NS-ELO3",
+    "strand_id": "MATH-G4-NS",
+    "elo_text": "Whole Number – Comparing and Ordering Quantities",
+    "elo_order": 224,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-NS-ELO4",
+    "strand_id": "MATH-G4-NS",
+    "elo_text": "Whole Number – Understanding Place Value",
+    "elo_order": 225,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-NS-ELO5",
+    "strand_id": "MATH-G4-NS",
+    "elo_text": "Learners will recognize, represent, and compare quantitative information and develop quantitative reasoning including additive and multiplicative thinking to make meaningful connections and solve problems.",
+    "elo_order": 226,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-NS-ELO6",
+    "strand_id": "MATH-G4-NS",
+    "elo_text": "Learners will recognize, represent, and compare quantitative information and develop quantitative reasoning including additive and multiplicative thinking to make meaningful connections and solve problems.",
+    "elo_order": 227,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-NS-ELO7",
+    "strand_id": "MATH-G4-NS",
+    "elo_text": "Learners will be able to represent decimals in context, verbally and symbolically",
+    "elo_order": 228,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-NS-ELO8",
+    "strand_id": "MATH-G4-NS",
+    "elo_text": "Fractions, Decimals and Rational Numbers – Comparing and Ordering Decimal",
+    "elo_order": 229,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-NS-ELO9",
+    "strand_id": "MATH-G4-NS",
+    "elo_text": "Fractions, Decimals and Rational Numbers – Decimal Place Value",
+    "elo_order": 230,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-ON-ELO1",
+    "strand_id": "MATH-G4-ON",
+    "elo_text": "Additive Thinking – Understanding the Meaning of Addition and Subtraction and How They Related",
+    "elo_order": 231,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-ON-ELO2",
+    "strand_id": "MATH-G4-ON",
+    "elo_text": "Additive Thinking – Compute Fluently Using Operations (+,-)",
+    "elo_order": 232,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-ON-ELO3",
+    "strand_id": "MATH-G4-ON",
+    "elo_text": "Additive Thinking – Make a Reasonable Estimation When Using Operations",
+    "elo_order": 233,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-ON-ELO4",
+    "strand_id": "MATH-G4-ON",
+    "elo_text": "Multiplicative Thinking – Understanding the Meaning of Multiplication and Division and How They Relate",
+    "elo_order": 234,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-ON-ELO5",
+    "strand_id": "MATH-G4-ON",
+    "elo_text": "Multiplicative Thinking – Compute Fluently with Operations (x&÷)",
+    "elo_order": 235,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-ON-ELO6",
+    "strand_id": "MATH-G4-ON",
+    "elo_text": "Multiplicative Thinking – Make Reasonable Estimation When Using the Operation (x&÷)",
+    "elo_order": 236,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-ON-ELO7",
+    "strand_id": "MATH-G4-ON",
+    "elo_text": "Proportional Reasoning – Representing and Working with Rates and Ratios",
+    "elo_order": 237,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-PR-ELO1",
+    "strand_id": "MATH-G4-PR",
+    "elo_text": "Recognizing, describing and extending patterns – Repeating Patterns",
+    "elo_order": 238,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-PR-ELO2",
+    "strand_id": "MATH-G4-PR",
+    "elo_text": "Recognizing, describing and extending patterns – Increasing and Decreasing Patterns",
+    "elo_order": 239,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-PR-ELO3",
+    "strand_id": "MATH-G4-PR",
+    "elo_text": "Variables and Relationships – Representing Unknowns",
+    "elo_order": 240,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-PR-ELO4",
+    "strand_id": "MATH-G4-PR",
+    "elo_text": "Variables and Relationships – Understanding and Representing Equivalence",
+    "elo_order": 241,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-PR-ELO5",
+    "strand_id": "MATH-G4-PR",
+    "elo_text": "Variables and Relationships – Writing Expressions and Equations",
+    "elo_order": 242,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-PR-ELO6",
+    "strand_id": "MATH-G4-PR",
+    "elo_text": "Modelling Quantitative Relationships and Analyzing Change – Modelling Patterns and Relationships with Equations and Functions",
+    "elo_order": 243,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-PR-ELO7",
+    "strand_id": "MATH-G4-PR",
+    "elo_text": "Modelling Quantitative Relationships and Analyzing Change – Representing Functions and Relationships",
+    "elo_order": 244,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-PR-ELO8",
+    "strand_id": "MATH-G4-PR",
+    "elo_text": "Modelling Quantitative Relationships and Analyzing Change – Solving Problems with Functions and Relationships",
+    "elo_order": 245,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-GT-ELO1",
+    "strand_id": "MATH-G4-GT",
+    "elo_text": "Explore and Analyze Geometric Shapes and Relationships- Developing Spatial Sense",
+    "elo_order": 246,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-GT-ELO2",
+    "strand_id": "MATH-G4-GT",
+    "elo_text": "Explore and Analyze Geometric Shapes and Relationships-, Sorting, Patterning and building with 2d and 3d shapes",
+    "elo_order": 247,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-GT-ELO3",
+    "strand_id": "MATH-G4-GT",
+    "elo_text": "Recognizing Naming, and Describing Shapes- Analyzing and describing shapes",
+    "elo_order": 248,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-GT-ELO4",
+    "strand_id": "MATH-G4-GT",
+    "elo_text": "Recognizing, Naming and Describing Shapes- Naming 2D and 3D shapes",
+    "elo_order": 249,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-GT-ELO5",
+    "strand_id": "MATH-G4-GT",
+    "elo_text": "Recognizing, Naming and Describing Shapes-Describing relationships between and among shapes",
+    "elo_order": 250,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-GT-ELO6",
+    "strand_id": "MATH-G4-GT",
+    "elo_text": "Composing, Decomposing and Transforming Shapes – Combining Shapes",
+    "elo_order": 251,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-GT-ELO7",
+    "strand_id": "MATH-G4-GT",
+    "elo_text": "Composing, Decomposing, and Transforming Shapes - Deconstructing Shapes",
+    "elo_order": 252,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-GT-ELO8",
+    "strand_id": "MATH-G4-GT",
+    "elo_text": "Composing, Decomposing and Transforming Shapes -Transforming Shapes",
+    "elo_order": 253,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-M-ELO1",
+    "strand_id": "MATH-G4-M",
+    "elo_text": "Measurement - Understanding What and How We Measure - Developing an understanding of measurable attributes",
+    "elo_order": 254,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-M-ELO2",
+    "strand_id": "MATH-G4-M",
+    "elo_text": "Measurement - Understanding What and How We Measure - Comparing and ordering based on measurable attributes",
+    "elo_order": 255,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-M-ELO3",
+    "strand_id": "MATH-G4-M",
+    "elo_text": "Measurement - Understanding What and How We Measure - Developing and applying non-standard units of measure",
+    "elo_order": 256,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-M-ELO4",
+    "strand_id": "MATH-G4-M",
+    "elo_text": "Measurement- Understanding what and how we measure-Developing and applying standards units of measure.",
+    "elo_order": 257,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-M-ELO5",
+    "strand_id": "MATH-G4-M",
+    "elo_text": "Applying Techniques, Tools and Formulae for Measuring - Developing personal referents for measuring attributes",
+    "elo_order": 258,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-M-ELO6",
+    "strand_id": "MATH-G4-M",
+    "elo_text": "Applying Techniques, Tools and Formulae for Measuring - Use tools to measure attributes",
+    "elo_order": 259,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-M-ELO7",
+    "strand_id": "MATH-G4-M",
+    "elo_text": "Applying Techniques, Tools and Formulae for Measuring - Developing and applying formulae for measuring",
+    "elo_order": 260,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-DH-ELO1",
+    "strand_id": "MATH-G4-DH",
+    "elo_text": "Collecting, Organising and Displaying Data - Formulating questions that can be answered with data.",
+    "elo_order": 261,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-DH-ELO2",
+    "strand_id": "MATH-G4-DH",
+    "elo_text": "Collecting, Organising and Displaying Data - Collecting, organising, displaying and communicating data.",
+    "elo_order": 262,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-DH-ELO3",
+    "strand_id": "MATH-G4-DH",
+    "elo_text": "Using Statistical Methods to Analyse Data - Describing data sets",
+    "elo_order": 263,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-DH-ELO4",
+    "strand_id": "MATH-G4-DH",
+    "elo_text": "Using Statistical Methods to Analyse Data - Developing and applying methods to analyse data sets",
+    "elo_order": 264,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-DH-ELO5",
+    "strand_id": "MATH-G4-DH",
+    "elo_text": "Evaluating Inferences and Making Prediction Based on Data - Making Inferences with data sets.",
+    "elo_order": 265,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-DH-ELO6",
+    "strand_id": "MATH-G4-DH",
+    "elo_text": "Evaluating Inferences and Making Predictions Based on Data - Making and testing conjectures based on data sets",
+    "elo_order": 266,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-DH-ELO7",
+    "strand_id": "MATH-G4-DH",
+    "elo_text": "Evaluating Inferences and Making Predictions Based on Data - Evaluating data descriptions and reports",
+    "elo_order": 267,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-DH-ELO8",
+    "strand_id": "MATH-G4-DH",
+    "elo_text": "Understanding and Applying Concepts of Probability - Predicting and describing the likelihood of events",
+    "elo_order": 268,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G4-DH-ELO9",
+    "strand_id": "MATH-G4-DH",
+    "elo_text": "Understanding and Applying Concepts of Probability - Calculating Probabilities",
+    "elo_order": 269,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G4-LS-ELO1",
+    "strand_id": "LANG-G4-LS",
+    "elo_text": "The learner will explore, use, and critically apply oral language for pleasure, and personal growth, to foster relationships and to develop an appreciation and celebration of culture and of oral languages.",
+    "elo_order": 270,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G4-RV-ELO1",
+    "strand_id": "LANG-G4-RV",
+    "elo_text": "Students will demonstrate a variety of ways to use background knowledge and interests to select and engage critically with a range of culturally diverse paper based, visual, and digital texts for pleasure and personal growth.",
+    "elo_order": 271,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G4-RV-ELO2",
+    "strand_id": "LANG-G4-RV",
+    "elo_text": "Students will interact with understanding and critical thought to a variety of genres and text forms using vocabulary, comprehension strategies and graphophonic cues.",
+    "elo_order": 272,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G4-RV-ELO3",
+    "strand_id": "LANG-G4-RV",
+    "elo_text": "Students will develop their understanding of how an author’s choice of vocabulary, language, genre, text form, text features and style influence the meaning of text and define the author’s craft.",
+    "elo_order": 273,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G4-RV-ELO4",
+    "strand_id": "LANG-G4-RV",
+    "elo_text": "Learners will generate, gather, and organize thoughts to explore, clarify and reflect on thoughts, feelings, and experiences as they create a written or representative draft, independently and collaboratively, for a range of audiences and purposes.",
+    "elo_order": 274,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G4-WR-ELO1",
+    "strand_id": "LANG-G4-WR",
+    "elo_text": "Students will revise the organization and language use in drafted writing or representation, collaboratively and independently, for a variety of purposes and audiences.",
+    "elo_order": 275,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G4-WR-ELO2",
+    "strand_id": "LANG-G4-WR",
+    "elo_text": "Students will use their knowledge of spoken language, written language and writing conventions to refine the precision and enhance the meaning and clarity of their written work.",
+    "elo_order": 276,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-E-ELO1",
+    "strand_id": "SCIENCE-G4-E",
+    "elo_text": " Use evidence to construct an explanation relating the speed of an object to the energy of that object. ",
+    "elo_order": 277,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-E-ELO2",
+    "strand_id": "SCIENCE-G4-E",
+    "elo_text": " Make observations to provide evidence that energy can be transferred from place to place by sound, light, heat, and electric currents.  ",
+    "elo_order": 278,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-E-ELO3",
+    "strand_id": "SCIENCE-G4-E",
+    "elo_text": " Ask questions and predict outcomes about the changes in energy that occur when objects collide ",
+    "elo_order": 279,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-E-ELO4",
+    "strand_id": "SCIENCE-G4-E",
+    "elo_text": " Apply scientific ideas to design, test, and refine a device that converts energy from one form to another. ",
+    "elo_order": 280,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-E-ELO5",
+    "strand_id": "SCIENCE-G4-E",
+    "elo_text": "Obtain and combine information to describe that energy and fuels are derived from natural resources and that their uses affect the environment",
+    "elo_order": 281,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-W-ELO1",
+    "strand_id": "SCIENCE-G4-W",
+    "elo_text": "Develop a model of waves to describe patterns in terms of amplitude and wavelength and that waves can cause objects to move ",
+    "elo_order": 282,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-W-ELO2",
+    "strand_id": "SCIENCE-G4-W",
+    "elo_text": " Generate and compare multiple solutions that use patterns to transfer information ",
+    "elo_order": 283,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-SF-ELO1",
+    "strand_id": "SCIENCE-G4-SF",
+    "elo_text": "Develop a model to describe that light reflecting from objects and entering the eye allows objects to be seen.  ",
+    "elo_order": 284,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-SF-ELO2",
+    "strand_id": "SCIENCE-G4-SF",
+    "elo_text": "Construct an argument that plants and animals have internal and external structures that function to support survival, growth, behavior, and reproduction.",
+    "elo_order": 285,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-SF-ELO3",
+    "strand_id": "SCIENCE-G4-SF",
+    "elo_text": " Use a model to describe that animals receive different information through their senses, process it in their brain and respond to it differently ",
+    "elo_order": 286,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-PSE-ELO1",
+    "strand_id": "SCIENCE-G4-PSE",
+    "elo_text": " Identify evidence from patterns in rock formations and fossils in rock layers to support an explanation for changes in a landscape over time ",
+    "elo_order": 287,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-PSE-ELO2",
+    "strand_id": "SCIENCE-G4-PSE",
+    "elo_text": "Make observations and/or measurements to provide evidence of the effects of weathering or the rate of erosion by water, ice, wind, or vegetation",
+    "elo_order": 288,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-PSE-ELO3",
+    "strand_id": "SCIENCE-G4-PSE",
+    "elo_text": "Analyze and interpret data from maps to describe patterns of Earth’s features ",
+    "elo_order": 289,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G4-PSE-ELO4",
+    "strand_id": "SCIENCE-G4-PSE",
+    "elo_text": "Generate and compare multiple solutions to reduce the impacts of natural Earth processes on humans ",
+    "elo_order": 290,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-HCT-ELO1",
+    "strand_id": "SS-G4-HCT",
+    "elo_text": "To recognise that contact with Europeans brought significant changes for Indigenous peoples: Indigenous People in the Caribbean Before Contact",
+    "elo_order": 291,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-HCT-ELO2",
+    "strand_id": "SS-G4-HCT",
+    "elo_text": "To recognise that the arrival of Europeans brought significant changes for Indigenous peoples : Indigenous People in the Caribbean and the Impact of the European Arrival",
+    "elo_order": 292,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-HCT-ELO3",
+    "strand_id": "SS-G4-HCT",
+    "elo_text": "To recognize that contact with Europeans brought significant changes for Indigenous peoples: Indigenous People in the Caribbean and the Impact of the Europeans and Colonisation",
+    "elo_order": 293,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-HCT-ELO4",
+    "strand_id": "SS-G4-HCT",
+    "elo_text": "To recognize that contact with Europeans brought significant changes for Indigenous peoples: Indigenous People in the Caribbean and the Impact of the European Arrival and Indigenous Lifestyles Today",
+    "elo_order": 294,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-ST-ELO1",
+    "strand_id": "SS-G4-ST",
+    "elo_text": "To understand that our island has important geographic features that make us unique: Locating My Island",
+    "elo_order": 295,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-ST-ELO2",
+    "strand_id": "SS-G4-ST",
+    "elo_text": "To understand that our island has important geographic features that make us unique: Geographic Divisions",
+    "elo_order": 296,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-ST-ELO3",
+    "strand_id": "SS-G4-ST",
+    "elo_text": "To understand that our island has important geographic features that make us unique: Physical Features of My Island",
+    "elo_order": 297,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-ST-ELO4",
+    "strand_id": "SS-G4-ST",
+    "elo_text": "To understand that our island has important geographic features that make us unique: Climate Change",
+    "elo_order": 298,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-ST-ELO5",
+    "strand_id": "SS-G4-ST",
+    "elo_text": "To understand that our island has important geographic features that make us unique: Weather",
+    "elo_order": 299,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-ST-ELO6",
+    "strand_id": "SS-G4-ST",
+    "elo_text": "To understand that our island has important geographic features that make us unique: Parklands, Nature Reserves for Protecting Our Environment",
+    "elo_order": 300,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-ST-ELO7",
+    "strand_id": "SS-G4-ST",
+    "elo_text": "To understand that our island has important geographic features that make us unique: Fresh Water Sources",
+    "elo_order": 301,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-ST-ELO8",
+    "strand_id": "SS-G4-ST",
+    "elo_text": "To understand that our island has important geographic features that make us unique: Impact of Human Activity on the Natural Environment",
+    "elo_order": 302,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-CP-ELO1",
+    "strand_id": "SS-G4-CP",
+    "elo_text": "To determine that how we communicate with one another shapes our health, safety, and progress: Our Changing Communication Technology",
+    "elo_order": 303,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-CP-ELO2",
+    "strand_id": "SS-G4-CP",
+    "elo_text": "To determine that how we communicate with one another shapes our health, safety, and progress: Transportation Evolution",
+    "elo_order": 304,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-CP-ELO3",
+    "strand_id": "SS-G4-CP",
+    "elo_text": "To appreciate how our island(s) followed a unique path to nationhood: Major Political Events Shaping Our Nation",
+    "elo_order": 305,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-CP-ELO4",
+    "strand_id": "SS-G4-CP",
+    "elo_text": "To appreciate how our island(s) followed a unique path to nationhood: Our Government System",
+    "elo_order": 306,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-CP-ELO5",
+    "strand_id": "SS-G4-CP",
+    "elo_text": "To appreciate how our island(s) followed a unique path to nationhood: Democracy",
+    "elo_order": 307,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-CP-ELO6",
+    "strand_id": "SS-G4-CP",
+    "elo_text": "To appreciate how our island(s) followed a unique path to nationhood: Political Constituencies and Representation",
+    "elo_order": 308,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-CP-ELO7",
+    "strand_id": "SS-G4-CP",
+    "elo_text": "To appreciate how our island(s) followed a unique path to nationhood: National Heroes",
+    "elo_order": 309,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-CP-ELO8",
+    "strand_id": "SS-G4-CP",
+    "elo_text": "To appreciate how our island(s) followed a unique path to nationhood: Citizenship is Our Responsibility",
+    "elo_order": 310,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-EDM-ELO1",
+    "strand_id": "SS-G4-EDM",
+    "elo_text": "To understand how our natural resources play an important role in shaping our way of life: Natural Resources",
+    "elo_order": 311,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-EDM-ELO2",
+    "strand_id": "SS-G4-EDM",
+    "elo_text": "To understand how our natural resources play an important role in shaping our way of life: Types of Economic Activity",
+    "elo_order": 312,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-EDM-ELO3",
+    "strand_id": "SS-G4-EDM",
+    "elo_text": "To understand how our natural resources play an important role in shaping our way of life: The Physical and Economic Benefits of Land Use",
+    "elo_order": 313,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-EDM-ELO4",
+    "strand_id": "SS-G4-EDM",
+    "elo_text": "To understand how our natural resources play an important role in shaping our way of life: The Blue Economy",
+    "elo_order": 314,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-EDM-ELO5",
+    "strand_id": "SS-G4-EDM",
+    "elo_text": "To understand how our natural resources play an important role in shaping our way of life: Our Coastal Environment and our Economy",
+    "elo_order": 315,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G4-EDM-ELO6",
+    "strand_id": "SS-G4-EDM",
+    "elo_text": "To understand how our natural resources play an important role in shaping our way of life: Renewable and Non-Renewable Energy",
+    "elo_order": 316,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G5-RV-ELO1",
+    "strand_id": "LANG-G5-RV",
+    "elo_text": "Learners will select and engage with a wide range of paper-based, digital, and visual texts for independent reading, pleasure, and personal growth.",
+    "elo_order": 316,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G5-LS-ELO1",
+    "strand_id": "LANG-G5-LS",
+    "elo_text": " The learner will explore, use, and critically apply oral language for pleasure, personal growth, to foster relationships and to develop an appreciation and celebration of culture and of oral languages. ",
+    "elo_order": 317,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G5-RV-ELO2",
+    "strand_id": "LANG-G5-RV",
+    "elo_text": "Students will demonstrate a variety of ways to use background knowledge and interests to select and engage critically with a range of culturally diverse paper based, visual, and digital texts for pleasure and personal growth. ",
+    "elo_order": 318,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G5-RV-ELO3",
+    "strand_id": "LANG-G5-RV",
+    "elo_text": "Students will interact with understanding and critical thought to a variety of genres and text forms using vocabulary, comprehension strategies and graphophonic cues.  ",
+    "elo_order": 319,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G5-RV-ELO4",
+    "strand_id": "LANG-G5-RV",
+    "elo_text": "Students will develop their understanding of how an author’s choice of vocabulary, language, genre, text form, text features and style influence the meaning of text and define the author’s craft.  ",
+    "elo_order": 320,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G5-WR-ELO1",
+    "strand_id": "LANG-G5-WR",
+    "elo_text": "Learners will generate, gather and organize ideas and information to write for a range of purposes and audiences, using the writing process independently and collaboratively.",
+    "elo_order": 320,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G5-WR-ELO2",
+    "strand_id": "LANG-G5-WR",
+    "elo_text": "Learners will revise and edit written drafts to improve organization, style, and effectiveness for a variety of purposes and audiences.",
+    "elo_order": 320,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G5-WR-ELO3",
+    "strand_id": "LANG-G5-WR",
+    "elo_text": "Learners will apply spelling conventions, grammar, and writing mechanics to enhance the precision and clarity of their written work.",
+    "elo_order": 320,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G5-WR-ELO5",
+    "strand_id": "LANG-G5-WR",
+    "elo_text": "Learners will generate, gather, and organize thoughts to explore, clarify and reflect on thoughts, feelings, and experiences as they create a written or representative draft, independently and collaboratively, for a range of audiences and purposes. ",
+    "elo_order": 321,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G5-WR-ELO6",
+    "strand_id": "LANG-G5-WR",
+    "elo_text": "Learners will revise the organization and language use in drafted writing or representation, collaboratively and independently, for a variety of purposes and audiences. ",
+    "elo_order": 322,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-G5-WR-ELO7",
+    "strand_id": "LANG-G5-WR",
+    "elo_text": "Learners will use their knowledge of spoken language, written language and writing conventions to refine the precision and enhance the meaning and clarity of their written work. ",
+    "elo_order": 323,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-SPR-ELO1",
+    "strand_id": "SCIENCE-G5-SPR",
+    "elo_text": " Develop a model to describe that matter is made of particles too small to be seen. ",
+    "elo_order": 324,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-SPR-ELO2",
+    "strand_id": "SCIENCE-G5-SPR",
+    "elo_text": " Measure and graph quantities to provide evidence that regardless of the type of change that occurs when heating, cooling, or mixing substances, the total weight of matter is conserved. ",
+    "elo_order": 325,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-SPR-ELO3",
+    "strand_id": "SCIENCE-G5-SPR",
+    "elo_text": "Make observations and measurements to identify materials based on their properties. ",
+    "elo_order": 326,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-SPR-ELO4",
+    "strand_id": "SCIENCE-G5-SPR",
+    "elo_text": "Conduct an investigation to determine whether the mixing of two or more substances results in new substances.",
+    "elo_order": 327,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-ME-ELO1",
+    "strand_id": "SCIENCE-G5-ME",
+    "elo_text": " Use models to describe that energy in animals’ food (used for body repair, growth, motion, and to maintain body warmth) was once energy from the sun. ",
+    "elo_order": 328,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-ME-ELO2",
+    "strand_id": "SCIENCE-G5-ME",
+    "elo_text": "Support an argument that plants get the materials they need for growth chiefly from air and water. ",
+    "elo_order": 329,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-ME-ELO3",
+    "strand_id": "SCIENCE-G5-ME",
+    "elo_text": " Develop a model to describe the movement of matter among plants, animals, decomposers, and the environment.  ",
+    "elo_order": 330,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-ES-ELO1",
+    "strand_id": "SCIENCE-G5-ES",
+    "elo_text": " Develop a model using an example to describe ways the geosphere, biosphere, hydrosphere, and/or atmosphere interact.  ",
+    "elo_order": 331,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-ES-ELO2",
+    "strand_id": "SCIENCE-G5-ES",
+    "elo_text": "Describe and graph the amounts of salt water and fresh water in various reservoirs to provide evidence about the distribution of water on Earth.",
+    "elo_order": 332,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-ES-ELO3",
+    "strand_id": "SCIENCE-G5-ES",
+    "elo_text": "Obtain and combine information about ways individual communities use science ideas to protect the Earth’s resources and environment.",
+    "elo_order": 333,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-SSS-ELO1",
+    "strand_id": "SCIENCE-G5-SSS",
+    "elo_text": "Support an argument that the gravitational force exerted by Earth on objects is directed down.",
+    "elo_order": 334,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-SSS-ELO2",
+    "strand_id": "SCIENCE-G5-SSS",
+    "elo_text": "Support an argument that differences in the apparent brightness of the sun compared to other stars is due to their relative distances from Earth.",
+    "elo_order": 335,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-SSS-ELO3",
+    "strand_id": "SCIENCE-G5-SSS",
+    "elo_text": "Represent data in graphical displays to reveal patterns of daily changes in length and direction of shadows, day and night, and the seasonal appearance of some stars in the night sky.",
+    "elo_order": 336,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SCIENCE-G5-EN-ELO1",
+    "strand_id": "SCIENCE-G5-EN",
+    "elo_text": "Plan and carry out fair tests in which variables are controlled and failure points are considered to identify aspects of a model or prototype that can be improved.",
+    "elo_order": 337,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-NS-ELO1",
+    "strand_id": "MATH-G5-NS",
+    "elo_text": "Whole Number – Saying Number Sequence, Meaningful Counting and Skip Counting",
+    "elo_order": 338,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-NS-ELO2",
+    "strand_id": "MATH-G5-NS",
+    "elo_text": "Whole Number – Representing and Partitioning Quantities",
+    "elo_order": 339,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-NS-ELO3",
+    "strand_id": "MATH-G5-NS",
+    "elo_text": "Whole Number – Comparing and Ordering Quantities",
+    "elo_order": 340,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-NS-ELO4",
+    "strand_id": "MATH-G5-NS",
+    "elo_text": "Whole Number – Understanding Place",
+    "elo_order": 341,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-NS-ELO5",
+    "strand_id": "MATH-G5-NS",
+    "elo_text": "Fractions, Decimals, and Rational Numbers– Representing Fractions",
+    "elo_order": 342,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-NS-ELO6",
+    "strand_id": "MATH-G5-NS",
+    "elo_text": "Fractions, Decimals and Rational Numbers – Comparing and Ordering Fractions",
+    "elo_order": 343,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-NS-ELO7",
+    "strand_id": "MATH-G5-NS",
+    "elo_text": "Fractions, Decimals and Rational Numbers – Representing Decimals",
+    "elo_order": 344,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-NS-ELO8",
+    "strand_id": "MATH-G5-NS",
+    "elo_text": "Fractions, Decimals and Rational Numbers – Comparing and Ordering Decimals",
+    "elo_order": 345,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-NS-ELO9",
+    "strand_id": "MATH-G5-NS",
+    "elo_text": "Fractions, Decimals and Rational Numbers – Decimal Place Value",
+    "elo_order": 346,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-ON-ELO1",
+    "strand_id": "MATH-G5-ON",
+    "elo_text": "Additive Thinking – Understanding the Meaning of Addition and Subtraction and how they are Related",
+    "elo_order": 347,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-ON-ELO2",
+    "strand_id": "MATH-G5-ON",
+    "elo_text": "Additive Thinking – Compute Fluently Using Operations (+,-)",
+    "elo_order": 348,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-ON-ELO3",
+    "strand_id": "MATH-G5-ON",
+    "elo_text": "Additive Thinking –Make a Reasonable Estimation When Using Operations",
+    "elo_order": 349,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-ON-ELO4",
+    "strand_id": "MATH-G5-ON",
+    "elo_text": "Multiplicative Thinking – Understanding the Meaning of Multiplication and Division and How They Relate",
+    "elo_order": 350,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-ON-ELO5",
+    "strand_id": "MATH-G5-ON",
+    "elo_text": "Multiplicative Thinking – Compute Fluently with Operations (x&÷)",
+    "elo_order": 351,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-ON-ELO6",
+    "strand_id": "MATH-G5-ON",
+    "elo_text": "Multiplicative Thinking – Make Reasonable Estimation When Using the Operation (x&÷)",
+    "elo_order": 352,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-ON-ELO7",
+    "strand_id": "MATH-G5-ON",
+    "elo_text": "Proportional Reasoning – Representing and Working with Rates and Ratios",
+    "elo_order": 353,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-ON-ELO8",
+    "strand_id": "MATH-G5-ON",
+    "elo_text": "Use a variety of representations and models of percentages to solve real-world mathematical problems",
+    "elo_order": 354,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-PR-ELO1",
+    "strand_id": "MATH-G5-PR",
+    "elo_text": "Recognizing, describing and extending patterns – Repeating Patterns",
+    "elo_order": 355,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-PR-ELO2",
+    "strand_id": "MATH-G5-PR",
+    "elo_text": "Recognizing, describing and extending patterns – Increasing and Decreasing Patterns",
+    "elo_order": 356,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-PR-ELO3",
+    "strand_id": "MATH-G5-PR",
+    "elo_text": "Variables and Relationships – Representing Unknowns",
+    "elo_order": 357,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-PR-ELO4",
+    "strand_id": "MATH-G5-PR",
+    "elo_text": "Variables and Relationships - Understanding and Representing Equivalence",
+    "elo_order": 358,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-PR-ELO5",
+    "strand_id": "MATH-G5-PR",
+    "elo_text": "Variables and Relationships - Writing Expressions and Equations",
+    "elo_order": 359,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-PR-ELO6",
+    "strand_id": "MATH-G5-PR",
+    "elo_text": "Modelling Quantitative Relationships and Analyzing Change – Solving Problems with Functions and Relationships",
+    "elo_order": 360,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-PR-ELO7",
+    "strand_id": "MATH-G5-PR",
+    "elo_text": "Modelling Quantitative Relationships and Analyzing Change – Representing Functions and Relationships",
+    "elo_order": 361,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-PR-ELO8",
+    "strand_id": "MATH-G5-PR",
+    "elo_text": "Modelling Quantitative Relationships and Analyzing Change – Solving Problems with Functions and Relationships",
+    "elo_order": 362,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-PR-ELO9",
+    "strand_id": "MATH-G5-PR",
+    "elo_text": "Learners will explore, recognise, represent, and analyze patterns and relationships that model mathematical concepts and problems",
+    "elo_order": 363,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-GT-ELO1",
+    "strand_id": "MATH-G5-GT",
+    "elo_text": "Explore and Analyse Geometric Shapes and Relationships - Developing a spatial sense",
+    "elo_order": 364,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-GT-ELO2",
+    "strand_id": "MATH-G5-GT",
+    "elo_text": "Explore and Analyze Geometric Shapes and Relationships -Sorting, patterning, and building with 2D & 3D Shapes",
+    "elo_order": 365,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-GT-ELO3",
+    "strand_id": "MATH-G5-GT",
+    "elo_text": "Naming and Describing Shapes - Analysing and describing shapes",
+    "elo_order": 366,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-GT-ELO4",
+    "strand_id": "MATH-G5-GT",
+    "elo_text": "Recognizing, Naming and Describing Shapes - Naming 2D & 3D shapes",
+    "elo_order": 367,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-GT-ELO5",
+    "strand_id": "MATH-G5-GT",
+    "elo_text": "Recognizing, Naming, and Describing Shapes – Describing relationships between and among shapes",
+    "elo_order": 368,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-GT-ELO6",
+    "strand_id": "MATH-G5-GT",
+    "elo_text": "Composing, Decomposing and Transforming Shapes - Combining Shapes",
+    "elo_order": 369,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-GT-ELO7",
+    "strand_id": "MATH-G5-GT",
+    "elo_text": "Composing, Decomposing and Transforming Shapes - Deconstructing Shapes",
+    "elo_order": 370,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-GT-ELO8",
+    "strand_id": "MATH-G5-GT",
+    "elo_text": "Composing, Decomposing and Transforming Shapes - Transforming Shapes",
+    "elo_order": 371,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-M-ELO1",
+    "strand_id": "MATH-G5-M",
+    "elo_text": "Understanding What and How We Measure - Developing an understanding of measurable attributes",
+    "elo_order": 372,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-M-ELO2",
+    "strand_id": "MATH-G5-M",
+    "elo_text": "Understanding What and How We Measure – Comparing and ordering based on measurable attributes",
+    "elo_order": 373,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-M-ELO3",
+    "strand_id": "MATH-G5-M",
+    "elo_text": "Understanding What and How We Measure - Developing and applying non-standard units of measure",
+    "elo_order": 374,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-M-ELO4",
+    "strand_id": "MATH-G5-M",
+    "elo_text": "Understanding What and How We Measure - Developing and applying standard units of measure",
+    "elo_order": 375,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-M-ELO5",
+    "strand_id": "MATH-G5-M",
+    "elo_text": "Applying Techniques, Tools and Formulae for Measuring - Developing personal referents for measuring attributes",
+    "elo_order": 376,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-M-ELO6",
+    "strand_id": "MATH-G5-M",
+    "elo_text": "Applying Techniques, Tools and Formulae for Measuring - Use tools to measure attributes",
+    "elo_order": 377,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-M-ELO7",
+    "strand_id": "MATH-G5-M",
+    "elo_text": "Applying Techniques, Tools and Formulae for Measuring - Developing and applying formulae for measuring",
+    "elo_order": 378,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-DH-ELO1",
+    "strand_id": "MATH-G5-DH",
+    "elo_text": "Collecting, Organising and Displaying Data - Formulating questions that can be answered with data",
+    "elo_order": 379,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-DH-ELO2",
+    "strand_id": "MATH-G5-DH",
+    "elo_text": "Collecting, Organising and Displaying Data - Collecting, organising, displaying and communicating data",
+    "elo_order": 380,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-DH-ELO3",
+    "strand_id": "MATH-G5-DH",
+    "elo_text": "Using Statistical Methods to Analyse Data - Describing data sets",
+    "elo_order": 381,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-DH-ELO4",
+    "strand_id": "MATH-G5-DH",
+    "elo_text": "Using Statistical Methods to Analyse Data - Developing and applying methods to analyse data sets",
+    "elo_order": 382,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-DH-ELO5",
+    "strand_id": "MATH-G5-DH",
+    "elo_text": "Evaluating Inferences and Making Predictions Based on Data - Making inferences with data sets",
+    "elo_order": 383,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-DH-ELO6",
+    "strand_id": "MATH-G5-DH",
+    "elo_text": "Evaluating Inferences and Making Predictions Based on Data - Making and testing conjectures based on data sets",
+    "elo_order": 384,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-DH-ELO7",
+    "strand_id": "MATH-G5-DH",
+    "elo_text": "Evaluating Inferences and Making Predictions Based on Data - Evaluating data descriptions and reports",
+    "elo_order": 385,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-DH-ELO8",
+    "strand_id": "MATH-G5-DH",
+    "elo_text": "Understanding and Applying Concepts of Probability - Predicting and describing the likelihood of events",
+    "elo_order": 386,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "MATH-G5-DH-ELO9",
+    "strand_id": "MATH-G5-DH",
+    "elo_text": "Understanding and Applying Concepts of Probability - Calculating Probabilities",
+    "elo_order": 387,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-HCT-ELO1",
+    "strand_id": "SS-G5-HCT",
+    "elo_text": "To determine how communication and transportation technology has evolved over time and influenced our way of life: Forms of Communication Over Time",
+    "elo_order": 388,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-HCT-ELO2",
+    "strand_id": "SS-G5-HCT",
+    "elo_text": "To determine how communication and transportation technology have evolved over time and influenced our way of life: Using Communication Media Effectively",
+    "elo_order": 389,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-HCT-ELO3",
+    "strand_id": "SS-G5-HCT",
+    "elo_text": "To understand how colonisation impacted the Caribbean: Early Settlement and Colonisation",
+    "elo_order": 390,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-HCT-ELO4",
+    "strand_id": "SS-G5-HCT",
+    "elo_text": "To understand how colonisation impacted the Caribbean: The African Slave Trade",
+    "elo_order": 391,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-HCT-ELO5",
+    "strand_id": "SS-G5-HCT",
+    "elo_text": "To understand how colonisation impacted the Caribbean: Active Resistance to Slavery",
+    "elo_order": 392,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-ST-ELO1",
+    "strand_id": "SS-G5-ST",
+    "elo_text": "The Caribbean has a diverse geography that poses challenges and opportunities: Geographic Classifications of the Caribbean Region",
+    "elo_order": 393,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-ST-ELO2",
+    "strand_id": "SS-G5-ST",
+    "elo_text": "The Caribbean has a diverse geography that poses challenges and opportunities: Physical Formation of the Caribbean Islands",
+    "elo_order": 394,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-ST-ELO3",
+    "strand_id": "SS-G5-ST",
+    "elo_text": "To appreciate that the Caribbean has a diverse geography that poses challenges and opportunities: Popular/Major Landmarks in the Region\r\nEssential",
+    "elo_order": 395,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-ST-ELO4",
+    "strand_id": "SS-G5-ST",
+    "elo_text": "To appreciate that the Caribbean has a diverse geography that poses challenges and opportunities: Our Climate\r\nEssential",
+    "elo_order": 396,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-ST-ELO5",
+    "strand_id": "SS-G5-ST",
+    "elo_text": "To appreciate that the Caribbean has a diverse geography that poses challenges and opportunities: Climate Change and Its Negative Effects",
+    "elo_order": 397,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-CP-ELO1",
+    "strand_id": "SS-G5-CP",
+    "elo_text": "To understand that the Caribbean is comprised of many independent states that are interconnected and interdependent: Caribbean Government Systems",
+    "elo_order": 398,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-CP-ELO2",
+    "strand_id": "SS-G5-CP",
+    "elo_text": "To understand that the Caribbean is comprised of many independent states that are interconnected and interdependent: Caribbean Regional Integration and Interaction",
+    "elo_order": 399,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-CP-ELO3",
+    "strand_id": "SS-G5-CP",
+    "elo_text": "To understand that the Caribbean is comprised of many independent states that are interconnected and interdependent: Economic, Social and Political Relationships",
+    "elo_order": 400,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-CP-ELO4",
+    "strand_id": "SS-G5-CP",
+    "elo_text": "To understand that the Caribbean is comprised of many independent states that are interconnected and interdependent: Caribbean Government Systems",
+    "elo_order": 401,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-CP-ELO5",
+    "strand_id": "SS-G5-CP",
+    "elo_text": "To understand that the Caribbean is comprised of many independent states that are interconnected and interdependent: Caribbean Regional Integration",
+    "elo_order": 402,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-CP-ELO6",
+    "strand_id": "SS-G5-CP",
+    "elo_text": "To understand that the Caribbean is comprised of many independent states that are interconnected and interdependent: Caribbean Regional Organisations",
+    "elo_order": 403,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-EDM-ELO1",
+    "strand_id": "SS-G5-EDM",
+    "elo_text": "Economic Decision Making: Regional and international movement of goods, people, and services shapes Caribbean society",
+    "elo_order": 404,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-EDM-ELO2",
+    "strand_id": "SS-G5-EDM",
+    "elo_text": "Recognize that regional and international movement of goods, people, and services shapes Caribbean society: Regional Family Connections",
+    "elo_order": 405,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-EDM-ELO3",
+    "strand_id": "SS-G5-EDM",
+    "elo_text": "Recognize that regional and international movement of goods, people, and services shapes Caribbean society: Caribbean Agriculture",
+    "elo_order": 406,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-EDM-ELO4",
+    "strand_id": "SS-G5-EDM",
+    "elo_text": "Recognize that regional and international movement of goods, people, and services shapes Caribbean society: Caribbean Regional Trade and Communication Networks",
+    "elo_order": 407,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-EDM-ELO5",
+    "strand_id": "SS-G5-EDM",
+    "elo_text": "Recognize regional and international movement of goods, people, and services shapes Caribbean society: Transportation and Trade",
+    "elo_order": 408,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "SS-G5-EDM-ELO6",
+    "strand_id": "SS-G5-EDM",
+    "elo_text": "Recognize regional and international movement of goods, people, and services shapes Caribbean society: Benefits of Regional Trade",
+    "elo_order": 409,
+    "created_at": "2026-02-21T17:24:20.767466+00:00"
+  },
+  {
+    "id": "LANG-GK-LS-ELO1",
+    "strand_id": "LANG-GK-LS",
+    "elo_text": "The learner will explore, use, and critically apply oral language for pleasure, personal growth, to foster relationships and to develop an appreciation and celebration of culture and of oral languages.",
+    "elo_order": 1,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "LANG-GK-RV-ELO1",
+    "strand_id": "LANG-GK-RV",
+    "elo_text": "Learners will demonstrate a variety of ways to use background knowledge and interests to select and engage critically with a range of culturally diverse paper based, visual, and digital texts for pleasure and personal growth.",
+    "elo_order": 2,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "LANG-GK-RV-ELO2",
+    "strand_id": "LANG-GK-RV",
+    "elo_text": "Learners will interact with understanding and critical thought to a variety of genres and text forms using vocabulary, comprehension strategies and graphophonic cues.",
+    "elo_order": 3,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "LANG-GK-RV-ELO3",
+    "strand_id": "LANG-GK-RV",
+    "elo_text": "Learners will develop their understanding of how an author's choice of vocabulary, language, genre, text form, text features and style influence the meaning of text and define the author's craft.",
+    "elo_order": 4,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "LANG-GK-WR-ELO1",
+    "strand_id": "LANG-GK-WR",
+    "elo_text": "Learners will generate, gather and organize thoughts to explore, clarify and reflect on thoughts, feelings and experiences as they create a written or representative draft, independently and collaboratively, for a range of audiences and purposes.",
+    "elo_order": 5,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "LANG-GK-WR-ELO2",
+    "strand_id": "LANG-GK-WR",
+    "elo_text": "Learners will revise the organization and language use in drafted writing or representation, collaboratively and independently, for a variety of purposes and audiences.",
+    "elo_order": 6,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "LANG-GK-WR-ELO3",
+    "strand_id": "LANG-GK-WR",
+    "elo_text": "Learners will use their knowledge of spoken language, written language and writing conventions to refine the precision and enhance the meaning and clarity of their written work.",
+    "elo_order": 7,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "MATH-GK-NS-ELO1",
+    "strand_id": "MATH-GK-NS",
+    "elo_text": "Whole Number - Saying Number Sequence, Meaningful Counting and Skip Counting",
+    "elo_order": 8,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "MATH-GK-NS-ELO2",
+    "strand_id": "MATH-GK-NS",
+    "elo_text": "Whole Number – Representing and Partitioning Quantities",
+    "elo_order": 9,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "MATH-GK-NS-ELO3",
+    "strand_id": "MATH-GK-NS",
+    "elo_text": "Whole Number – Comparing and Ordering Quantities",
+    "elo_order": 10,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "MATH-GK-ON-ELO1",
+    "strand_id": "MATH-GK-ON",
+    "elo_text": "Additive Thinking - Understanding the meaning of addition and subtraction and how they relate",
+    "elo_order": 11,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "MATH-GK-PR-ELO1",
+    "strand_id": "MATH-GK-PR",
+    "elo_text": "Describe, create, extend and generalise patterns",
+    "elo_order": 12,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "MATH-GK-GT-ELO1",
+    "strand_id": "MATH-GK-GT",
+    "elo_text": "Analysing and describing 3D shapes",
+    "elo_order": 13,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "MATH-GK-GT-ELO2",
+    "strand_id": "MATH-GK-GT",
+    "elo_text": "Recognize, Name and Describe Shapes – 2D and 3D",
+    "elo_order": 14,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "MATH-GK-M-ELO1",
+    "strand_id": "MATH-GK-M",
+    "elo_text": "Understanding What and How We Measure",
+    "elo_order": 15,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "MATH-GK-M-ELO2",
+    "strand_id": "MATH-GK-M",
+    "elo_text": "Developing and applying non-standard and standard units of measurement",
+    "elo_order": 16,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "MATH-GK-DMP-ELO1",
+    "strand_id": "MATH-GK-DMP",
+    "elo_text": "Collecting, organizing, displaying and communicating data",
+    "elo_order": 17,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SCIENCE-GK-FI-ELO1",
+    "strand_id": "SCIENCE-GK-FI",
+    "elo_text": "Plan and conduct an investigation to compare the effects of different strengths or different directions of pushes and pulls on the motion of an object.",
+    "elo_order": 18,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SCIENCE-GK-FI-ELO2",
+    "strand_id": "SCIENCE-GK-FI",
+    "elo_text": "Analyse data to determine if a design solution works as intended to change the speed or direction of an object with a push or a pull.",
+    "elo_order": 19,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SCIENCE-GK-IRE-ELO1",
+    "strand_id": "SCIENCE-GK-IRE",
+    "elo_text": "Use observations to describe patterns of what plants and animals (including humans) need to survive.",
+    "elo_order": 20,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SCIENCE-GK-IRE-ELO2",
+    "strand_id": "SCIENCE-GK-IRE",
+    "elo_text": "Construct an argument supported by evidence for how plants and animals (including humans) can change the environment to meet their needs.",
+    "elo_order": 21,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SCIENCE-GK-IRE-ELO3",
+    "strand_id": "SCIENCE-GK-IRE",
+    "elo_text": "Use a model to represent the relationship between the needs of different plants or animals (including humans) and the places they live.",
+    "elo_order": 22,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SCIENCE-GK-IRE-ELO4",
+    "strand_id": "SCIENCE-GK-IRE",
+    "elo_text": "Communicate solutions that will reduce the impact of humans on the land, water, air, and/or other living things in the local environment.",
+    "elo_order": 23,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SCIENCE-GK-WC-ELO1",
+    "strand_id": "SCIENCE-GK-WC",
+    "elo_text": "Make observations to determine the effect of sunlight on Earth's surface.",
+    "elo_order": 24,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SCIENCE-GK-WC-ELO2",
+    "strand_id": "SCIENCE-GK-WC",
+    "elo_text": "Use tools and materials to design and build a structure that will reduce the warming effect of sunlight on an area.",
+    "elo_order": 25,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SCIENCE-GK-WC-ELO3",
+    "strand_id": "SCIENCE-GK-WC",
+    "elo_text": "Use and share observations of local weather conditions to describe patterns over time.",
+    "elo_order": 26,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SCIENCE-GK-WC-ELO4",
+    "strand_id": "SCIENCE-GK-WC",
+    "elo_text": "Ask questions to obtain information about the purpose of weather forecasting to prepare for, and respond to, severe weather.",
+    "elo_order": 27,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SS-GK-HCT-ELO1",
+    "strand_id": "SS-GK-HCT",
+    "elo_text": "Recognize that all children are special as they all have people who love them, they have their own physical characteristics, aptitudes and mannerisms.",
+    "elo_order": 28,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SS-GK-HCT-ELO2",
+    "strand_id": "SS-GK-HCT",
+    "elo_text": "To understand how our celebrations help us build pride in our identity. (The emphasis should be on how the family takes part in celebrations.)",
+    "elo_order": 29,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SS-GK-CP-ELO1",
+    "strand_id": "SS-GK-CP",
+    "elo_text": "To understand that we have rights and responsibilities as individuals.",
+    "elo_order": 30,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  },
+  {
+    "id": "SS-GK-ST-ELO1",
+    "strand_id": "SS-GK-ST",
+    "elo_text": "To understand that we belong to a wider environment.",
+    "elo_order": 31,
+    "created_at": "2026-03-05T19:48:15.876872+00:00"
+  }
+]

@@ -209,6 +209,8 @@ export default function FlashcardCreator() {
                   onSubjectChange={editor.setSubject}
                   onGradeLevelChange={editor.setGradeLevel}
                   onAgeRangeChange={editor.setAgeRange}
+                  curriculumContext={editor.curriculumContext}
+                  onCurriculumChange={editor.setCurriculumContext}
                 />
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="space-y-0.5">
@@ -455,6 +457,7 @@ export default function FlashcardCreator() {
         onOpenChange={setShowAIModal}
         contentType="flashcard"
         onGenerated={handleAIGenerated}
+        curriculumContext={editor.curriculumContext}
       />
     </div>
   );

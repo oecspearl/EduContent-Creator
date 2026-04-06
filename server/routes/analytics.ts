@@ -136,23 +136,15 @@ export function registerAnalyticsRoutes({ app, storage, requireAuth, requireTeac
 
   // Recent student activity
   app.get("/api/dashboard/recent-activity", requireAuth, asyncHandler(async (req: any, res) => {
-    try {
-      const limit = parseInt(req.query.limit as string) || 10;
-      const activity = await (storage as any).getRecentStudentActivity(req.session.userId!, limit);
-      res.json(activity);
-    } catch (error: any) {
-      res.json([]);
-    }
+    const limit = parseInt(req.query.limit as string) || 10;
+    const activity = await (storage as any).getRecentStudentActivity(req.session.userId!, limit);
+    res.json(activity);
   }));
 
   // Analytics overview
   app.get("/api/analytics/overview", requireAuth, asyncHandler(async (req: any, res) => {
-    try {
-      const analytics = await storage.getUserContentAnalytics(req.session.userId!);
-      res.json(analytics);
-    } catch (error: any) {
-      res.json([]);
-    }
+    const analytics = await storage.getUserContentAnalytics(req.session.userId!);
+    res.json(analytics);
   }));
 
   // Content-specific analytics — all routes verify ownership via ContentService

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "3969d14e-ddc4-47c6-a8ba-7e90413f1d55",
+    "code": "NUM",
+    "name": "Number",
+    "description": "Understanding of number concepts and operations",
+    "subject": "Mathematics",
+    "grade_level": "Grade 1",
+    "sort_order": 1,
+    "is_active": true,
+    "created_at": "2025-07-21T02:08:57.662073+00:00",
+    "updated_at": "2025-07-21T02:08:57.662073+00:00"
+  },
+  {
+    "id": "f0f457bc-bd6b-415b-8e7c-40b49ce8a5bb",
+    "code": "GEO",
+    "name": "Geometry",
+    "description": "Spatial relationships and geometric concepts",
+    "subject": "Mathematics",
+    "grade_level": "Grade 1",
+    "sort_order": 2,
+    "is_active": true,
+    "created_at": "2025-07-21T02:08:57.662073+00:00",
+    "updated_at": "2025-07-21T02:08:57.662073+00:00"
+  },
+  {
+    "id": "bf870537-7977-4658-902b-83bd01ab3e36",
+    "code": "MEAS",
+    "name": "Measurement",
+    "description": "Understanding measurement concepts and units",
+    "subject": "Mathematics",
+    "grade_level": "Grade 1",
+    "sort_order": 3,
+    "is_active": true,
+    "created_at": "2025-07-21T02:08:57.662073+00:00",
+    "updated_at": "2025-07-21T02:08:57.662073+00:00"
+  },
+  {
+    "id": "958e1ee1-9e38-445f-9360-a2c27e7df97c",
+    "code": "READ",
+    "name": "Reading",
+    "description": "Reading comprehension and fluency",
+    "subject": "English Language Arts",
+    "grade_level": "Grade 1",
+    "sort_order": 1,
+    "is_active": true,
+    "created_at": "2025-07-21T02:08:57.662073+00:00",
+    "updated_at": "2025-07-21T02:08:57.662073+00:00"
+  },
+  {
+    "id": "7019a92f-cb84-477d-bd4a-11993ac18030",
+    "code": "WRITE",
+    "name": "Writing",
+    "description": "Written communication and composition",
+    "subject": "English Language Arts",
+    "grade_level": "Grade 1",
+    "sort_order": 2,
+    "is_active": true,
+    "created_at": "2025-07-21T02:08:57.662073+00:00",
+    "updated_at": "2025-07-21T02:08:57.662073+00:00"
+  },
+  {
+    "id": "fafddfad-3a84-4675-9719-3b298f31f132",
+    "code": "SPEAK",
+    "name": "Speaking & Listening",
+    "description": "Oral communication skills",
+    "subject": "English Language Arts",
+    "grade_level": "Grade 1",
+    "sort_order": 3,
+    "is_active": true,
+    "created_at": "2025-07-21T02:08:57.662073+00:00",
+    "updated_at": "2025-07-21T02:08:57.662073+00:00"
+  }
+]

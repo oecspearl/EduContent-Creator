@@ -78,6 +78,16 @@ export const insertContentAssignmentSchema = createInsertSchema(contentAssignmen
   instructions: z.string().optional().nullable(),
 });
 
+// ─── Curriculum context (shared across generation schemas) ─
+
+export const curriculumContextSchema = z.object({
+  subject: z.string(),
+  grade: z.string(),
+  strand: z.string(),
+  eloText: z.string(),
+  scoTexts: z.array(z.string()).optional(),
+});
+
 // ─── API request schemas ───────────────────────────────────
 
 export const presentationGenerationSchema = z.object({
@@ -87,6 +97,7 @@ export const presentationGenerationSchema = z.object({
   learningOutcomes: z.array(z.string()).min(1).max(10),
   numberOfSlides: z.number().min(5).max(30).default(10),
   customInstructions: z.string().optional(),
+  curriculumContext: curriculumContextSchema.optional(),
 });
 
 export const aiGenerationSchema = z.object({
@@ -101,6 +112,7 @@ export const aiGenerationSchema = z.object({
   questionType: z.enum(["multiple-choice", "true-false", "fill-blank", "ordering", "drag-drop"]).optional(),
   questionTypes: z.array(z.enum(["multiple-choice", "true-false", "fill-blank", "ordering", "drag-drop"])).optional(),
   numberOfOptions: z.number().min(2).max(6).optional(),
+  curriculumContext: curriculumContextSchema.optional(),
 });
 
 export const videoFinderPedagogySchema = z.object({

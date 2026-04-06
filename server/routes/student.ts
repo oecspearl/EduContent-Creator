@@ -160,6 +160,140 @@ export function registerStudentRoutes({ app, storage, requireAuth }: RouteContex
     });
   }));
 
+  // Student gradebook — grades per class with best scores
+  app.get("/api/student/gradebook", requireAuth, asyncHandler(async (req: any, res) => {
+    const userId = req.session.userId!;
+
+    const classes = await storage.getStudentClasses(userId);
+    if (classes.length === 0) return res.json({ classes: [], overall: null });
+
+    // Get all assignments + individual assignments in parallel
+    const [classAssignments, individualRows] = await Promise.all([
+      storage.getStudentAssignments(userId),
+      db.select({
+        contentId: h5pContent.id,
+        contentTitle: h5pContent.title,
+        contentType: h5pContent.type,
+        assignedAt: studentAssignments.assignedAt,
+        dueDate: studentAssignments.dueDate,
+      })
+        .from(studentAssignments)
+        .innerJoin(h5pContent, eq(studentAssignments.contentId, h5pContent.id))
+        .where(eq(studentAssignments.studentId, userId)),
+    ]);
+
+    // All content IDs the student has assignments for
+    const allContentIds = Array.from(new Set([
+      ...classAssignments.map((a: any) => a.contentId),
+      ...individualRows.map(a => a.contentId),
+    ]));
+
+    // Batch fetch all quiz attempts and progress
+    const [allAttempts, allProgress] = await Promise.all([
+      allContentIds.length > 0
+        ? db.select().from(quizAttempts)
+            .where(and(eq(quizAttempts.userId, userId), inArray(quizAttempts.contentId, allContentIds)))
+        : Promise.resolve([]),
+      allContentIds.length > 0
+        ? db.select().from(learnerProgress)
+            .where(and(eq(learnerProgress.userId, userId), inArray(learnerProgress.contentId, allContentIds)))
+        : Promise.resolve([]),
+    ]);
+
+    // Build lookup maps
+    const attemptsByContent = new Map<string, typeof allAttempts>();
+    for (const a of allAttempts) {
+      const list = attemptsByContent.get(a.contentId) || [];
+      list.push(a);
+      attemptsByContent.set(a.contentId, list);
+    }
+    const progressByContent = new Map(allProgress.map(p => [p.contentId, p]));
+
+    function gradeForContent(contentId: string) {
+      const attempts = attemptsByContent.get(contentId) || [];
+      const progress = progressByContent.get(contentId);
+      if (attempts.length > 0) {
+        const best = attempts.reduce((b, a) =>
+          (a.score / a.totalQuestions) > (b.score / b.totalQuestions) ? a : b
+        );
+        return {
+          bestScore: best.score,
+          bestTotal: best.totalQuestions,
+          bestPercentage: Math.round((best.score / best.totalQuestions) * 100),
+          attempts: attempts.length,
+          completionPercentage: progress?.completionPercentage ?? 0,
+          completedAt: progress?.completedAt?.toISOString() ?? null,
+        };
+      }
+      return {
+        bestScore: null,
+        bestTotal: null,
+        bestPercentage: null,
+        attempts: 0,
+        completionPercentage: progress?.completionPercentage ?? 0,
+        completedAt: progress?.completedAt?.toISOString() ?? null,
+      };
+    }
+
+    // Build per-class data
+    const classData = classes.map(c => {
+      const assignments = classAssignments.filter((a: any) => a.classId === c.id);
+      const grades = assignments.map((a: any) => ({
+        contentId: a.contentId,
+        contentTitle: a.contentTitle,
+        contentType: a.contentType,
+        dueDate: a.dueDate,
+        ...gradeForContent(a.contentId),
+      }));
+
+      const gradedItems = grades.filter(g => g.bestPercentage !== null);
+      const classAverage = gradedItems.length > 0
+        ? Math.round(gradedItems.reduce((sum, g) => sum + g.bestPercentage!, 0) / gradedItems.length)
+        : null;
+
+      return {
+        classId: c.id,
+        className: c.name,
+        subject: c.subject,
+        gradeLevel: c.gradeLevel,
+        assignments: grades,
+        classAverage,
+        totalAssignments: assignments.length,
+        completedAssignments: grades.filter(g => g.completionPercentage >= 100).length,
+      };
+    });
+
+    // Individual assignments (not tied to a class)
+    const seenInClass = new Set(classAssignments.map((a: any) => a.contentId));
+    const individualGrades = individualRows
+      .filter(a => !seenInClass.has(a.contentId))
+      .map(a => ({
+        contentId: a.contentId,
+        contentTitle: a.contentTitle,
+        contentType: a.contentType,
+        dueDate: a.dueDate,
+        ...gradeForContent(a.contentId),
+      }));
+
+    // Overall stats
+    const allGrades = [...classData.flatMap(c => c.assignments), ...individualGrades];
+    const allGraded = allGrades.filter(g => g.bestPercentage !== null);
+    const overallAverage = allGraded.length > 0
+      ? Math.round(allGraded.reduce((sum, g) => sum + g.bestPercentage!, 0) / allGraded.length)
+      : null;
+
+    res.json({
+      classes: classData,
+      individualAssignments: individualGrades,
+      overall: {
+        average: overallAverage,
+        totalAssignments: allGrades.length,
+        totalGraded: allGraded.length,
+        totalCompleted: allGrades.filter(g => g.completionPercentage >= 100).length,
+      },
+    });
+  }));
+
   // AI-powered study insights after completing a quiz
   const insightsSchema = z.object({
     score: z.number(),

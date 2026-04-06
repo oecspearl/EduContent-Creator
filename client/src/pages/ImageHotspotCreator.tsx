@@ -173,6 +173,8 @@ export default function ImageHotspotCreator() {
                   onSubjectChange={editor.setSubject}
                   onGradeLevelChange={editor.setGradeLevel}
                   onAgeRangeChange={editor.setAgeRange}
+                  curriculumContext={editor.curriculumContext}
+                  onCurriculumChange={editor.setCurriculumContext}
                 />
                 <div className="space-y-2">
                   <Label htmlFor="imageUrl">Image URL *</Label>
@@ -368,6 +370,7 @@ export default function ImageHotspotCreator() {
         onOpenChange={setShowAIModal}
         contentType="image-hotspot"
         onGenerated={handleAIGenerated}
+        curriculumContext={editor.curriculumContext}
       />
     </div>
   );
