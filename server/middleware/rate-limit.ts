@@ -137,6 +137,19 @@ export const presentationCreationRateLimit = rateLimit({
 });
 
 /**
+ * OpenRouter / per-slide image generation (many calls per presentation)
+ */
+export const aiImageGenerationRateLimit = rateLimit({
+  maxRequests: 45,
+  windowSeconds: 60,
+  keyGenerator: (req) => {
+    const userId = (req.session as any)?.userId;
+    return userId ? `img:${userId}` : req.ip || req.socket.remoteAddress || "unknown";
+  },
+  message: "Too many image generations. Please wait a minute and try again.",
+});
+
+/**
  * Rate limit for image search (less restrictive)
  */
 export const imageSearchRateLimit = rateLimit({

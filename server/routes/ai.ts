@@ -23,7 +23,12 @@ import {
   getOpenAIClient,
 } from "../openai";
 import { withTimeoutMiddleware } from "../middleware/timeout";
-import { aiGenerationRateLimit, imageSearchRateLimit, presentationCreationRateLimit } from "../middleware/rate-limit";
+import {
+  aiGenerationRateLimit,
+  aiImageGenerationRateLimit,
+  imageSearchRateLimit,
+  presentationCreationRateLimit,
+} from "../middleware/rate-limit";
 import { asyncHandler } from "../utils/async-handler";
 import type { RouteContext } from "./types";
 import { generateImageWithOpenRouter } from "../openrouter-image";
@@ -306,7 +311,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
   }));
 
   // AI image generation via OpenRouter (teachers only)
-  app.post("/api/ai/generate-image", requireTeacher, aiGenerationRateLimit, asyncHandler(async (req, res) => {
+  app.post("/api/ai/generate-image", requireTeacher, aiImageGenerationRateLimit, asyncHandler(async (req, res) => {
     try {
       const parsed = aiImageGenerationSchema.parse(req.body);
       if (!requireOpenRouterKey(res)) return;

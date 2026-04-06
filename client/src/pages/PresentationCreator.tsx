@@ -238,8 +238,13 @@ export default function PresentationCreator() {
 
       try {
         for (const slide of slidesData) {
-          if (slide.imageUrl && !slide.imageUrl.startsWith("http")) {
-            const originalPrompt = slide.imageUrl;
+          const raw = slide.imageUrl?.trim() ?? "";
+          const alreadyImage =
+            raw.startsWith("http://") ||
+            raw.startsWith("https://") ||
+            raw.startsWith("data:image");
+          if (raw && !alreadyImage) {
+            const originalPrompt = raw;
             const parts = [
               "Educational illustration for a classroom presentation.",
               topic ? `Topic: "${topic}".` : "",
