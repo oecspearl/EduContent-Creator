@@ -123,6 +123,7 @@ export default function PresentationPlayer({ data, contentId }: PresentationPlay
             {(slide.subtitle || slide.content) && (
               <p className="text-xl text-muted-foreground">{slide.subtitle || slide.content}</p>
             )}
+            {renderImage(slide)}
           </div>
         );
 
@@ -167,6 +168,7 @@ export default function PresentationPlayer({ data, contentId }: PresentationPlay
             ) : slide.content ? (
               <p className="text-lg leading-relaxed">{slide.content}</p>
             ) : null}
+            {renderImage(slide)}
           </div>
         );
 
@@ -197,6 +199,7 @@ export default function PresentationPlayer({ data, contentId }: PresentationPlay
                 )}
               </div>
             </div>
+            {renderImage(slide)}
           </div>
         );
 
@@ -215,6 +218,7 @@ export default function PresentationPlayer({ data, contentId }: PresentationPlay
                 ))}
               </ul>
             )}
+            {renderImage(slide)}
           </div>
         );
 
@@ -234,6 +238,7 @@ export default function PresentationPlayer({ data, contentId }: PresentationPlay
               </ul>
             )}
             {slide.content && <p className="text-lg leading-relaxed">{slide.content}</p>}
+            {renderImage(slide)}
           </div>
         );
 
