@@ -218,8 +218,9 @@ PresentationCreator
   │                                      │
   ◄─ { slides: SlideContent[] } ◄────────┘
   │
-  ├─ For each slide with imageUrl (prompt/query, not http):
-  │   └─ POST /api/ai/generate-image → OpenRouter (chat + image modalities)
+  ├─ For each slide with imageUrl (prompt/query, not http/data):
+  │   ├─ If teacher chose OpenRouter → POST /api/ai/generate-image
+  │   └─ If teacher chose Unsplash → POST /api/unsplash/search
   │
   └─ Load slides into editor
 ```

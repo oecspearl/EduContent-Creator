@@ -14,11 +14,36 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ArrowLeft, Plus, Trash2, Sparkles, Globe, ExternalLink, AlertCircle, Palette, Edit2, Save, X, GripVertical, Download, Settings } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Sparkles,
+  Globe,
+  ExternalLink,
+  AlertCircle,
+  Palette,
+  Edit2,
+  Save,
+  X,
+  GripVertical,
+  Download,
+  Settings,
+  Image as ImageIcon,
+} from "lucide-react";
 import type { PresentationData, SlideContent, H5pContent } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
 import { ContentMetadataFields } from "@/components/ContentMetadataFields";
+
+type PresentationImageProvider = "openrouter" | "unsplash";
+
+function normalizePresentationImageProvider(
+  value: PresentationData["imageProvider"] | undefined,
+): PresentationImageProvider {
+  return value === "unsplash" ? "unsplash" : "openrouter";
+}
 
 export default function PresentationCreator() {
   const { id: contentId } = useParams();
@@ -48,6 +73,7 @@ export default function PresentationCreator() {
   const [curriculumContext, setCurriculumContext] = useState<import("@shared/schema").CurriculumContext | null>(null);
   const [presentationUrl, setPresentationUrl] = useState<string>("");
   const [colorScheme, setColorScheme] = useState<string>("blue");
+  const [imageProvider, setImageProvider] = useState<PresentationImageProvider>("openrouter");
   const [editingSlideId, setEditingSlideId] = useState<string | null>(null);
   const [editedSlide, setEditedSlide] = useState<SlideContent | null>(null);
 
@@ -78,6 +104,7 @@ export default function PresentationCreator() {
       setPresentationId(data.presentationId || "");
       setPresentationUrl(data.presentationUrl || "");
       setColorScheme(data.colorScheme || "blue");
+      setImageProvider(normalizePresentationImageProvider(data.imageProvider));
     }
   }, [content]);
 
@@ -130,6 +157,7 @@ export default function PresentationCreator() {
         slides: saveSafeSlides,
         generatedDate: generatedDate || new Date().toISOString(),
         colorScheme,
+        imageProvider,
         ...(presentationId && { presentationId }),
         ...(presentationUrl && { presentationUrl }),
       };
@@ -191,7 +219,22 @@ export default function PresentationCreator() {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [title, description, subject, gradeLevel, ageRange, topic, learningOutcomes, customInstructions, slides, colorScheme, isPublic, autosave, isPublished]);
+  }, [
+    title,
+    description,
+    subject,
+    gradeLevel,
+    ageRange,
+    topic,
+    learningOutcomes,
+    customInstructions,
+    slides,
+    colorScheme,
+    imageProvider,
+    isPublic,
+    autosave,
+    isPublished,
+  ]);
   
   const handleManualSave = () => {
     if (!title) {
@@ -245,40 +288,70 @@ export default function PresentationCreator() {
             raw.startsWith("data:image");
           if (raw && !alreadyImage) {
             const originalPrompt = raw;
-            const parts = [
-              "Educational illustration for a classroom presentation.",
-              topic ? `Topic: "${topic}".` : "",
-              slide.title ? `Slide title: "${slide.title}".` : "",
-              slide.imageAlt ? `Scene / accessibility: ${slide.imageAlt}.` : "",
-              `Visual focus: ${originalPrompt}.`,
-              "Style: clear, age-appropriate for students; minimal or no overlaid text unless essential.",
-            ];
-            const fullPrompt = parts.filter(Boolean).join(" ");
+            let resolved = false;
 
-            try {
-              const imageResponse = await apiRequest("POST", "/api/ai/generate-image", {
-                prompt: fullPrompt,
-              });
-              const body = await imageResponse.json();
-              const imageUrl = body.imageUrl as string | undefined;
-              if (imageUrl) {
-                successCount++;
-                slidesWithImages.push({
-                  ...slide,
-                  imageUrl,
-                  imageAlt: slide.imageAlt || originalPrompt,
+            if (imageProvider === "unsplash") {
+              try {
+                const imageResponse = await apiRequest("POST", "/api/unsplash/search", {
+                  query: originalPrompt,
+                  count: 1,
                 });
-                continue;
+                const imageData = await imageResponse.json();
+                const photo = imageData.photos?.[0];
+                if (photo?.urls?.regular) {
+                  successCount++;
+                  resolved = true;
+                  slidesWithImages.push({
+                    ...slide,
+                    imageUrl: photo.urls.regular,
+                    imageAlt:
+                      slide.imageAlt ||
+                      photo.alt_description ||
+                      photo.description ||
+                      originalPrompt,
+                  });
+                }
+              } catch (err) {
+                console.error("Unsplash image failed for slide:", err);
               }
-            } catch (err) {
-              console.error("OpenRouter image failed for slide:", err);
+            } else {
+              const parts = [
+                "Educational illustration for a classroom presentation.",
+                topic ? `Topic: "${topic}".` : "",
+                slide.title ? `Slide title: "${slide.title}".` : "",
+                slide.imageAlt ? `Scene / accessibility: ${slide.imageAlt}.` : "",
+                `Visual focus: ${originalPrompt}.`,
+                "Style: clear, age-appropriate for students; minimal or no overlaid text unless essential.",
+              ];
+              const fullPrompt = parts.filter(Boolean).join(" ");
+              try {
+                const imageResponse = await apiRequest("POST", "/api/ai/generate-image", {
+                  prompt: fullPrompt,
+                });
+                const body = await imageResponse.json();
+                const imageUrl = body.imageUrl as string | undefined;
+                if (imageUrl) {
+                  successCount++;
+                  resolved = true;
+                  slidesWithImages.push({
+                    ...slide,
+                    imageUrl,
+                    imageAlt: slide.imageAlt || originalPrompt,
+                  });
+                }
+              } catch (err) {
+                console.error("OpenRouter image failed for slide:", err);
+              }
             }
-            failCount++;
-            slidesWithImages.push({
-              ...slide,
-              imageUrl: "",
-              imageAlt: slide.imageAlt || originalPrompt,
-            });
+
+            if (!resolved) {
+              failCount++;
+              slidesWithImages.push({
+                ...slide,
+                imageUrl: "",
+                imageAlt: slide.imageAlt || originalPrompt,
+              });
+            }
           } else {
             slidesWithImages.push(slide);
           }
@@ -287,11 +360,22 @@ export default function PresentationCreator() {
         console.log("Slides with images:", slidesWithImages);
         setSlides(slidesWithImages);
 
+        const sourceHint =
+          imageProvider === "unsplash"
+            ? failCount > 0 && successCount === 0
+              ? " Check UNSPLASH_ACCESS_KEY on the server."
+              : ""
+            : failCount > 0 && successCount === 0
+              ? " Check OPENROUTER_API_KEY and OPENROUTER_IMAGE_MODEL."
+              : "";
+
         const toastMessage =
           successCount > 0
-            ? `OpenRouter AI images: ${successCount} ok${failCount > 0 ? `, ${failCount} failed` : ""}.`
+            ? `${imageProvider === "unsplash" ? "Stock photos" : "AI images"}: ${successCount} ok${
+                failCount > 0 ? `, ${failCount} failed` : ""
+              }.`
             : failCount > 0
-              ? "Slide text generated, but no images were produced. Check OPENROUTER_API_KEY and OPENROUTER_IMAGE_MODEL."
+              ? `Slide text generated, but no images were filled in.${sourceHint}`
               : "Slides generated (no image prompts in deck).";
 
         toast({
@@ -380,6 +464,7 @@ export default function PresentationCreator() {
             slides,
             generatedDate: generatedDate || new Date().toISOString(),
             colorScheme,
+            imageProvider,
             presentationId: data.presentationId,
             presentationUrl: data.url,
           };
@@ -795,13 +880,33 @@ export default function PresentationCreator() {
                 <p className="text-xs text-muted-foreground mt-1">Between 5 and 30 slides</p>
               </div>
               <div>
-                <Label>Slide images</Label>
-                <p className="text-sm text-muted-foreground mt-1">
-                  After the outline is generated, images are created with{" "}
-                  <span className="font-medium text-foreground">OpenRouter</span> using{" "}
-                  <code className="text-xs bg-muted px-1 rounded">OPENROUTER_API_KEY</code> on the server.
-                  Optional: <code className="text-xs bg-muted px-1 rounded">OPENROUTER_IMAGE_MODEL</code> (default{" "}
-                  <code className="text-xs bg-muted px-1 rounded">google/gemini-2.5-flash-image</code>).
+                <Label htmlFor="imageProvider">Slide images</Label>
+                <Select
+                  value={imageProvider}
+                  onValueChange={(value) => setImageProvider(value as PresentationImageProvider)}
+                >
+                  <SelectTrigger id="imageProvider" data-testid="select-image-provider">
+                    <SelectValue placeholder="Choose image source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="openrouter" data-testid="select-image-provider-openrouter">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4" />
+                        <span>AI images (OpenRouter)</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="unsplash" data-testid="select-image-provider-unsplash">
+                      <div className="flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4" />
+                        <span>Stock photos (Unsplash)</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {imageProvider === "openrouter"
+                    ? "Uses OPENROUTER_API_KEY (optional OPENROUTER_IMAGE_MODEL) on the server."
+                    : "Uses UNSPLASH_ACCESS_KEY. The AI supplies short search terms per slide."}
                 </p>
               </div>
               <div>

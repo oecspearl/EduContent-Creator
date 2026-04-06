@@ -262,4 +262,6 @@ export type PresentationData = {
   presentationUrl?: string;
   generatedDate: string;
   colorScheme?: string;
+  /** Teacher-chosen source when resolving slide image prompts after AI outline */
+  imageProvider?: "openrouter" | "unsplash";
 };

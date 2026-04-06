@@ -41,13 +41,13 @@ The Google Slides content type enables teachers to create AI-generated education
 - **Title slides**: Engaging titles and subtitles
 - **Learning outcomes slides**: Clear presentation of objectives
 - **Content slides**: Structured information with 3-5 bullet points
-- **Image slides**: Educational images via **OpenRouter** (server-side `OPENROUTER_API_KEY`; optional `OPENROUTER_IMAGE_MODEL`)
+- **Image slides**: Teacher chooses **OpenRouter** (AI) or **Unsplash** (stock) when generating; stored as `imageProvider` on presentation data
 - **Guiding questions**: 4-6 thought-provoking questions to check understanding (recall to analysis to application)
 - **Reflection questions**: 2-3 deeper thinking prompts for learner engagement
 - **Speaker notes**: Pedagogical guidance and teaching tips for educators
 
 **Google Slides Integration**:
-- **Image sourcing**: AI-generated slide images use OpenRouter on the server (`/api/ai/generate-image`).
+- **Image sourcing**: Slide images use OpenRouter or Unsplash according to teacher selection (`imageProvider`).
 - **Real presentation creation**: Uses Google Slides API to create actual presentations in teacher's Google Drive
 - **Persistent links**: Stores presentation ID and URL for future access
 - **One-click access**: "Open in Google Slides" button in both creator and player views

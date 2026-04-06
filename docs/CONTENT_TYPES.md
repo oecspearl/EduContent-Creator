@@ -607,10 +607,10 @@ type PresentationData = {
   presentationUrl?: string;   // Google Slides URL (if exported)
   generatedDate: string;
   colorScheme?: string;       // "blue" | "green" | "purple" | "orange" | "teal" | "red"
+  imageProvider?: "openrouter" | "unsplash";  // teacher picks after outline: AI vs stock photos
 };
 
-// Slide images: OpenRouter via POST /api/ai/generate-image (OPENROUTER_API_KEY on server).
-// Legacy imageProvider on PresentationData is no longer stored.
+// Slide images: OpenRouter (POST /api/ai/generate-image) or Unsplash (POST /api/unsplash/search) per imageProvider.
 
 type SlideContent = {
   id: string;
