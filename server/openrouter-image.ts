@@ -3,6 +3,37 @@ const OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
 /** Listed on https://openrouter.ai/docs/guides/overview/multimodal/image-generation */
 const DEFAULT_IMAGE_MODEL = "google/gemini-2.5-flash-image";
 
+/** Maps OpenRouter HTTP status to a clear message; sets statusCode for Express error handler. */
+function openRouterFailureError(status: number, rawText: string): Error {
+  let detail = rawText.slice(0, 700);
+  try {
+    const j = JSON.parse(rawText) as { error?: { message?: string }; message?: string };
+    if (j.error?.message) detail = j.error.message;
+    else if (typeof j.message === "string") detail = j.message;
+  } catch {
+    /* use raw slice */
+  }
+
+  let message: string;
+  if (status === 401) {
+    message = `OpenRouter returned 401 Unauthorized — your API key is missing, invalid, or revoked. Check OPENROUTER_API_KEY matches a key from https://openrouter.ai/keys (must start with sk-or-v1-). OpenRouter: ${detail}`;
+  } else if (status === 403) {
+    message = `OpenRouter returned 403 Forbidden — key may lack permission or the model is blocked for your account. OpenRouter: ${detail}`;
+  } else if (status === 402) {
+    message = `OpenRouter returned 402 — add credits or a payment method at https://openrouter.ai/credits. OpenRouter: ${detail}`;
+  } else if (status === 429) {
+    message = `OpenRouter rate limit (429). Wait a minute and retry. OpenRouter: ${detail}`;
+  } else if (status === 404) {
+    message = `OpenRouter 404 — model may be wrong or renamed. Set OPENROUTER_IMAGE_MODEL to an image-capable model from https://openrouter.ai/models. OpenRouter: ${detail}`;
+  } else {
+    message = `OpenRouter error (${status}): ${detail}`;
+  }
+
+  const err = new Error(message) as Error & { statusCode?: number };
+  err.statusCode = status >= 400 && status < 600 ? status : 502;
+  return err;
+}
+
 type ContentPart = {
   type?: string;
   text?: string;
@@ -76,7 +107,7 @@ async function openRouterChatCompletion(body: Record<string, unknown>): Promise<
 
   const rawText = await res.text();
   if (!res.ok) {
-    throw new Error(`OpenRouter error (${res.status}): ${rawText.slice(0, 800)}`);
+    throw openRouterFailureError(res.status, rawText);
   }
 
   try {
