@@ -632,7 +632,7 @@ Respond in JSON format:
       systemMessage: "You are an expert Caribbean instructional designer creating visually engaging educational presentations for OECS schools. Always respond with valid JSON. Follow Universal Design for Learning (UDL) principles. Create varied, impactful slides that keep students engaged.",
       prompt,
       maxTokens: 6000,
-      timeout: 30000,
+      timeout: 50000,
     },
     "slides",
   );

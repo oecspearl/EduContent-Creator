@@ -280,7 +280,7 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
   }));
 
   // Presentation AI generation (teachers only)
-  app.post("/api/presentation/generate", requireTeacher, presentationCreationRateLimit, withTimeoutMiddleware(25000), asyncHandler(async (req, res) => {
+  app.post("/api/presentation/generate", requireTeacher, presentationCreationRateLimit, withTimeoutMiddleware(55000), asyncHandler(async (req, res) => {
     try {
       const parsed = presentationGenerationSchema.parse(req.body);
       const slides = await generatePresentation(parsed);
