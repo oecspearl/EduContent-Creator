@@ -138,7 +138,7 @@ export default function HelpPage() {
               <div>
                 <h4 className="font-semibold text-foreground mb-1">Create or Generate with AI</h4>
                 <p className="text-sm text-muted-foreground">
-                  Build your content manually or use the AI generation feature to automatically create questions, flashcards, and more based on your topic and difficulty level.
+                  Build your content manually or use the AI generation feature to automatically create questions, flashcards, and more based on your topic and difficulty level. You can also align your content to the OECS Harmonised Primary Curriculum by selecting specific learning outcomes before generating.
                 </p>
               </div>
             </div>
@@ -490,6 +490,64 @@ export default function HelpPage() {
                       <li>Review and fact-check AI-generated content</li>
                       <li>For ordering questions, provide context about the sequence in your topic description</li>
                       <li>For drag-drop questions, specify the categories or zones you want in the additional context</li>
+                    </ul>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="curriculum-alignment">
+              <AccordionTrigger>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  <span>OECS Curriculum Alignment</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  <p className="text-sm text-muted-foreground">
+                    Align your content directly to the OECS Harmonised Primary Curriculum. When enabled, you can drill down through the curriculum hierarchy and the AI will generate content that targets specific learning outcomes.
+                  </p>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">How to Use Curriculum Alignment:</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>In any content creator, find the "Align to OECS Harmonised Primary Curriculum" toggle below the Subject, Grade, and Age Range selectors</li>
+                      <li>Turn on the toggle to reveal the curriculum selector</li>
+                      <li>Select a <strong>Subject</strong> from the curriculum (e.g., Mathematics, Science)</li>
+                      <li>Select a <strong>Grade Level</strong> available for that subject</li>
+                      <li>Select a <strong>Strand</strong> (the broad curriculum grouping within the subject)</li>
+                      <li>Select an <strong>Essential Learning Outcome (ELO)</strong> - the learning goal you want to target</li>
+                      <li>Optionally click on one or more <strong>Specific Curriculum Outcomes (SCOs)</strong> to narrow the focus further</li>
+                      <li>The selected curriculum context will be shown as a summary card</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">How It Works with AI Generation:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>When you use "Generate with AI", the selected ELO and SCOs are automatically included in the AI prompt</li>
+                      <li>The AI generates content that directly assesses or teaches the specific curriculum outcomes</li>
+                      <li>A curriculum alignment badge appears in the AI Generation modal showing what outcomes are targeted</li>
+                      <li>This works across all content types: quizzes, flashcards, presentations, interactive videos, and more</li>
+                    </ul>
+                  </div>
+                  <div className="bg-accent/50 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-foreground mb-2">Curriculum Hierarchy:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li><strong>Subject:</strong> The curriculum subject area (e.g., Mathematics, English Language, Science)</li>
+                      <li><strong>Grade Level:</strong> The grade within that subject</li>
+                      <li><strong>Strand:</strong> A broad grouping of related learning outcomes (e.g., "Number and Number Sense")</li>
+                      <li><strong>Essential Learning Outcome (ELO):</strong> A broad learning goal that describes what learners should achieve</li>
+                      <li><strong>Specific Curriculum Outcome (SCO):</strong> A granular, measurable skill or knowledge point under each ELO</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Best Practices:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>Select specific SCOs when you want tightly focused content (e.g., a quiz on one skill)</li>
+                      <li>Leave SCOs unselected to generate broader content aligned to the entire ELO</li>
+                      <li>Selecting a curriculum subject and grade automatically updates the metadata fields</li>
+                      <li>Always review AI-generated content to ensure it meets your curriculum expectations</li>
+                      <li>Use curriculum alignment for lesson planning to ensure all outcomes are covered over time</li>
                     </ul>
                   </div>
                 </div>
@@ -963,6 +1021,15 @@ export default function HelpPage() {
               </AccordionItem>
 
               <AccordionItem value="faq-9">
+                <AccordionTrigger>What is the OECS Curriculum Alignment feature?</AccordionTrigger>
+                <AccordionContent>
+                  <p className="text-sm text-muted-foreground">
+                    The OECS Curriculum Alignment feature lets you connect your content directly to the OECS Harmonised Primary Curriculum. When creating any content type, toggle on "Align to OECS Harmonised Primary Curriculum" to select a specific Subject, Grade, Strand, Essential Learning Outcome (ELO), and Specific Curriculum Outcomes (SCOs). When you then use AI generation, the AI will create content that directly targets those curriculum outcomes, ensuring your materials are standards-aligned.
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="faq-10">
                 <AccordionTrigger>Can I download my quizzes as HTML files?</AccordionTrigger>
                 <AccordionContent>
                   <p className="text-sm text-muted-foreground">
