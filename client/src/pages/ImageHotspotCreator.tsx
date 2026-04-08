@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,16 @@ export default function ImageHotspotCreator() {
   const [hotspots, setHotspots] = useState<ImageHotspot[]>([]);
   const [showAIModal, setShowAIModal] = useState(false);
 
+  // Interaction state
+  const [selectedHotspotIndex, setSelectedHotspotIndex] = useState<number | null>(null);
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+
+  // Refs
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+  const hotspotCardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  // Tracks when a drag just ended so the subsequent click event doesn't place a new hotspot
+  const dragEndedRef = useRef(false);
+
   const editor = useContentEditor<ImageHotspotData>({
     contentType: "image-hotspot",
     contentLabel: "Image hotspot",
@@ -41,15 +51,32 @@ export default function ImageHotspotCreator() {
     autosaveDeps: [imageUrl, hotspots],
   });
 
-  const addHotspot = () => {
+  // Scroll selected hotspot card into view
+  useEffect(() => {
+    if (selectedHotspotIndex !== null) {
+      hotspotCardRefs.current[selectedHotspotIndex]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [selectedHotspotIndex]);
+
+  // Release drag if mouse is released outside the container
+  useEffect(() => {
+    if (draggingIndex === null) return;
+    const stop = () => setDraggingIndex(null);
+    document.addEventListener("mouseup", stop);
+    return () => document.removeEventListener("mouseup", stop);
+  }, [draggingIndex]);
+
+  const addHotspot = (x = 50, y = 50) => {
+    const newIndex = hotspots.length;
     const newHotspot: ImageHotspot = {
       id: Date.now().toString(),
-      x: 50,
-      y: 50,
+      x,
+      y,
       title: "",
       description: "",
     };
     setHotspots([...hotspots, newHotspot]);
+    setSelectedHotspotIndex(newIndex);
   };
 
   const updateHotspot = (index: number, updates: Partial<ImageHotspot>) => {
@@ -60,12 +87,49 @@ export default function ImageHotspotCreator() {
 
   const removeHotspot = (index: number) => {
     setHotspots(hotspots.filter((_, i) => i !== index));
+    if (selectedHotspotIndex === index) setSelectedHotspotIndex(null);
+    else if (selectedHotspotIndex !== null && selectedHotspotIndex > index) {
+      setSelectedHotspotIndex(selectedHotspotIndex - 1);
+    }
   };
 
   const handleAIGenerated = (data: any) => {
     if (data.hotspots) {
       setHotspots(prev => [...prev, ...data.hotspots]);
     }
+  };
+
+  // --- Preview interaction helpers ---
+
+  const getContainerPct = (clientX: number, clientY: number) => {
+    const rect = imageContainerRef.current!.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(100, Math.round(((clientX - rect.left) / rect.width) * 100))),
+      y: Math.max(0, Math.min(100, Math.round(((clientY - rect.top) / rect.height) * 100))),
+    };
+  };
+
+  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Suppress the click that fires immediately after a drag-end
+    if (dragEndedRef.current) { dragEndedRef.current = false; return; }
+    if (draggingIndex !== null) return;
+    if (!imageUrl) return;
+    const { x, y } = getContainerPct(e.clientX, e.clientY);
+    addHotspot(x, y);
+  };
+
+  const handleDotMouseDown = (e: React.MouseEvent, index: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    dragEndedRef.current = false;
+    setDraggingIndex(index);
+    setSelectedHotspotIndex(index);
+  };
+
+  const handleContainerMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (draggingIndex === null) return;
+    const { x, y } = getContainerPct(e.clientX, e.clientY);
+    updateHotspot(draggingIndex, { x, y });
   };
 
   return (
@@ -173,8 +237,6 @@ export default function ImageHotspotCreator() {
                   onSubjectChange={editor.setSubject}
                   onGradeLevelChange={editor.setGradeLevel}
                   onAgeRangeChange={editor.setAgeRange}
-                  curriculumContext={editor.curriculumContext}
-                  onCurriculumChange={editor.setCurriculumContext}
                 />
                 <div className="space-y-2">
                   <Label htmlFor="imageUrl">Image URL *</Label>
@@ -186,7 +248,7 @@ export default function ImageHotspotCreator() {
                     data-testid="input-image-url"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Paste an image URL to add interactive hotspots
+                    Paste an image URL, then click on the preview to place hotspots
                   </p>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
@@ -236,7 +298,7 @@ export default function ImageHotspotCreator() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Hotspots ({hotspots.length})</h3>
-                <Button onClick={addHotspot} size="sm" data-testid="button-add-hotspot">
+                <Button onClick={() => addHotspot()} size="sm" data-testid="button-add-hotspot">
                   <Plus className="h-4 w-4 mr-1" />
                   Add Hotspot
                 </Button>
@@ -246,9 +308,9 @@ export default function ImageHotspotCreator() {
                 <Card className="text-center py-8">
                   <CardContent>
                     <p className="text-muted-foreground mb-4">
-                      No hotspots yet. Add interactive points to your image.
+                      No hotspots yet. Click anywhere on the image to place one.
                     </p>
-                    <Button onClick={addHotspot} size="sm" data-testid="button-add-first-hotspot">
+                    <Button onClick={() => addHotspot()} size="sm" data-testid="button-add-first-hotspot">
                       <Plus className="h-4 w-4 mr-2" />
                       Add Hotspot
                     </Button>
@@ -256,67 +318,87 @@ export default function ImageHotspotCreator() {
                 </Card>
               ) : (
                 hotspots.map((hotspot, index) => (
-                  <Card key={hotspot.id} data-testid={`hotspot-${index}`}>
-                    <CardContent className="pt-6 space-y-4">
-                      <div className="flex items-start justify-between">
-                        <h4 className="font-medium">Hotspot {index + 1}</h4>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => removeHotspot(index)}
-                          data-testid={`button-delete-${index}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                  <div
+                    key={hotspot.id}
+                    ref={(el) => { hotspotCardRefs.current[index] = el; }}
+                  >
+                    <Card
+                      className={`transition-all cursor-pointer ${selectedHotspotIndex === index ? "ring-2 ring-primary" : ""}`}
+                      onClick={() => setSelectedHotspotIndex(index)}
+                      data-testid={`hotspot-${index}`}
+                    >
+                      <CardContent className="pt-6 space-y-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0">
+                              {index + 1}
+                            </div>
+                            <h4 className="font-medium">
+                              {hotspot.title || `Hotspot ${index + 1}`}
+                            </h4>
+                          </div>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={(e) => { e.stopPropagation(); removeHotspot(index); }}
+                            data-testid={`button-delete-${index}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">X Position (%)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={hotspot.x}
+                              onChange={(e) => updateHotspot(index, { x: parseInt(e.target.value) || 0 })}
+                              onClick={(e) => e.stopPropagation()}
+                              data-testid={`input-x-${index}`}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">Y Position (%)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={hotspot.y}
+                              onChange={(e) => updateHotspot(index, { y: parseInt(e.target.value) || 0 })}
+                              onClick={(e) => e.stopPropagation()}
+                              data-testid={`input-y-${index}`}
+                            />
+                          </div>
+                        </div>
+
                         <div className="space-y-2">
-                          <Label>X Position (%)</Label>
+                          <Label>Title</Label>
                           <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={hotspot.x}
-                            onChange={(e) => updateHotspot(index, { x: parseInt(e.target.value) || 0 })}
-                            data-testid={`input-x-${index}`}
+                            placeholder="Hotspot title..."
+                            value={hotspot.title}
+                            onChange={(e) => updateHotspot(index, { title: e.target.value })}
+                            onClick={(e) => e.stopPropagation()}
+                            data-testid={`input-title-${index}`}
                           />
                         </div>
+
                         <div className="space-y-2">
-                          <Label>Y Position (%)</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={hotspot.y}
-                            onChange={(e) => updateHotspot(index, { y: parseInt(e.target.value) || 0 })}
-                            data-testid={`input-y-${index}`}
+                          <Label>Description</Label>
+                          <Textarea
+                            placeholder="Hotspot description..."
+                            value={hotspot.description}
+                            onChange={(e) => updateHotspot(index, { description: e.target.value })}
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-20 resize-none"
+                            data-testid={`textarea-description-${index}`}
                           />
                         </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Title</Label>
-                        <Input
-                          placeholder="Hotspot title..."
-                          value={hotspot.title}
-                          onChange={(e) => updateHotspot(index, { title: e.target.value })}
-                          data-testid={`input-title-${index}`}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Description</Label>
-                        <Textarea
-                          placeholder="Hotspot description..."
-                          value={hotspot.description}
-                          onChange={(e) => updateHotspot(index, { description: e.target.value })}
-                          className="h-20 resize-none"
-                          data-testid={`textarea-description-${index}`}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </div>
                 ))
               )}
             </div>
@@ -327,24 +409,41 @@ export default function ImageHotspotCreator() {
             <Card>
               <CardHeader>
                 <CardTitle>Preview</CardTitle>
+                {imageUrl && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Click on the image to place a hotspot · Drag a hotspot to reposition it
+                  </p>
+                )}
               </CardHeader>
               <CardContent>
                 {imageUrl ? (
-                  <div className="relative bg-muted rounded-lg overflow-hidden" style={{ aspectRatio: "16/9" }}>
-                    <img src={imageUrl} alt="Hotspot image" className="w-full h-full object-contain" />
+                  <div
+                    ref={imageContainerRef}
+                    className={`relative bg-muted rounded-lg overflow-hidden select-none ${draggingIndex !== null ? "cursor-grabbing" : "cursor-crosshair"}`}
+                    style={{ aspectRatio: "16/9" }}
+                    onClick={handleImageClick}
+                    onMouseMove={handleContainerMouseMove}
+                    onMouseUp={() => setDraggingIndex(null)}
+                  >
+                    <img src={imageUrl} alt="Hotspot image" className="w-full h-full object-contain pointer-events-none" />
                     {hotspots.map((hotspot, index) => (
                       <div
                         key={hotspot.id}
-                        className="absolute w-6 h-6 bg-primary rounded-full border-2 border-primary-foreground cursor-pointer transform -translate-x-1/2 -translate-y-1/2 hover-elevate transition-all"
+                        className={`absolute flex items-center justify-center text-[10px] font-bold w-7 h-7 rounded-full border-2 transform -translate-x-1/2 -translate-y-1/2 transition-transform select-none z-10
+                          ${selectedHotspotIndex === index
+                            ? "bg-amber-400 border-amber-600 text-amber-900 scale-125"
+                            : "bg-primary border-primary-foreground text-primary-foreground"}
+                          ${draggingIndex === index ? "cursor-grabbing scale-125" : "cursor-grab"}
+                        `}
                         style={{
                           left: `${hotspot.x}%`,
                           top: `${hotspot.y}%`,
                         }}
-                        title={hotspot.title}
+                        onMouseDown={(e) => handleDotMouseDown(e, index)}
+                        onClick={(e) => { e.stopPropagation(); setSelectedHotspotIndex(index); }}
+                        title={hotspot.title || `Hotspot ${index + 1}`}
                       >
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-card text-card-foreground px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 hover:opacity-100 transition-opacity shadow-lg">
-                          {hotspot.title || `Hotspot ${index + 1}`}
-                        </div>
+                        {index + 1}
                       </div>
                     ))}
                   </div>
@@ -370,7 +469,6 @@ export default function ImageHotspotCreator() {
         onOpenChange={setShowAIModal}
         contentType="image-hotspot"
         onGenerated={handleAIGenerated}
-        curriculumContext={editor.curriculumContext}
       />
     </div>
   );
