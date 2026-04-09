@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -18,7 +18,8 @@ import {
   Video,
   Image,
   Presentation,
-  Gamepad2
+  Gamepad2,
+  CheckCheck,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -101,6 +102,36 @@ export function DashboardRightSidebar() {
     refetchInterval: 60000,
   });
 
+  type Notification = {
+    id: string;
+    type: string;
+    title: string;
+    body: string | null;
+    linkUrl: string | null;
+    isRead: boolean;
+    createdAt: string;
+  };
+
+  const { data: notifications = [] } = useQuery<Notification[]>({
+    queryKey: ["/api/notifications", { limit: "10" }],
+    refetchInterval: 30000,
+  });
+
+  const { data: unreadCount } = useQuery<{ count: number }>({
+    queryKey: ["/api/notifications/unread-count"],
+    refetchInterval: 30000,
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/notifications/mark-all-read");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+    },
+  });
+
   const handleLogout = async () => {
     await logout();
   };
@@ -114,26 +145,63 @@ export function DashboardRightSidebar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative h-8 w-8 cursor-pointer">
                 <Bell className="h-4 w-4" />
-                {recentActivity.length > 0 && (
-                  <span className="absolute top-0.5 right-0.5 h-1.5 w-1.5 rounded-full bg-destructive" />
+                {(unreadCount?.count ?? 0) > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-medium flex items-center justify-center">
+                    {unreadCount!.count > 9 ? "9+" : unreadCount!.count}
+                  </span>
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-72">
+            <DropdownMenuContent align="start" className="w-80">
               <DropdownMenuLabel className="flex items-center justify-between">
                 <span>Notifications</span>
-                {recentActivity.length > 0 && (
-                  <span className="text-xs text-muted-foreground">{recentActivity.length} new</span>
+                {(unreadCount?.count ?? 0) > 0 && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); markAllReadMutation.mutate(); }}
+                    className="text-xs text-primary hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <CheckCheck className="h-3 w-3" />
+                    Mark all read
+                  </button>
                 )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {recentActivity.length === 0 ? (
+              {notifications.length === 0 && recentActivity.length === 0 ? (
                 <div className="py-4 text-center text-sm text-muted-foreground">
                   No new notifications
                 </div>
               ) : (
                 <>
-                  {recentActivity.slice(0, 5).map((activity) => (
+                  {notifications.slice(0, 5).map((notif) => (
+                    <DropdownMenuItem
+                      key={notif.id}
+                      className={`flex items-start gap-2.5 p-2.5 cursor-pointer ${!notif.isRead ? "bg-primary/5" : ""}`}
+                      onClick={() => notif.linkUrl && navigate(notif.linkUrl)}
+                    >
+                      <div className={`h-7 w-7 rounded-md flex items-center justify-center flex-shrink-0 ${
+                        notif.type === "review_request" ? "bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400" :
+                        notif.type === "content_review" ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400" :
+                        notif.type === "content_status" ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400" :
+                        "bg-muted text-muted-foreground"
+                      }`}>
+                        {notif.type === "review_request" ? <BookOpen className="h-3.5 w-3.5" /> :
+                         notif.type === "new_assignment" ? <FileQuestion className="h-3.5 w-3.5" /> :
+                         <Bell className="h-3.5 w-3.5" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm truncate ${!notif.isRead ? "font-semibold" : "font-medium"}`}>{notif.title}</p>
+                        {notif.body && <p className="text-xs text-muted-foreground line-clamp-2">{notif.body}</p>}
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                  {recentActivity.length > 0 && notifications.length > 0 && <DropdownMenuSeparator />}
+                  {recentActivity.length > 0 && (
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">Student Activity</DropdownMenuLabel>
+                  )}
+                  {recentActivity.slice(0, 3).map((activity) => (
                     <DropdownMenuItem
                       key={activity.progressId}
                       className="flex items-start gap-2.5 p-2.5 cursor-pointer"
@@ -150,17 +218,6 @@ export function DashboardRightSidebar() {
                       </div>
                     </DropdownMenuItem>
                   ))}
-                  {recentActivity.length > 5 && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-center text-sm text-primary cursor-pointer justify-center"
-                        onClick={() => navigate("/analytics")}
-                      >
-                        View all activity
-                      </DropdownMenuItem>
-                    </>
-                  )}
                 </>
               )}
             </DropdownMenuContent>
