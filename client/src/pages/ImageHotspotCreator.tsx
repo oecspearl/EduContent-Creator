@@ -423,27 +423,39 @@ export default function ImageHotspotCreator() {
                     style={{ aspectRatio: "16/9" }}
                     onClick={handleImageClick}
                     onMouseMove={handleContainerMouseMove}
-                    onMouseUp={() => setDraggingIndex(null)}
+                    onMouseUp={() => {
+                      if (draggingIndex !== null) dragEndedRef.current = true;
+                      setDraggingIndex(null);
+                    }}
                   >
                     <img src={imageUrl} alt="Hotspot image" className="w-full h-full object-contain pointer-events-none" />
                     {hotspots.map((hotspot, index) => (
                       <div
                         key={hotspot.id}
-                        className={`absolute flex items-center justify-center text-[10px] font-bold w-7 h-7 rounded-full border-2 transform -translate-x-1/2 -translate-y-1/2 transition-transform select-none z-10
-                          ${selectedHotspotIndex === index
-                            ? "bg-amber-400 border-amber-600 text-amber-900 scale-125"
-                            : "bg-primary border-primary-foreground text-primary-foreground"}
-                          ${draggingIndex === index ? "cursor-grabbing scale-125" : "cursor-grab"}
-                        `}
-                        style={{
-                          left: `${hotspot.x}%`,
-                          top: `${hotspot.y}%`,
-                        }}
+                        className="absolute z-10 select-none"
+                        style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
                         onMouseDown={(e) => handleDotMouseDown(e, index)}
                         onClick={(e) => { e.stopPropagation(); setSelectedHotspotIndex(index); }}
                         title={hotspot.title || `Hotspot ${index + 1}`}
                       >
-                        {index + 1}
+                        {/* Pin: circle badge + stem + tip. Inner div shifted so tip sits exactly at coordinate. */}
+                        <div
+                          className={`flex flex-col items-center transition-transform ${draggingIndex === index ? "cursor-grabbing scale-110" : "cursor-grab"}`}
+                          style={{ transform: "translate(-50%, -100%)" }}
+                        >
+                          {/* Badge */}
+                          <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 text-xs font-bold shadow-lg transition-transform
+                            ${selectedHotspotIndex === index
+                              ? "bg-amber-400 border-amber-600 text-amber-900 scale-110"
+                              : "bg-primary border-primary-foreground text-primary-foreground"}
+                          `}>
+                            {index + 1}
+                          </div>
+                          {/* Stem */}
+                          <div className={`w-0.5 h-3 ${selectedHotspotIndex === index ? "bg-amber-600" : "bg-primary"}`} />
+                          {/* Tip dot — sits at the exact coordinate */}
+                          <div className={`w-2 h-2 rounded-full ${selectedHotspotIndex === index ? "bg-amber-600" : "bg-primary"}`} />
+                        </div>
                       </div>
                     ))}
                   </div>
