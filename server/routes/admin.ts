@@ -416,13 +416,13 @@ export function registerAdminRoutes({ app, requireAdmin }: RouteContext) {
       metadata: { title: content[0].title, reviewerId: assignedToId, reviewerName: reviewer[0].fullName },
     });
 
-    // Notify the assigned reviewer
+    // Notify the assigned reviewer — link to their review page
     await db.insert(notifications).values({
       userId: assignedToId,
       type: "review_request",
       title: "Content Review Requested",
       body: `You have been asked to review "${content[0].title}".`,
-      linkUrl: `/preview/${contentId}`,
+      linkUrl: `/reviews/${review.id}`,
     });
 
     res.json({ message: "Review request created", review });
