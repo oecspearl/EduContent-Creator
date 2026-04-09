@@ -14,6 +14,7 @@ import {
   ClipboardList,
   MessageCircle,
   Waypoints,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +54,11 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
   const [location, navigate] = useLocation();
   const { user } = useAuth();
   const isStudent = user?.role === "student";
-  const navItems = isStudent ? studentNavItems : teacherNavItems;
+  const isAdmin = user?.role === "admin";
+  const baseItems = isStudent ? studentNavItems : teacherNavItems;
+  const navItems = isAdmin
+    ? [{ label: "Admin Dashboard", icon: Shield, path: "/admin" }, ...baseItems]
+    : baseItems;
 
   const handleNavigate = (path: string) => {
     navigate(path);

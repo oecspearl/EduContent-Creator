@@ -16,4 +16,5 @@ export interface RouteContext {
   storage: IStorage;
   requireAuth: AuthMiddleware;
   requireTeacher: AuthMiddleware;
+  requireAdmin: AuthMiddleware;
 }

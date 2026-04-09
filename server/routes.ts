@@ -23,6 +23,7 @@ import { registerStudentGroupRoutes } from "./routes/student-groups";
 import { registerParentViewRoutes } from "./routes/parent-view";
 import { registerRubricRoutes } from "./routes/rubrics";
 import { registerCurriculumRoutes } from "./routes/curriculum";
+import { registerAdminRoutes } from "./routes/admin";
 import type { AuthMiddleware } from "./routes/types";
 
 // Type augmentation for session
@@ -131,8 +132,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Role middleware — blocks non-admins from admin features
+  const requireAdmin: AuthMiddleware = async (req: any, res, next) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+      const profile = await storage.getProfileById(req.session.userId);
+      if (!profile || profile.role !== "admin") {
+        return res.status(403).json({ message: "This feature is only available to administrators" });
+      }
+      next();
+    } catch {
+      return res.status(500).json({ message: "Authorization check failed" });
+    }
+  };
+
   // Shared context for all route modules
-  const ctx = { app, storage, requireAuth, requireTeacher };
+  const ctx = { app, storage, requireAuth, requireTeacher, requireAdmin };
 
   // Register all route modules
   registerAuthRoutes(ctx, isGoogleOAuthAvailable, isMicrosoftOAuthAvailable);
@@ -150,6 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerParentViewRoutes(ctx);
   registerRubricRoutes(ctx);
   registerCurriculumRoutes(ctx);
+  registerAdminRoutes(ctx);
 
   const httpServer = createServer(app);
   setupWebSocket(httpServer);

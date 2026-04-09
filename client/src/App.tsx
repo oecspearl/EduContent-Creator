@@ -40,6 +40,7 @@ import StudentLearningPaths from "@/pages/StudentLearningPaths";
 import MessagesPage from "@/pages/MessagesPage";
 import ParentViewPage from "@/pages/ParentViewPage";
 import SettingsPage from "@/pages/SettingsPage";
+import AdminDashboard from "@/pages/AdminDashboard";
 import NotFound from "@/pages/not-found";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -71,6 +72,25 @@ function TeacherRoute({ component: Component }: { component: React.ComponentType
   }
 
   if (user.role === "student") {
+    return <Redirect to="/dashboard" />;
+  }
+
+  return <Component />;
+}
+
+/** Route that requires admin role */
+function AdminRoute({ component: Component }: { component: React.ComponentType }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <PageSkeleton />;
+  }
+
+  if (!user) {
+    return <Redirect to="/login" />;
+  }
+
+  if (user.role !== "admin") {
     return <Redirect to="/dashboard" />;
   }
 
@@ -122,6 +142,11 @@ function Router() {
       {/* Dashboard — role-aware */}
       <Route path="/dashboard">
         <DashboardRoute />
+      </Route>
+
+      {/* Admin-only routes */}
+      <Route path="/admin">
+        <AdminRoute component={AdminDashboard} />
       </Route>
 
       {/* Teacher-only routes */}
