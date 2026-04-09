@@ -50,7 +50,9 @@
       "Bash(sed -n '7275,7862p' add_curriculum_data.sql)",
       "Bash(sed -n '7942,9217p' ../add_curriculum_data.sql)",
       "Bash(sed -n '9218,10477p' ../add_curriculum_data.sql)",
-      "Bash(ls tsconfig*.json)"
+      "Bash(ls tsconfig*.json)",
+      "Bash(git pull:*)",
+      "Bash(npm run:*)"
     ],
     "additionalDirectories": [
       "/Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/server"

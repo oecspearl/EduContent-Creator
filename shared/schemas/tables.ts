@@ -35,6 +35,10 @@ export const h5pContent = pgTable("h5p_content", {
   userId: varchar("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
   isPublished: boolean("is_published").default(false).notNull(),
   isPublic: boolean("is_public").default(false).notNull(),
+  reviewStatus: text("review_status").default("none").notNull(), // 'none' | 'flagged' | 'in_review' | 'approved' | 'rejected'
+  reviewNotes: text("review_notes"),
+  flaggedBy: varchar("flagged_by").references(() => profiles.id, { onDelete: "set null" }),
+  reviewedBy: varchar("reviewed_by").references(() => profiles.id, { onDelete: "set null" }),
   tags: text("tags").array(),
   subject: text("subject"),
   gradeLevel: text("grade_level"),
@@ -253,4 +257,19 @@ export const contentAssignments = pgTable("content_assignments", {
 }, (table) => ({
   uniqueContentClass: unique().on(table.contentId, table.classId),
   classIdIdx: index("content_assignments_class_id_idx").on(table.classId),
+}));
+
+// Content reviews table — review requests assigned to users
+export const contentReviews = pgTable("content_reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull().references(() => h5pContent.id, { onDelete: "cascade" }),
+  requestedBy: varchar("requested_by").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  assignedTo: varchar("assigned_to").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  status: text("status").default("pending").notNull(), // 'pending' | 'in_progress' | 'completed'
+  feedback: text("feedback"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+}, (table) => ({
+  contentIdIdx: index("content_reviews_content_id_idx").on(table.contentId),
+  assignedToIdx: index("content_reviews_assigned_to_idx").on(table.assignedTo),
 }));

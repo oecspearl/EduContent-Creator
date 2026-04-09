@@ -30,6 +30,7 @@ export {
   messages,
   rubrics,
   rubricScores,
+  contentReviews,
 } from "./schemas/tables";
 
 // Insert schemas & API request schemas

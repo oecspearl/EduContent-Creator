@@ -17,10 +17,18 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Users, FileQuestion, GraduationCap, Trophy, Search, Trash2,
   ChevronLeft, ChevronRight, Eye, Menu, Shield, BarChart3,
   Layers, Video, Image as ImageIcon, Move, PenTool, Brain,
-  BookOpenCheck, Presentation, Activity,
+  BookOpenCheck, Presentation, Activity, MoreVertical,
+  CheckCircle, XCircle, Flag, Send, BookOpen,
 } from "lucide-react";
 
 // ─── Types ─────────────────────────────────────────────────
@@ -41,6 +49,8 @@ type AdminContentItem = {
   type: string;
   isPublished: boolean;
   isPublic: boolean;
+  reviewStatus: string;
+  reviewNotes: string | null;
   subject: string | null;
   gradeLevel: string | null;
   tags: string[] | null;
@@ -118,6 +128,13 @@ export default function AdminDashboard() {
   const [usersRoleFilter, setUsersRoleFilter] = useState("all");
   const [roleChangeTarget, setRoleChangeTarget] = useState<{ id: string; name: string; newRole: string } | null>(null);
 
+  // Flag / review dialog state
+  const [flagTarget, setFlagTarget] = useState<{ id: string; title: string } | null>(null);
+  const [flagNotes, setFlagNotes] = useState("");
+  const [flagStatus, setFlagStatus] = useState("flagged");
+  const [reviewTarget, setReviewTarget] = useState<{ id: string; title: string } | null>(null);
+  const [reviewAssignee, setReviewAssignee] = useState("");
+
   // ─── Queries ───────────────────────────────────────────
 
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
@@ -143,7 +160,7 @@ export default function AdminDashboard() {
 
   const { data: usersData, isLoading: usersLoading } = useQuery<PaginatedResponse<AdminUser>>({
     queryKey: ["/api/admin/users", userFilters],
-    enabled: activeTab === "users" || activeTab === "overview",
+    enabled: activeTab === "users" || activeTab === "overview" || activeTab === "content",
   });
 
   const { data: activityData } = useQuery<AuditEntry[]>({
@@ -186,6 +203,50 @@ export default function AdminDashboard() {
     },
   });
 
+  const publishMutation = useMutation({
+    mutationFn: async ({ id, isPublished }: { id: string; isPublished: boolean }) => {
+      await apiRequest("PATCH", `/api/admin/content/${id}/publish`, { isPublished });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string).startsWith("/api/admin") });
+      toast({ title: "Publish status updated" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Update failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const flagMutation = useMutation({
+    mutationFn: async ({ id, reviewStatus, reviewNotes }: { id: string; reviewStatus: string; reviewNotes?: string }) => {
+      await apiRequest("PATCH", `/api/admin/content/${id}/flag`, { reviewStatus, reviewNotes });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string).startsWith("/api/admin") });
+      toast({ title: "Review status updated" });
+      setFlagTarget(null);
+      setFlagNotes("");
+      setFlagStatus("flagged");
+    },
+    onError: (err: any) => {
+      toast({ title: "Flag failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const assignReviewMutation = useMutation({
+    mutationFn: async ({ contentId, assignedTo }: { contentId: string; assignedTo: string }) => {
+      await apiRequest("POST", `/api/admin/content/${contentId}/review`, { assignedTo });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string).startsWith("/api/admin") });
+      toast({ title: "Review request sent" });
+      setReviewTarget(null);
+      setReviewAssignee("");
+    },
+    onError: (err: any) => {
+      toast({ title: "Failed to assign reviewer", description: err.message, variant: "destructive" });
+    },
+  });
+
   // ─── Helpers ───────────────────────────────────────────
 
   const getTypeInfo = (type: string) => typeIcons[type] || { icon: FileQuestion, color: "text-gray-600", bg: "bg-gray-50", label: type };
@@ -200,6 +261,16 @@ export default function AdminDashboard() {
       case "teacher": return "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300";
       case "student": return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
       default: return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  const reviewStatusBadge = (status: string) => {
+    switch (status) {
+      case "flagged": return { label: "Flagged", className: "border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400" };
+      case "in_review": return { label: "In Review", className: "border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-400" };
+      case "approved": return { label: "Approved", className: "border-green-200 dark:border-green-800 text-green-700 dark:text-green-400" };
+      case "rejected": return { label: "Rejected", className: "border-red-200 dark:border-red-800 text-red-700 dark:text-red-400" };
+      default: return null;
     }
   };
 
@@ -415,10 +486,14 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                       <td className="p-3 hidden lg:table-cell">
-                        <div className="flex gap-1">
+                        <div className="flex flex-wrap gap-1">
                           {item.isPublished && <Badge variant="outline" className="text-xs border-green-200 dark:border-green-800 text-green-700 dark:text-green-400">Published</Badge>}
                           {item.isPublic && <Badge variant="outline" className="text-xs border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400">Public</Badge>}
                           {!item.isPublished && !item.isPublic && <span className="text-xs text-muted-foreground">Draft</span>}
+                          {(() => {
+                            const badge = reviewStatusBadge(item.reviewStatus);
+                            return badge ? <Badge variant="outline" className={`text-xs ${badge.className}`}>{badge.label}</Badge> : null;
+                          })()}
                         </div>
                       </td>
                       <td className="p-3 hidden lg:table-cell text-sm text-muted-foreground">
@@ -435,15 +510,80 @@ export default function AdminDashboard() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 cursor-pointer text-destructive hover:text-destructive"
-                            onClick={() => setDeleteTarget({ id: item.id, title: item.title })}
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer" title="Actions">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {item.isPublished ? (
+                                <DropdownMenuItem
+                                  onClick={() => publishMutation.mutate({ id: item.id, isPublished: false })}
+                                  className="cursor-pointer"
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Unpublish
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() => publishMutation.mutate({ id: item.id, isPublished: true })}
+                                  className="cursor-pointer"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Publish
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => { setFlagTarget({ id: item.id, title: item.title }); setFlagStatus("flagged"); }}
+                                className="cursor-pointer"
+                              >
+                                <Flag className="h-4 w-4 mr-2" />
+                                Flag for Review
+                              </DropdownMenuItem>
+                              {item.reviewStatus !== "none" && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() => { setFlagTarget({ id: item.id, title: item.title }); setFlagStatus("approved"); }}
+                                    className="cursor-pointer"
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                                    Approve
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => { setFlagTarget({ id: item.id, title: item.title }); setFlagStatus("rejected"); }}
+                                    className="cursor-pointer"
+                                  >
+                                    <XCircle className="h-4 w-4 mr-2 text-red-600" />
+                                    Reject
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => flagMutation.mutate({ id: item.id, reviewStatus: "none" })}
+                                    className="cursor-pointer"
+                                  >
+                                    Clear Review Flag
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => setReviewTarget({ id: item.id, title: item.title })}
+                                className="cursor-pointer"
+                              >
+                                <Send className="h-4 w-4 mr-2" />
+                                Share for Review
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => setDeleteTarget({ id: item.id, title: item.title })}
+                                className="cursor-pointer text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </td>
                     </tr>
@@ -787,6 +927,85 @@ export default function AdminDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Flag for review dialog */}
+      <Dialog open={!!flagTarget} onOpenChange={() => { setFlagTarget(null); setFlagNotes(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {flagStatus === "flagged" ? "Flag Content for Review" : flagStatus === "approved" ? "Approve Content" : "Reject Content"}
+            </DialogTitle>
+            <DialogDescription>
+              {flagStatus === "flagged"
+                ? `Flag "${flagTarget?.title}" for review. The content owner will be notified.`
+                : `${flagStatus === "approved" ? "Approve" : "Reject"} "${flagTarget?.title}". ${flagStatus === "approved" ? "This will also publish the content." : "This will unpublish the content."}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Notes (optional)</label>
+            <Textarea
+              placeholder="Add notes about why this content is being flagged/reviewed..."
+              value={flagNotes}
+              onChange={(e) => setFlagNotes(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setFlagTarget(null); setFlagNotes(""); }} disabled={flagMutation.isPending} className="cursor-pointer">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => flagTarget && flagMutation.mutate({ id: flagTarget.id, reviewStatus: flagStatus, reviewNotes: flagNotes || undefined })}
+              disabled={flagMutation.isPending}
+              className="cursor-pointer"
+              variant={flagStatus === "rejected" ? "destructive" : "default"}
+            >
+              {flagMutation.isPending ? "Updating..." : flagStatus === "flagged" ? "Flag" : flagStatus === "approved" ? "Approve" : "Reject"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share for review dialog */}
+      <Dialog open={!!reviewTarget} onOpenChange={() => { setReviewTarget(null); setReviewAssignee(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share Content for Review</DialogTitle>
+            <DialogDescription>
+              Assign a user to review "{reviewTarget?.title}". They will receive a notification.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Assign reviewer</label>
+            <Select value={reviewAssignee} onValueChange={setReviewAssignee}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a user..." />
+              </SelectTrigger>
+              <SelectContent>
+                {usersData?.items
+                  .filter((u) => u.role === "teacher" || u.role === "admin")
+                  .map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.fullName} ({u.email})
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setReviewTarget(null); setReviewAssignee(""); }} disabled={assignReviewMutation.isPending} className="cursor-pointer">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => reviewTarget && reviewAssignee && assignReviewMutation.mutate({ contentId: reviewTarget.id, assignedTo: reviewAssignee })}
+              disabled={assignReviewMutation.isPending || !reviewAssignee}
+              className="cursor-pointer"
+            >
+              {assignReviewMutation.isPending ? "Sending..." : "Send Review Request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
