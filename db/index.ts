@@ -19,8 +19,8 @@ if (process.env.DATABASE_URL) {
     ssl: (isSupabase || isNeon) ? {
       rejectUnauthorized: false
     } : false,
-    max: isVercel ? 5 : 20,
-    idleTimeoutMillis: isVercel ? 10000 : 30000,
+    max: isVercel ? 1 : 20,
+    idleTimeoutMillis: isVercel ? 5000 : 30000,
     connectionTimeoutMillis: 10000,
   });
 

@@ -524,8 +524,8 @@ var init_db = __esm({
         ssl: isSupabase || isNeon ? {
           rejectUnauthorized: false
         } : false,
-        max: isVercel ? 5 : 20,
-        idleTimeoutMillis: isVercel ? 1e4 : 3e4,
+        max: isVercel ? 1 : 20,
+        idleTimeoutMillis: isVercel ? 5e3 : 3e4,
         connectionTimeoutMillis: 1e4
       });
       pool.on("error", (err) => {
