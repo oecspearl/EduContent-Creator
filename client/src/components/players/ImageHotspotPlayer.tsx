@@ -112,16 +112,25 @@ export function ImageHotspotPlayer({ data, contentId }: ImageHotspotPlayerProps)
             {data.hotspots.map((hotspot, index) => (
               <div
                 key={hotspot.id}
-                className="absolute w-8 h-8 bg-primary rounded-full border-4 border-primary-foreground cursor-pointer transform -translate-x-1/2 -translate-y-1/2 hover-elevate transition-all z-10"
-                style={{
-                  left: `${hotspot.x}%`,
-                  top: `${hotspot.y}%`,
-                }}
+                className="absolute z-10 select-none"
+                style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
                 onClick={() => setSelectedHotspot(selectedHotspot === index ? null : index)}
                 data-testid={`hotspot-point-${index}`}
               >
-                <div className="absolute inset-0 flex items-center justify-center text-primary-foreground font-bold text-sm">
-                  {index + 1}
+                {/* Pin: badge + stem + tip dot. Tip sits at exact coordinate. */}
+                <div
+                  className="flex flex-col items-center cursor-pointer hover-elevate transition-all"
+                  style={{ transform: "translate(-50%, -100%)" }}
+                >
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-bold shadow-lg transition-all
+                    ${selectedHotspot === index
+                      ? "bg-amber-400 border-amber-600 text-amber-900"
+                      : "bg-primary border-primary-foreground text-primary-foreground"}
+                  `}>
+                    {index + 1}
+                  </div>
+                  <div className={`w-0.5 h-3 transition-colors ${selectedHotspot === index ? "bg-amber-600" : "bg-primary"}`} />
+                  <div className={`w-2 h-2 rounded-full transition-colors ${selectedHotspot === index ? "bg-amber-600" : "bg-primary"}`} />
                 </div>
               </div>
             ))}
