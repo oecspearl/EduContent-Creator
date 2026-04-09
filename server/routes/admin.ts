@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/async-handler";
 import { db } from "../../db";
 import { profiles, h5pContent, quizAttempts, learnerProgress, classes, classEnrollments, auditLog } from "@shared/schema";
-import { eq, desc, sql, count, and, gte, lte } from "drizzle-orm";
+import { eq, desc, sql, count, and, gte, lte, inArray } from "drizzle-orm";
 import type { RouteContext } from "./types";
 
 export function registerAdminRoutes({ app, requireAdmin }: RouteContext) {
@@ -153,7 +153,7 @@ export function registerAdminRoutes({ app, requireAdmin }: RouteContext) {
             count: count(),
           })
           .from(h5pContent)
-          .where(sql`${h5pContent.userId} = ANY(${userIds})`)
+          .where(inArray(h5pContent.userId, userIds))
           .groupBy(h5pContent.userId)
       : [];
 
