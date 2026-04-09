@@ -114,6 +114,7 @@ export type BlankItem = {
 export type FillInBlanksData = {
   text: string;
   blanks: BlankItem[];
+  wordBank?: string[];
   settings: {
     caseSensitive: boolean;
     showHints: boolean;

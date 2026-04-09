@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
-import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Save } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Save, X } from "lucide-react";
 import type { FillInBlanksData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { ContentMetadataFields } from "@/components/ContentMetadataFields";
@@ -21,21 +22,24 @@ export default function FillBlanksCreator() {
     showHints: true,
     allowRetry: true,
   });
+  const [wordBank, setWordBank] = useState<string[]>([]);
+  const [wordBankInput, setWordBankInput] = useState("");
   const [showAIModal, setShowAIModal] = useState(false);
   const [rawAnswerInputs, setRawAnswerInputs] = useState<Record<string, string>>({});
 
   const editor = useContentEditor<FillInBlanksData>({
     contentType: "fill-blanks",
     contentLabel: "Fill in the Blanks activity",
-    buildData: useCallback(() => ({ text, blanks, settings }), [text, blanks, settings]),
+    buildData: useCallback(() => ({ text, blanks, wordBank, settings }), [text, blanks, wordBank, settings]),
     populateFromContent: useCallback((content) => {
       const data = content.data as FillInBlanksData;
       setText(data.text || "");
       setBlanks(data.blanks || []);
+      setWordBank(data.wordBank || []);
       setSettings(data.settings || { caseSensitive: false, showHints: true, allowRetry: true });
     }, []),
     canSave: useCallback(() => !!text && blanks.length > 0, [text, blanks.length]),
-    autosaveDeps: [text, blanks, settings],
+    autosaveDeps: [text, blanks, wordBank, settings],
   });
 
   const addBlank = () => {
@@ -261,6 +265,63 @@ export default function FillBlanksCreator() {
                   </div>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Word Bank (Optional)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Add words students can choose from when filling blanks. Leave empty to require free-text entry.
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  value={wordBankInput}
+                  onChange={(e) => setWordBankInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && wordBankInput.trim()) {
+                      e.preventDefault();
+                      setWordBank([...wordBank, wordBankInput.trim()]);
+                      setWordBankInput("");
+                    }
+                  }}
+                  placeholder="Type a word and press Enter"
+                  data-testid="input-word-bank"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    if (wordBankInput.trim()) {
+                      setWordBank([...wordBank, wordBankInput.trim()]);
+                      setWordBankInput("");
+                    }
+                  }}
+                  disabled={!wordBankInput.trim()}
+                  data-testid="button-add-word"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {wordBank.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {wordBank.map((word, i) => (
+                    <Badge key={i} variant="secondary" className="flex items-center gap-1 pr-1">
+                      {word}
+                      <button
+                        type="button"
+                        onClick={() => setWordBank(wordBank.filter((_, j) => j !== i))}
+                        className="ml-1 hover:text-destructive"
+                        data-testid={`button-remove-word-${i}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

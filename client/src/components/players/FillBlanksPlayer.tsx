@@ -18,6 +18,7 @@ export function FillBlanksPlayer({ data, contentId }: FillBlanksPlayerProps) {
   const [feedback, setFeedback] = useState<boolean[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [showHints, setShowHints] = useState<boolean[]>(new Array(data.blanks.length).fill(false));
+  const [focusedBlank, setFocusedBlank] = useState<number | null>(null);
 
   const { progress: savedProgress, isProgressFetched, updateProgress, logInteraction, isAuthenticated } = useProgressTracker(contentId);
   const [lastSentProgress, setLastSentProgress] = useState<number>(-1);
@@ -124,7 +125,12 @@ export function FillBlanksPlayer({ data, contentId }: FillBlanksPlayerProps) {
                   newAnswers[idx] = e.target.value;
                   setAnswers(newAnswers);
                 }}
+                onFocus={() => setFocusedBlank(idx)}
                 className={`w-32 inline-block ${
+                  focusedBlank === idx && !(showResults && !data.settings.allowRetry)
+                    ? "ring-2 ring-primary ring-offset-1"
+                    : ""
+                } ${
                   feedback[idx] !== undefined
                     ? feedback[idx]
                       ? "border-green-500"
@@ -214,6 +220,39 @@ export function FillBlanksPlayer({ data, contentId }: FillBlanksPlayerProps) {
                 {score === total ? "Perfect! Well done!" : `You got ${score} out of ${total} correct.`}
               </p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {data.wordBank && data.wordBank.length > 0 && (
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <p className="text-sm font-medium mb-2">Word Bank — click a word to fill the selected blank</p>
+            <div className="flex flex-wrap gap-2">
+              {data.wordBank.map((word, i) => (
+                <Button
+                  key={i}
+                  variant={focusedBlank !== null ? "outline" : "ghost"}
+                  size="sm"
+                  onClick={() => {
+                    if (focusedBlank !== null) {
+                      const newAnswers = [...answers];
+                      newAnswers[focusedBlank] = word;
+                      setAnswers(newAnswers);
+                    }
+                  }}
+                  disabled={showResults && !data.settings.allowRetry}
+                  data-testid={`word-bank-${i}`}
+                >
+                  {word}
+                </Button>
+              ))}
+            </div>
+            {focusedBlank === null && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Click on a blank in the text below to select it, then click a word above to fill it.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
