@@ -375,10 +375,10 @@ export function registerAdminRoutes({ app, requireAdmin }: RouteContext) {
   // ─── Admin: share content for review (assign a reviewer) ─
   app.post("/api/admin/content/:id/review", requireAdmin, asyncHandler(async (req: any, res) => {
     const contentId = req.params.id;
-    const { assignedTo } = req.body;
+    const { assignedTo, email } = req.body;
 
-    if (!assignedTo) {
-      return res.status(400).json({ message: "assignedTo (user ID) is required" });
+    if (!assignedTo && !email) {
+      return res.status(400).json({ message: "assignedTo (user ID) or email is required" });
     }
 
     const content = await db.select().from(h5pContent).where(eq(h5pContent.id, contentId)).limit(1);
@@ -386,16 +386,20 @@ export function registerAdminRoutes({ app, requireAdmin }: RouteContext) {
       return res.status(404).json({ message: "Content not found" });
     }
 
-    const reviewer = await db.select().from(profiles).where(eq(profiles.id, assignedTo)).limit(1);
+    // Look up reviewer by ID or email
+    const reviewer = assignedTo
+      ? await db.select().from(profiles).where(eq(profiles.id, assignedTo)).limit(1)
+      : await db.select().from(profiles).where(eq(profiles.email, email.trim().toLowerCase())).limit(1);
     if (reviewer.length === 0) {
-      return res.status(404).json({ message: "Reviewer not found" });
+      return res.status(404).json({ message: "No user found with that email address" });
     }
+    const assignedToId = reviewer[0].id;
 
     // Create the review request
     const [review] = await db.insert(contentReviews).values({
       contentId,
       requestedBy: req.session.userId,
-      assignedTo,
+      assignedTo: assignedToId,
     }).returning();
 
     // Mark content as in_review
@@ -409,12 +413,12 @@ export function registerAdminRoutes({ app, requireAdmin }: RouteContext) {
       action: "admin_review_requested",
       entityType: "content",
       entityId: contentId,
-      metadata: { title: content[0].title, reviewerId: assignedTo, reviewerName: reviewer[0].fullName },
+      metadata: { title: content[0].title, reviewerId: assignedToId, reviewerName: reviewer[0].fullName },
     });
 
     // Notify the assigned reviewer
     await db.insert(notifications).values({
-      userId: assignedTo,
+      userId: assignedToId,
       type: "review_request",
       title: "Content Review Requested",
       body: `You have been asked to review "${content[0].title}".`,

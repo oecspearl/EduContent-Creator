@@ -160,7 +160,7 @@ export default function AdminDashboard() {
 
   const { data: usersData, isLoading: usersLoading } = useQuery<PaginatedResponse<AdminUser>>({
     queryKey: ["/api/admin/users", userFilters],
-    enabled: activeTab === "users" || activeTab === "overview" || activeTab === "content",
+    enabled: activeTab === "users" || activeTab === "overview",
   });
 
   const { data: activityData } = useQuery<AuditEntry[]>({
@@ -233,8 +233,8 @@ export default function AdminDashboard() {
   });
 
   const assignReviewMutation = useMutation({
-    mutationFn: async ({ contentId, assignedTo }: { contentId: string; assignedTo: string }) => {
-      await apiRequest("POST", `/api/admin/content/${contentId}/review`, { assignedTo });
+    mutationFn: async ({ contentId, email }: { contentId: string; email: string }) => {
+      await apiRequest("POST", `/api/admin/content/${contentId}/review`, { email });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string).startsWith("/api/admin") });
@@ -972,33 +972,25 @@ export default function AdminDashboard() {
           <DialogHeader>
             <DialogTitle>Share Content for Review</DialogTitle>
             <DialogDescription>
-              Assign a user to review "{reviewTarget?.title}". They will receive a notification.
+              Enter the email of the user who should review "{reviewTarget?.title}". They will receive a notification.
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
-            <label className="text-sm font-medium text-foreground mb-1.5 block">Assign reviewer</label>
-            <Select value={reviewAssignee} onValueChange={setReviewAssignee}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a user..." />
-              </SelectTrigger>
-              <SelectContent>
-                {usersData?.items
-                  .filter((u) => u.role === "teacher" || u.role === "admin")
-                  .map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.fullName} ({u.email})
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Reviewer email</label>
+            <Input
+              type="email"
+              placeholder="user@example.com"
+              value={reviewAssignee}
+              onChange={(e) => setReviewAssignee(e.target.value)}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setReviewTarget(null); setReviewAssignee(""); }} disabled={assignReviewMutation.isPending} className="cursor-pointer">
               Cancel
             </Button>
             <Button
-              onClick={() => reviewTarget && reviewAssignee && assignReviewMutation.mutate({ contentId: reviewTarget.id, assignedTo: reviewAssignee })}
-              disabled={assignReviewMutation.isPending || !reviewAssignee}
+              onClick={() => reviewTarget && reviewAssignee.trim() && assignReviewMutation.mutate({ contentId: reviewTarget.id, email: reviewAssignee.trim() })}
+              disabled={assignReviewMutation.isPending || !reviewAssignee.trim()}
               className="cursor-pointer"
             >
               {assignReviewMutation.isPending ? "Sending..." : "Send Review Request"}
