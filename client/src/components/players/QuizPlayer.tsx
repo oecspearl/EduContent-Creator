@@ -410,11 +410,29 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
                       />
                     )}
                     {!isCorrect(index) && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Correct answer: {typeof question.correctAnswer === "number" && question.options
-                          ? question.options[question.correctAnswer]
-                          : String(question.correctAnswer)}
-                      </p>
+                      <div className="mt-1">
+                        {typeof question.correctAnswer === "number" && question.options ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Correct answer:</span>
+                            {question.optionImages?.[question.correctAnswer as number] && (
+                              <img
+                                src={question.optionImages[question.correctAnswer as number]}
+                                alt={question.options[question.correctAnswer as number] || "Correct answer"}
+                                className="max-h-12 object-contain rounded border bg-background"
+                              />
+                            )}
+                            {question.options[question.correctAnswer as number] && (
+                              <span className="text-xs text-muted-foreground">
+                                {question.options[question.correctAnswer as number]}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            Correct answer: {String(question.correctAnswer)}
+                          </p>
+                        )}
+                      </div>
                     )}
                     <QuestionInsight
                       question={question}
@@ -516,11 +534,18 @@ export function QuizPlayer({ data, contentId }: QuizPlayerProps) {
                       disabled={showExplanation}
                       data-testid={`option-${index}`}
                     />
-                    <Label 
+                    <Label
                       htmlFor={`option-${currentIndex}-${index}`}
-                      className="flex-1 cursor-pointer text-base"
+                      className="flex-1 cursor-pointer"
                     >
-                      {option}
+                      {currentQuestion.optionImages?.[index] && (
+                        <img
+                          src={currentQuestion.optionImages[index]}
+                          alt={option || `Option ${index + 1}`}
+                          className="max-h-24 w-auto object-contain rounded mb-1"
+                        />
+                      )}
+                      {option && <span className="text-base">{option}</span>}
                     </Label>
                     {showCorrect && isCorrectOption && <CheckCircle2 className="h-5 w-5 text-green-600" />}
                     {showCorrect && isSelected && !isCorrectOption && <XCircle className="h-5 w-5 text-destructive" />}

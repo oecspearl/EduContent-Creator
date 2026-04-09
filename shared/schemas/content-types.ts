@@ -12,6 +12,8 @@ export type QuizQuestion = {
   imageUrl?: string;
   imageAlt?: string;
   options?: string[];
+  /** Optional image URL per answer option (parallel to options array). */
+  optionImages?: (string | undefined)[];
   correctAnswer: string | number | string[] | Record<string, string>;
   explanation?: string;
   items?: string[];

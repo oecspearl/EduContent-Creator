@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +48,22 @@ export function QuestionCard({
   fileInputRef,
 }: QuestionCardProps) {
   const localFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [optionImageInputs, setOptionImageInputs] = useState<Record<number, string>>({});
+
+  const applyOptionImage = (optIndex: number) => {
+    const url = optionImageInputs[optIndex]?.trim();
+    if (!url) return;
+    const newImages = [...(question.optionImages || (question.options || []).map(() => undefined))];
+    newImages[optIndex] = url;
+    onUpdate({ optionImages: newImages });
+    setOptionImageInputs((prev) => ({ ...prev, [optIndex]: "" }));
+  };
+
+  const removeOptionImage = (optIndex: number) => {
+    const newImages = [...(question.optionImages || (question.options || []).map(() => undefined))];
+    newImages[optIndex] = undefined;
+    onUpdate({ optionImages: newImages });
+  };
 
   return (
     <Card data-testid={`question-${index}`}>
@@ -156,45 +172,79 @@ export function QuestionCard({
                   </Button>
                 </div>
                 {question.options.map((option, optIndex) => (
-                  <div key={optIndex} className="flex items-center gap-2">
-                    <Input
-                      placeholder={`Option ${optIndex + 1}`}
-                      value={option}
-                      onChange={(e) => {
-                        const newOptions = [...question.options!];
-                        newOptions[optIndex] = e.target.value;
-                        onUpdate({ options: newOptions });
-                      }}
-                      data-testid={`input-option-${index}-${optIndex}`}
-                    />
-                    <Button
-                      variant={question.correctAnswer === optIndex ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => onUpdate({ correctAnswer: optIndex })}
-                      data-testid={`button-correct-${index}-${optIndex}`}
-                    >
-                      {question.correctAnswer === optIndex ? "Correct" : "Mark Correct"}
-                    </Button>
-                    {question.options!.length > 2 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => {
-                          const newOptions = question.options!.filter((_, i) => i !== optIndex);
-                          // Adjust correctAnswer if needed
-                          let newCorrectAnswer = question.correctAnswer as number;
-                          if (optIndex === newCorrectAnswer) {
-                            newCorrectAnswer = 0; // Reset to first option if deleted option was correct
-                          } else if (optIndex < newCorrectAnswer) {
-                            newCorrectAnswer--; // Shift down if deleted option was before correct
-                          }
-                          onUpdate({ options: newOptions, correctAnswer: newCorrectAnswer });
+                  <div key={optIndex} className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder={`Option ${optIndex + 1}`}
+                        value={option}
+                        onChange={(e) => {
+                          const newOptions = [...question.options!];
+                          newOptions[optIndex] = e.target.value;
+                          onUpdate({ options: newOptions });
                         }}
-                        data-testid={`button-delete-option-${index}-${optIndex}`}
+                        data-testid={`input-option-${index}-${optIndex}`}
+                      />
+                      <Button
+                        variant={question.correctAnswer === optIndex ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => onUpdate({ correctAnswer: optIndex })}
+                        data-testid={`button-correct-${index}-${optIndex}`}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {question.correctAnswer === optIndex ? "Correct" : "Mark Correct"}
                       </Button>
+                      {question.options!.length > 2 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => {
+                            const newOptions = question.options!.filter((_, i) => i !== optIndex);
+                            const newImages = question.optionImages?.filter((_, i) => i !== optIndex);
+                            let newCorrectAnswer = question.correctAnswer as number;
+                            if (optIndex === newCorrectAnswer) {
+                              newCorrectAnswer = 0;
+                            } else if (optIndex < newCorrectAnswer) {
+                              newCorrectAnswer--;
+                            }
+                            onUpdate({ options: newOptions, correctAnswer: newCorrectAnswer, optionImages: newImages });
+                          }}
+                          data-testid={`button-delete-option-${index}-${optIndex}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {/* Per-option image */}
+                    {question.optionImages?.[optIndex] ? (
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={question.optionImages[optIndex]}
+                          alt={option || `Option ${optIndex + 1}`}
+                          className="h-12 w-16 object-contain rounded border bg-muted/50"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-destructive hover:text-destructive"
+                          onClick={() => removeOptionImage(optIndex)}
+                          title="Remove image"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <ImageIcon className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                        <Input
+                          value={optionImageInputs[optIndex] || ""}
+                          onChange={(e) => setOptionImageInputs((prev) => ({ ...prev, [optIndex]: e.target.value }))}
+                          placeholder="Image URL (optional)"
+                          className="h-7 text-xs"
+                          onKeyDown={(e) => { if (e.key === "Enter") applyOptionImage(optIndex); }}
+                          onBlur={() => applyOptionImage(optIndex)}
+                          data-testid={`input-option-image-${index}-${optIndex}`}
+                        />
+                      </div>
                     )}
                   </div>
                 ))}
