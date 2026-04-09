@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, XCircle, RotateCcw, HelpCircle } from "lucide-react";
 import type { FillInBlanksData } from "@shared/schema";
@@ -113,7 +112,7 @@ export function FillBlanksPlayer({ data, contentId }: FillBlanksPlayerProps) {
     const result: React.ReactElement[] = [];
 
     parts.forEach((part, idx) => {
-      result.push(<span key={`text-${idx}`}>{part}</span>);
+      result.push(<span key={`text-${idx}`} dangerouslySetInnerHTML={{ __html: part }} />);
       if (idx < data.blanks.length) {
         result.push(
           <span key={`blank-${idx}`} className="inline-flex flex-col gap-1 mx-1">

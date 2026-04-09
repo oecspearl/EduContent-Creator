@@ -84,6 +84,9 @@ export function useContentEditor<TData>(options: UseContentEditorOptions<TData>)
       setAgeRange(content.ageRange || "");
       setIsPublished(content.isPublished);
       setIsPublic(content.isPublic || false);
+      if (content.curriculumContext) {
+        setCurriculumContext(content.curriculumContext as CurriculumContext);
+      }
       populateFromContent(content);
     }
   }, [content]);
@@ -101,6 +104,7 @@ export function useContentEditor<TData>(options: UseContentEditorOptions<TData>)
         data,
         isPublished: publish,
         isPublic,
+        curriculumContext: curriculumContext ?? null,
       };
 
       if (isEditing) {
@@ -140,7 +144,7 @@ export function useContentEditor<TData>(options: UseContentEditorOptions<TData>)
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, description, isPublic, autosave, isPublished, ...autosaveDeps]);
+  }, [title, description, isPublic, autosave, isPublished, curriculumContext, ...autosaveDeps]);
 
   const handleManualSave = useCallback(() => {
     if (!isReady()) {

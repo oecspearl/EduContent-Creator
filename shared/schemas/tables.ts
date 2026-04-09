@@ -39,6 +39,7 @@ export const h5pContent = pgTable("h5p_content", {
   subject: text("subject"),
   gradeLevel: text("grade_level"),
   ageRange: text("age_range"),
+  curriculumContext: jsonb("curriculum_context"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({

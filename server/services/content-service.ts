@@ -50,6 +50,7 @@ export class ContentService {
     subject?: string | null;
     gradeLevel?: string | null;
     ageRange?: string | null;
+    curriculumContext?: any | null;
   }): Promise<ContentResult> {
     if (!input.title || !input.type || !input.data) {
       return { ok: false, status: 400, message: "Missing required fields" };
@@ -67,6 +68,7 @@ export class ContentService {
       subject: input.subject || null,
       gradeLevel: input.gradeLevel || null,
       ageRange: input.ageRange || null,
+      curriculumContext: input.curriculumContext || null,
     });
 
     return { ok: true, data: content };

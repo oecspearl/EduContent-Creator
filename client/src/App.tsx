@@ -128,64 +128,34 @@ function Router() {
       <Route path="/shared-resources">
         <TeacherRoute component={SharedResourcesPage} />
       </Route>
-      <Route path="/create/quiz">
+      <Route path="/create/quiz/:id?">
         <TeacherRoute component={QuizCreator} />
       </Route>
-      <Route path="/create/quiz/:id">
-        <TeacherRoute component={QuizCreator} />
-      </Route>
-      <Route path="/create/flashcard">
+      <Route path="/create/flashcard/:id?">
         <TeacherRoute component={FlashcardCreator} />
       </Route>
-      <Route path="/create/flashcard/:id">
-        <TeacherRoute component={FlashcardCreator} />
-      </Route>
-      <Route path="/create/interactive-video">
+      <Route path="/create/interactive-video/:id?">
         <TeacherRoute component={InteractiveVideoCreator} />
       </Route>
-      <Route path="/create/interactive-video/:id">
-        <TeacherRoute component={InteractiveVideoCreator} />
-      </Route>
-      <Route path="/create/image-hotspot">
+      <Route path="/create/image-hotspot/:id?">
         <TeacherRoute component={ImageHotspotCreator} />
       </Route>
-      <Route path="/create/image-hotspot/:id">
-        <TeacherRoute component={ImageHotspotCreator} />
-      </Route>
-      <Route path="/create/drag-drop">
+      <Route path="/create/drag-drop/:id?">
         <TeacherRoute component={DragDropCreator} />
       </Route>
-      <Route path="/create/drag-drop/:id">
-        <TeacherRoute component={DragDropCreator} />
-      </Route>
-      <Route path="/create/fill-blanks">
+      <Route path="/create/fill-blanks/:id?">
         <TeacherRoute component={FillBlanksCreator} />
       </Route>
-      <Route path="/create/fill-blanks/:id">
-        <TeacherRoute component={FillBlanksCreator} />
-      </Route>
-      <Route path="/create/memory-game">
+      <Route path="/create/memory-game/:id?">
         <TeacherRoute component={MemoryGameCreator} />
       </Route>
-      <Route path="/create/memory-game/:id">
-        <TeacherRoute component={MemoryGameCreator} />
-      </Route>
-      <Route path="/create/interactive-book">
+      <Route path="/create/interactive-book/:id?">
         <TeacherRoute component={InteractiveBookCreator} />
       </Route>
-      <Route path="/create/interactive-book/:id">
-        <TeacherRoute component={InteractiveBookCreator} />
-      </Route>
-      <Route path="/create/video-finder">
+      <Route path="/create/video-finder/:id?">
         <TeacherRoute component={VideoFinderCreator} />
       </Route>
-      <Route path="/create/video-finder/:id">
-        <TeacherRoute component={VideoFinderCreator} />
-      </Route>
-      <Route path="/create/presentation">
-        <TeacherRoute component={PresentationCreator} />
-      </Route>
-      <Route path="/create/presentation/:id">
+      <Route path="/create/presentation/:id?">
         <TeacherRoute component={PresentationCreator} />
       </Route>
       <Route path="/share/:id">

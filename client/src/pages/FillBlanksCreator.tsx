@@ -3,8 +3,8 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
@@ -182,17 +182,16 @@ export default function FillBlanksCreator() {
               <CardTitle>Text with Blanks</CardTitle>
             </CardHeader>
             <CardContent>
-              <Label htmlFor="text">
-                Enter text and use *blank* to mark where blanks should appear
+              <Label>
+                Type your text and use <strong>*blank*</strong> where you want blanks to appear. Use the toolbar for formatting.
               </Label>
-              <Textarea
-                id="text"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Example: The capital of France is *blank*."
-                className="min-h-32 mt-2"
-                data-testid="textarea-text"
-              />
+              <div className="mt-2" data-testid="textarea-text">
+                <RichTextEditor
+                  content={text}
+                  onChange={setText}
+                  placeholder="Example: The capital of France is *blank*."
+                />
+              </div>
               <p className="text-sm text-muted-foreground mt-2">
                 Blanks detected: {(text.match(/\*blank\*/g) || []).length}
               </p>

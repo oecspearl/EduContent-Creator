@@ -37,7 +37,7 @@ export function registerContentRoutes({ app, storage, requireAuth, requireTeache
 
   // Update content (teachers only)
   app.put("/api/content/:id", requireTeacher, asyncHandler(async (req: any, res) => {
-    const { title, description, data, isPublished, isPublic, tags, subject, gradeLevel, ageRange } = req.body;
+    const { title, description, data, isPublished, isPublic, tags, subject, gradeLevel, ageRange, curriculumContext } = req.body;
     const updates: any = {};
     if (title !== undefined) updates.title = title;
     if (description !== undefined) updates.description = description;
@@ -48,6 +48,7 @@ export function registerContentRoutes({ app, storage, requireAuth, requireTeache
     if (subject !== undefined) updates.subject = subject;
     if (gradeLevel !== undefined) updates.gradeLevel = gradeLevel;
     if (ageRange !== undefined) updates.ageRange = ageRange;
+    updates.curriculumContext = curriculumContext ?? null;
 
     const result = await contentSvc.update(req.params.id, req.session.userId, updates);
     if (!result.ok) return res.status(result.status).json({ message: result.message });

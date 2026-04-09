@@ -3,7 +3,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { BookOpen, Loader2, PenLine } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { CurriculumContext } from "@shared/schema";
 
 type CurriculumSubject = { subjectSlug: string; subjectName: string };
@@ -32,7 +35,20 @@ export function CurriculumSelector({
   onGradeSync,
 }: CurriculumSelectorProps) {
   const [enabled, setEnabled] = useState(!!curriculumContext);
+  const [manualEntry, setManualEntry] = useState(!!curriculumContext);
+  const [manualStrand, setManualStrand] = useState(curriculumContext?.strand ?? "");
+  const [manualElo, setManualElo] = useState(curriculumContext?.eloText ?? "");
   const [loading, setLoading] = useState("");
+
+  // Sync when curriculumContext is restored from DB (async load)
+  useEffect(() => {
+    if (curriculumContext && !enabled) {
+      setEnabled(true);
+      setManualEntry(true);
+      setManualStrand(curriculumContext.strand ?? "");
+      setManualElo(curriculumContext.eloText ?? "");
+    }
+  }, [curriculumContext]);
 
   // Selection state
   const [subjects, setSubjects] = useState<CurriculumSubject[]>([]);
@@ -101,9 +117,9 @@ export function CurriculumSelector({
       .finally(() => setLoading(""));
   }, [selectedEloId]);
 
-  // Emit curriculum context when ELO is selected
+  // Emit curriculum context when ELO is selected (dropdown mode)
   useEffect(() => {
-    if (!enabled || !selectedEloText) {
+    if (!enabled || manualEntry || !selectedEloText) {
       return;
     }
     const scoTexts = scos
@@ -117,13 +133,42 @@ export function CurriculumSelector({
       eloText: selectedEloText,
       scoTexts: scoTexts.length > 0 ? scoTexts : undefined,
     });
-  }, [enabled, selectedSubjectName, selectedGrade, selectedStrandName, selectedEloText, selectedScoIds, scos]);
+  }, [enabled, manualEntry, selectedSubjectName, selectedGrade, selectedStrandName, selectedEloText, selectedScoIds, scos]);
+
+  // Emit curriculum context for manual entry mode
+  useEffect(() => {
+    if (!enabled || !manualEntry || !manualElo.trim()) {
+      return;
+    }
+    onCurriculumChange({
+      subject: selectedSubjectName,
+      grade: selectedGrade,
+      strand: manualStrand,
+      eloText: manualElo,
+    });
+  }, [enabled, manualEntry, selectedSubjectName, selectedGrade, manualStrand, manualElo]);
 
   function handleToggle(checked: boolean) {
     setEnabled(checked);
     if (!checked) {
       onCurriculumChange(null);
       resetSelections();
+      setManualEntry(false);
+      setManualStrand("");
+      setManualElo("");
+    }
+  }
+
+  function handleManualEntryToggle(on: boolean) {
+    setManualEntry(on);
+    if (on) {
+      // Clear dropdown-derived context when switching to manual
+      onCurriculumChange(null);
+    } else {
+      // Clear manual text when switching back to dropdowns
+      setManualStrand("");
+      setManualElo("");
+      onCurriculumChange(null);
     }
   }
 
@@ -216,122 +261,180 @@ export function CurriculumSelector({
         <Switch id="curriculum-toggle" checked={true} onCheckedChange={handleToggle} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* Subject */}
-        <div className="space-y-1">
-          <Label className="text-xs">Subject</Label>
-          <Select value={selectedSubject} onValueChange={handleSubjectChange}>
-            <SelectTrigger className="h-9">
-              {isLoading("subjects") ? (
-                <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Loading...</span>
-              ) : (
-                <SelectValue placeholder="Select subject" />
-              )}
-            </SelectTrigger>
-            <SelectContent>
-              {subjects.map((s) => (
-                <SelectItem key={s.subjectSlug} value={s.subjectSlug}>{s.subjectName}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Grade */}
-        <div className="space-y-1">
-          <Label className="text-xs">Grade Level</Label>
-          <Select value={selectedGrade} onValueChange={handleGradeChange} disabled={!selectedSubject}>
-            <SelectTrigger className="h-9">
-              {isLoading("grades") ? (
-                <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Loading...</span>
-              ) : (
-                <SelectValue placeholder="Select grade" />
-              )}
-            </SelectTrigger>
-            <SelectContent>
-              {grades.map((g) => (
-                <SelectItem key={g.gradeLevel} value={g.gradeLevel}>{g.gradeLevel}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Strand */}
-        <div className="space-y-1 md:col-span-2">
-          <Label className="text-xs">Strand</Label>
-          <Select value={selectedStrandId} onValueChange={handleStrandChange} disabled={!selectedGrade}>
-            <SelectTrigger className="h-9">
-              {isLoading("strands") ? (
-                <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Loading...</span>
-              ) : (
-                <SelectValue placeholder="Select strand" />
-              )}
-            </SelectTrigger>
-            <SelectContent>
-              {strands.map((s) => (
-                <SelectItem key={s.id} value={s.id}>{s.strandName}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* ELO */}
-        <div className="space-y-1 md:col-span-2">
-          <Label className="text-xs">Essential Learning Outcome (ELO)</Label>
-          <Select value={selectedEloId} onValueChange={handleEloChange} disabled={!selectedStrandId}>
-            <SelectTrigger className="h-9">
-              {isLoading("elos") ? (
-                <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Loading...</span>
-              ) : (
-                <SelectValue placeholder="Select ELO" />
-              )}
-            </SelectTrigger>
-            <SelectContent>
-              {elos.map((e) => (
-                <SelectItem key={e.id} value={e.id}>
-                  <span className="line-clamp-2">{e.eloText}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Mode toggle: dropdowns vs manual text entry */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant={!manualEntry ? "default" : "outline"}
+          className="h-7 text-xs"
+          onClick={() => handleManualEntryToggle(false)}
+        >
+          Select from curriculum
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={manualEntry ? "default" : "outline"}
+          className="h-7 text-xs"
+          onClick={() => handleManualEntryToggle(true)}
+        >
+          <PenLine className="h-3 w-3 mr-1" />
+          Type manually
+        </Button>
       </div>
 
-      {/* SCOs - shown after ELO is selected */}
-      {selectedEloId && scos.length > 0 && (
-        <div className="space-y-2">
-          <Label className="text-xs">Specific Curriculum Outcomes (click to select)</Label>
-          <div className="flex flex-wrap gap-2">
-            {scos.map((sco) => {
-              const isSelected = selectedScoIds.includes(sco.id);
-              return (
-                <Badge
-                  key={sco.id}
-                  variant={isSelected ? "default" : "outline"}
-                  className="cursor-pointer text-xs max-w-full"
-                  onClick={() => toggleSco(sco.id)}
-                >
-                  <span className="line-clamp-1">{sco.scoText}</span>
-                </Badge>
-              );
-            })}
+      {!manualEntry ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Subject */}
+          <div className="space-y-1">
+            <Label className="text-xs">Subject</Label>
+            <Select value={selectedSubject} onValueChange={handleSubjectChange}>
+              <SelectTrigger className="h-9">
+                {isLoading("subjects") ? (
+                  <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Loading...</span>
+                ) : (
+                  <SelectValue placeholder="Select subject" />
+                )}
+              </SelectTrigger>
+              <SelectContent>
+                {subjects.map((s) => (
+                  <SelectItem key={s.subjectSlug} value={s.subjectSlug}>{s.subjectName}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          {selectedScoIds.length === 0 && (
-            <p className="text-xs text-muted-foreground">
-              No SCOs selected — AI will align to the ELO above. Click SCOs to narrow the focus.
-            </p>
+
+          {/* Grade */}
+          <div className="space-y-1">
+            <Label className="text-xs">Grade Level</Label>
+            <Select value={selectedGrade} onValueChange={handleGradeChange} disabled={!selectedSubject}>
+              <SelectTrigger className="h-9">
+                {isLoading("grades") ? (
+                  <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Loading...</span>
+                ) : (
+                  <SelectValue placeholder="Select grade" />
+                )}
+              </SelectTrigger>
+              <SelectContent>
+                {grades.map((g) => (
+                  <SelectItem key={g.gradeLevel} value={g.gradeLevel}>{g.gradeLevel}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Strand */}
+          <div className="space-y-1 md:col-span-2">
+            <Label className="text-xs">Strand</Label>
+            <Select value={selectedStrandId} onValueChange={handleStrandChange} disabled={!selectedGrade}>
+              <SelectTrigger className="h-9">
+                {isLoading("strands") ? (
+                  <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Loading...</span>
+                ) : (
+                  <SelectValue placeholder="Select strand" />
+                )}
+              </SelectTrigger>
+              <SelectContent>
+                {strands.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.strandName}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* ELO */}
+          <div className="space-y-1 md:col-span-2">
+            <Label className="text-xs">Essential Learning Outcome (ELO)</Label>
+            <Select value={selectedEloId} onValueChange={handleEloChange} disabled={!selectedStrandId}>
+              <SelectTrigger className="h-9">
+                {isLoading("elos") ? (
+                  <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Loading...</span>
+                ) : (
+                  <SelectValue placeholder="Select ELO" />
+                )}
+              </SelectTrigger>
+              <SelectContent>
+                {elos.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    <span className="line-clamp-2">{e.eloText}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* SCOs - shown after ELO is selected */}
+          {selectedEloId && scos.length > 0 && (
+            <div className="space-y-2 md:col-span-2">
+              <Label className="text-xs">Specific Curriculum Outcomes (click to select)</Label>
+              <div className="flex flex-wrap gap-2">
+                {scos.map((sco) => {
+                  const isSelected = selectedScoIds.includes(sco.id);
+                  return (
+                    <Badge
+                      key={sco.id}
+                      variant={isSelected ? "default" : "outline"}
+                      className="cursor-pointer text-xs max-w-full"
+                      onClick={() => toggleSco(sco.id)}
+                    >
+                      <span className="line-clamp-1">{sco.scoText}</span>
+                    </Badge>
+                  );
+                })}
+              </div>
+              {selectedScoIds.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  No SCOs selected — AI will align to the ELO above. Click SCOs to narrow the focus.
+                </p>
+              )}
+            </div>
           )}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Type the curriculum details directly if you know them. Subject and grade will still be inferred from the fields above.
+          </p>
+          <div className="space-y-1">
+            <Label className="text-xs">Strand (optional)</Label>
+            <Input
+              value={manualStrand}
+              onChange={(e) => setManualStrand(e.target.value)}
+              placeholder="e.g. Reading and Responding to Literature"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Essential Learning Outcome (ELO)</Label>
+            <Textarea
+              value={manualElo}
+              onChange={(e) => setManualElo(e.target.value)}
+              placeholder="e.g. Students will be able to identify the main idea and supporting details in a text."
+              className="text-sm min-h-20 resize-none"
+            />
+          </div>
         </div>
       )}
 
       {/* Summary of selected curriculum */}
-      {selectedEloText && (
+      {(selectedEloText || (manualEntry && manualElo.trim())) && (
         <div className="rounded-md bg-background p-3 border text-xs space-y-1">
           <p className="font-medium text-foreground">Selected Curriculum Target:</p>
-          <p className="text-muted-foreground"><strong>ELO:</strong> {selectedEloText}</p>
-          {selectedScoIds.length > 0 && (
-            <p className="text-muted-foreground">
-              <strong>SCOs:</strong> {scos.filter((s) => selectedScoIds.includes(s.id)).map((s) => s.scoText).join("; ")}
-            </p>
+          {manualEntry ? (
+            <>
+              {manualStrand && <p className="text-muted-foreground"><strong>Strand:</strong> {manualStrand}</p>}
+              <p className="text-muted-foreground"><strong>ELO:</strong> {manualElo}</p>
+            </>
+          ) : (
+            <>
+              <p className="text-muted-foreground"><strong>ELO:</strong> {selectedEloText}</p>
+              {selectedScoIds.length > 0 && (
+                <p className="text-muted-foreground">
+                  <strong>SCOs:</strong> {scos.filter((s) => selectedScoIds.includes(s.id)).map((s) => s.scoText).join("; ")}
+                </p>
+              )}
+            </>
           )}
         </div>
       )}
