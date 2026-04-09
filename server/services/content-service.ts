@@ -23,8 +23,9 @@ export class ContentService {
     const content = await this.storage.getContentById(id);
     if (!content) return { ok: false, status: 404, message: "Content not found" };
 
-    // Owner can always access
+    // Owner and admins can always access any content
     if (content.userId === userId) return { ok: true, data: content };
+    if (userRole === "admin") return { ok: true, data: content };
 
     // Students can access content assigned to them via class enrollments
     if (userRole === "student") {
