@@ -68,7 +68,7 @@ var init_websocket = __esm({
 // shared/schemas/tables.ts
 import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, boolean, jsonb, timestamp, integer, real, unique, index } from "drizzle-orm/pg-core";
-var profiles, h5pContent, contentShares, learnerProgress, quizAttempts, interactionEvents, chatMessages, classes, classEnrollments, auditLog, notifications, learningPaths, learningPathItems, studentGroups, studentGroupMembers, messages, rubrics, rubricScores, studentAssignments, contentAssignments;
+var profiles, h5pContent, contentShares, learnerProgress, quizAttempts, interactionEvents, chatMessages, classes, classEnrollments, auditLog, notifications, learningPaths, learningPathItems, studentGroups, studentGroupMembers, messages, rubrics, rubricScores, studentAssignments, contentAssignments, contentReviews;
 var init_tables = __esm({
   "shared/schemas/tables.ts"() {
     "use strict";
@@ -101,6 +101,11 @@ var init_tables = __esm({
       userId: varchar("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
       isPublished: boolean("is_published").default(false).notNull(),
       isPublic: boolean("is_public").default(false).notNull(),
+      reviewStatus: text("review_status").default("none").notNull(),
+      // 'none' | 'flagged' | 'in_review' | 'approved' | 'rejected'
+      reviewNotes: text("review_notes"),
+      flaggedBy: varchar("flagged_by").references(() => profiles.id, { onDelete: "set null" }),
+      reviewedBy: varchar("reviewed_by").references(() => profiles.id, { onDelete: "set null" }),
       tags: text("tags").array(),
       subject: text("subject"),
       gradeLevel: text("grade_level"),
@@ -293,6 +298,24 @@ var init_tables = __esm({
       uniqueContentClass: unique().on(table.contentId, table.classId),
       classIdIdx: index("content_assignments_class_id_idx").on(table.classId)
     }));
+    contentReviews = pgTable("content_reviews", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      contentId: varchar("content_id").notNull().references(() => h5pContent.id, { onDelete: "cascade" }),
+      requestedBy: varchar("requested_by").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+      assignedTo: varchar("assigned_to").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+      status: text("status").default("pending").notNull(),
+      // 'pending' | 'in_progress' | 'completed'
+      feedback: text("feedback"),
+      checklist: jsonb("checklist"),
+      // Array of { item: string, checked: boolean, notes?: string }
+      recommendation: text("recommendation"),
+      // 'approve' | 'reject' | 'needs_changes'
+      createdAt: timestamp("created_at").defaultNow().notNull(),
+      completedAt: timestamp("completed_at")
+    }, (table) => ({
+      contentIdIdx: index("content_reviews_content_id_idx").on(table.contentId),
+      assignedToIdx: index("content_reviews_assigned_to_idx").on(table.assignedTo)
+    }));
   }
 });
 
@@ -463,6 +486,7 @@ __export(schema_exports, {
   classEnrollments: () => classEnrollments,
   classes: () => classes,
   contentAssignments: () => contentAssignments,
+  contentReviews: () => contentReviews,
   contentShares: () => contentShares,
   curriculumContextSchema: () => curriculumContextSchema,
   h5pContent: () => h5pContent,
@@ -2207,11 +2231,14 @@ var init_content_filters = __esm({
 });
 
 // server/services/content-service.ts
+import { eq as eq7, and as and4 } from "drizzle-orm";
 var ContentService;
 var init_content_service = __esm({
   "server/services/content-service.ts"() {
     "use strict";
+    init_schema();
     init_content_filters();
+    init_db();
     ContentService = class {
       constructor(storage2) {
         this.storage = storage2;
@@ -2229,6 +2256,10 @@ var init_content_service = __esm({
         if (!content) return { ok: false, status: 404, message: "Content not found" };
         if (content.userId === userId) return { ok: true, data: content };
         if (userRole === "admin") return { ok: true, data: content };
+        if (userRole === "teacher" || userRole === "admin") {
+          const reviewAssignment = await db.select({ id: contentReviews.id }).from(contentReviews).where(and4(eq7(contentReviews.contentId, id), eq7(contentReviews.assignedTo, userId))).limit(1);
+          if (reviewAssignment.length > 0) return { ok: true, data: content };
+        }
         if (userRole === "student") {
           const assignments = await this.storage.getStudentAssignments(userId);
           const isAssigned = assignments.some((a) => a.contentId === id);
@@ -3759,7 +3790,7 @@ var init_ai = __esm({
 });
 
 // server/services/audit-service.ts
-import { eq as eq7, desc as desc5 } from "drizzle-orm";
+import { eq as eq8, desc as desc5 } from "drizzle-orm";
 var AuditService;
 var init_audit_service = __esm({
   "server/services/audit-service.ts"() {
@@ -3778,10 +3809,10 @@ var init_audit_service = __esm({
         return entry;
       }
       async getByEntity(entityType, entityId, limit = 50) {
-        return db.select().from(auditLog).where(eq7(auditLog.entityId, entityId)).orderBy(desc5(auditLog.createdAt)).limit(limit);
+        return db.select().from(auditLog).where(eq8(auditLog.entityId, entityId)).orderBy(desc5(auditLog.createdAt)).limit(limit);
       }
       async getByUser(userId, limit = 50) {
-        return db.select().from(auditLog).where(eq7(auditLog.userId, userId)).orderBy(desc5(auditLog.createdAt)).limit(limit);
+        return db.select().from(auditLog).where(eq8(auditLog.userId, userId)).orderBy(desc5(auditLog.createdAt)).limit(limit);
       }
       async getRecent(limit = 50) {
         return db.select().from(auditLog).orderBy(desc5(auditLog.createdAt)).limit(limit);
@@ -3791,7 +3822,7 @@ var init_audit_service = __esm({
 });
 
 // server/services/notification-service.ts
-import { eq as eq8, and as and4, desc as desc6, count as count2 } from "drizzle-orm";
+import { eq as eq9, and as and5, desc as desc6, count as count2 } from "drizzle-orm";
 var NotificationService;
 var init_notification_service = __esm({
   "server/services/notification-service.ts"() {
@@ -3804,31 +3835,31 @@ var init_notification_service = __esm({
         return notification;
       }
       async getForUser(userId, limit = 50) {
-        return db.select().from(notifications).where(eq8(notifications.userId, userId)).orderBy(desc6(notifications.createdAt)).limit(limit);
+        return db.select().from(notifications).where(eq9(notifications.userId, userId)).orderBy(desc6(notifications.createdAt)).limit(limit);
       }
       async getUnreadCount(userId) {
         const [result] = await db.select({ value: count2() }).from(notifications).where(
-          and4(
-            eq8(notifications.userId, userId),
-            eq8(notifications.isRead, false)
+          and5(
+            eq9(notifications.userId, userId),
+            eq9(notifications.isRead, false)
           )
         );
         return result?.value ?? 0;
       }
       async markAsRead(notificationId, userId) {
         const [updated] = await db.update(notifications).set({ isRead: true }).where(
-          and4(
-            eq8(notifications.id, notificationId),
-            eq8(notifications.userId, userId)
+          and5(
+            eq9(notifications.id, notificationId),
+            eq9(notifications.userId, userId)
           )
         ).returning();
         return updated ?? null;
       }
       async markAllAsRead(userId) {
         await db.update(notifications).set({ isRead: true }).where(
-          and4(
-            eq8(notifications.userId, userId),
-            eq8(notifications.isRead, false)
+          and5(
+            eq9(notifications.userId, userId),
+            eq9(notifications.isRead, false)
           )
         );
       }
@@ -4301,7 +4332,7 @@ var init_analytics = __esm({
 });
 
 // server/routes/classes.ts
-import { eq as eq9, and as and5, desc as desc7 } from "drizzle-orm";
+import { eq as eq10, and as and6, desc as desc7 } from "drizzle-orm";
 import { z as z2 } from "zod";
 function parseCSVLine(line) {
   const result = [];
@@ -4778,16 +4809,16 @@ function registerClassRoutes({ app: app2, storage: storage2, requireAuth, requir
       assignedAt: studentAssignments.assignedAt,
       dueDate: studentAssignments.dueDate,
       instructions: studentAssignments.instructions
-    }).from(studentAssignments).innerJoin(profiles, eq9(studentAssignments.studentId, profiles.id)).where(eq9(studentAssignments.contentId, req.params.contentId)).orderBy(desc7(studentAssignments.assignedAt));
+    }).from(studentAssignments).innerJoin(profiles, eq10(studentAssignments.studentId, profiles.id)).where(eq10(studentAssignments.contentId, req.params.contentId)).orderBy(desc7(studentAssignments.assignedAt));
     res.json(assignments);
   }));
   app2.delete("/api/content/:contentId/student-assignments/:studentId", requireTeacher, asyncHandler(async (req, res) => {
     const content = await storage2.getContentById(req.params.contentId);
     if (!content) return res.status(404).json({ message: "Content not found" });
     if (content.userId !== req.session.userId) return res.status(403).json({ message: "Not authorized" });
-    await db.delete(studentAssignments).where(and5(
-      eq9(studentAssignments.contentId, req.params.contentId),
-      eq9(studentAssignments.studentId, req.params.studentId)
+    await db.delete(studentAssignments).where(and6(
+      eq10(studentAssignments.contentId, req.params.contentId),
+      eq10(studentAssignments.studentId, req.params.studentId)
     ));
     res.json({ message: "Student assignment removed" });
   }));
@@ -6628,7 +6659,7 @@ var init_classroom = __esm({
 
 // server/routes/student.ts
 import { z as z3 } from "zod";
-import { eq as eq10, desc as desc8, and as and6, inArray as inArray4 } from "drizzle-orm";
+import { eq as eq11, desc as desc8, and as and7, inArray as inArray4 } from "drizzle-orm";
 function registerStudentRoutes({ app: app2, storage: storage2, requireAuth }) {
   app2.get("/api/student/my-assignments", requireAuth, asyncHandler(async (req, res) => {
     const userId = req.session.userId;
@@ -6641,14 +6672,14 @@ function registerStudentRoutes({ app: app2, storage: storage2, requireAuth }) {
       assignedAt: studentAssignments.assignedAt,
       dueDate: studentAssignments.dueDate,
       instructions: studentAssignments.instructions
-    }).from(studentAssignments).innerJoin(h5pContent, eq10(studentAssignments.contentId, h5pContent.id)).where(eq10(studentAssignments.studentId, userId)).orderBy(desc8(studentAssignments.assignedAt));
+    }).from(studentAssignments).innerJoin(h5pContent, eq11(studentAssignments.contentId, h5pContent.id)).where(eq11(studentAssignments.studentId, userId)).orderBy(desc8(studentAssignments.assignedAt));
     const seenContentIds = new Set(classAssignments.map((a) => a.contentId));
     const merged = [
       ...classAssignments,
       ...individualAssignments.filter((a) => !seenContentIds.has(a.contentId)).map((a) => ({ ...a, classId: null, className: "Individual Assignment" }))
     ];
     const contentIds = merged.map((a) => a.contentId);
-    const allProgress = contentIds.length > 0 ? await db.select().from(learnerProgress).where(and6(eq10(learnerProgress.userId, userId), inArray4(learnerProgress.contentId, contentIds))) : [];
+    const allProgress = contentIds.length > 0 ? await db.select().from(learnerProgress).where(and7(eq11(learnerProgress.userId, userId), inArray4(learnerProgress.contentId, contentIds))) : [];
     const progressMap = new Map(allProgress.map((p) => [p.contentId, p]));
     const enriched = merged.map((a) => {
       const progress = progressMap.get(a.contentId);
@@ -6665,7 +6696,7 @@ function registerStudentRoutes({ app: app2, storage: storage2, requireAuth }) {
     const userId = req.session.userId;
     const assignments = await storage2.getStudentAssignments(userId);
     const contentIds = Array.from(new Set(assignments.map((a) => a.contentId)));
-    const allAttempts = contentIds.length > 0 ? await db.select().from(quizAttempts).where(and6(eq10(quizAttempts.userId, userId), inArray4(quizAttempts.contentId, contentIds))) : [];
+    const allAttempts = contentIds.length > 0 ? await db.select().from(quizAttempts).where(and7(eq11(quizAttempts.userId, userId), inArray4(quizAttempts.contentId, contentIds))) : [];
     const attemptsByContent = /* @__PURE__ */ new Map();
     for (const a of allAttempts) {
       const list = attemptsByContent.get(a.contentId) || [];
@@ -6739,15 +6770,15 @@ function registerStudentRoutes({ app: app2, storage: storage2, requireAuth }) {
         contentType: h5pContent.type,
         assignedAt: studentAssignments.assignedAt,
         dueDate: studentAssignments.dueDate
-      }).from(studentAssignments).innerJoin(h5pContent, eq10(studentAssignments.contentId, h5pContent.id)).where(eq10(studentAssignments.studentId, userId))
+      }).from(studentAssignments).innerJoin(h5pContent, eq11(studentAssignments.contentId, h5pContent.id)).where(eq11(studentAssignments.studentId, userId))
     ]);
     const allContentIds = Array.from(/* @__PURE__ */ new Set([
       ...classAssignments.map((a) => a.contentId),
       ...individualRows.map((a) => a.contentId)
     ]));
     const [allAttempts, allProgress] = await Promise.all([
-      allContentIds.length > 0 ? db.select().from(quizAttempts).where(and6(eq10(quizAttempts.userId, userId), inArray4(quizAttempts.contentId, allContentIds))) : Promise.resolve([]),
-      allContentIds.length > 0 ? db.select().from(learnerProgress).where(and6(eq10(learnerProgress.userId, userId), inArray4(learnerProgress.contentId, allContentIds))) : Promise.resolve([])
+      allContentIds.length > 0 ? db.select().from(quizAttempts).where(and7(eq11(quizAttempts.userId, userId), inArray4(quizAttempts.contentId, allContentIds))) : Promise.resolve([]),
+      allContentIds.length > 0 ? db.select().from(learnerProgress).where(and7(eq11(learnerProgress.userId, userId), inArray4(learnerProgress.contentId, allContentIds))) : Promise.resolve([])
     ]);
     const attemptsByContent = /* @__PURE__ */ new Map();
     for (const a of allAttempts) {
@@ -6981,7 +7012,7 @@ var init_notifications = __esm({
 });
 
 // server/routes/messages.ts
-import { eq as eq11, or, and as and7, desc as desc9 } from "drizzle-orm";
+import { eq as eq12, or, and as and8, desc as desc9 } from "drizzle-orm";
 import { z as z4 } from "zod";
 function registerMessageRoutes({ app: app2, storage: storage2, requireAuth }) {
   const notifSvc = new NotificationService();
@@ -7025,11 +7056,11 @@ function registerMessageRoutes({ app: app2, storage: storage2, requireAuth }) {
       isRead: messages.isRead,
       createdAt: messages.createdAt,
       fromName: profiles.fullName
-    }).from(messages).leftJoin(profiles, eq11(messages.fromUserId, profiles.id)).where(or(eq11(messages.fromUserId, userId), eq11(messages.toUserId, userId))).orderBy(desc9(messages.createdAt)).limit(limit);
+    }).from(messages).leftJoin(profiles, eq12(messages.fromUserId, profiles.id)).where(or(eq12(messages.fromUserId, userId), eq12(messages.toUserId, userId))).orderBy(desc9(messages.createdAt)).limit(limit);
     res.json(allMessages);
   }));
   app2.patch("/api/messages/:id/read", requireAuth, asyncHandler(async (req, res) => {
-    await db.update(messages).set({ isRead: true }).where(and7(eq11(messages.id, req.params.id), eq11(messages.toUserId, req.session.userId)));
+    await db.update(messages).set({ isRead: true }).where(and8(eq12(messages.id, req.params.id), eq12(messages.toUserId, req.session.userId)));
     res.json({ message: "Marked as read" });
   }));
 }
@@ -7051,7 +7082,7 @@ var init_messages = __esm({
 });
 
 // server/routes/learning-paths.ts
-import { eq as eq12, asc, desc as desc10, inArray as inArray5, and as and8 } from "drizzle-orm";
+import { eq as eq13, asc, desc as desc10, inArray as inArray5, and as and9 } from "drizzle-orm";
 import { z as z5 } from "zod";
 async function getPathItems(pathId) {
   return db.select({
@@ -7061,7 +7092,7 @@ async function getPathItems(pathId) {
     isRequired: learningPathItems.isRequired,
     contentTitle: h5pContent.title,
     contentType: h5pContent.type
-  }).from(learningPathItems).innerJoin(h5pContent, eq12(learningPathItems.contentId, h5pContent.id)).where(eq12(learningPathItems.pathId, pathId)).orderBy(asc(learningPathItems.orderIndex));
+  }).from(learningPathItems).innerJoin(h5pContent, eq13(learningPathItems.contentId, h5pContent.id)).where(eq13(learningPathItems.pathId, pathId)).orderBy(asc(learningPathItems.orderIndex));
 }
 async function batchGetProgress(userIds, contentIds) {
   if (userIds.length === 0 || contentIds.length === 0) return /* @__PURE__ */ new Map();
@@ -7070,7 +7101,7 @@ async function batchGetProgress(userIds, contentIds) {
     contentId: learnerProgress.contentId,
     completionPercentage: learnerProgress.completionPercentage,
     completedAt: learnerProgress.completedAt
-  }).from(learnerProgress).where(and8(
+  }).from(learnerProgress).where(and9(
     inArray5(learnerProgress.userId, userIds),
     inArray5(learnerProgress.contentId, contentIds)
   ));
@@ -7085,14 +7116,14 @@ async function batchGetProgress(userIds, contentIds) {
 }
 async function isStudentEnrolledInPathClass(userId, path) {
   if (!path.classId) return false;
-  const [enrollment] = await db.select({ id: classEnrollments.id }).from(classEnrollments).where(and8(
-    eq12(classEnrollments.classId, path.classId),
-    eq12(classEnrollments.userId, userId)
+  const [enrollment] = await db.select({ id: classEnrollments.id }).from(classEnrollments).where(and9(
+    eq13(classEnrollments.classId, path.classId),
+    eq13(classEnrollments.userId, userId)
   )).limit(1);
   return !!enrollment;
 }
 async function isAdmin(userId) {
-  const [user] = await db.select({ role: profiles.role }).from(profiles).where(eq12(profiles.id, userId)).limit(1);
+  const [user] = await db.select({ role: profiles.role }).from(profiles).where(eq13(profiles.id, userId)).limit(1);
   return user?.role === "admin";
 }
 function registerLearningPathRoutes({ app: app2, storage: storage2, requireAuth, requireTeacher }) {
@@ -7121,12 +7152,12 @@ function registerLearningPathRoutes({ app: app2, storage: storage2, requireAuth,
   }));
   app2.get("/api/learning-paths", requireTeacher, asyncHandler(async (req, res) => {
     const admin = await isAdmin(req.session.userId);
-    const query = admin ? db.select().from(learningPaths) : db.select().from(learningPaths).where(eq12(learningPaths.userId, req.session.userId));
+    const query = admin ? db.select().from(learningPaths) : db.select().from(learningPaths).where(eq13(learningPaths.userId, req.session.userId));
     const paths = await query.orderBy(desc10(learningPaths.createdAt));
     res.json(paths);
   }));
   app2.get("/api/learning-paths/:id", requireAuth, asyncHandler(async (req, res) => {
-    const [path] = await db.select().from(learningPaths).where(eq12(learningPaths.id, req.params.id)).limit(1);
+    const [path] = await db.select().from(learningPaths).where(eq13(learningPaths.id, req.params.id)).limit(1);
     if (!path) return res.status(404).json({ message: "Path not found" });
     const userId = req.session.userId;
     if (path.userId !== userId) {
@@ -7137,7 +7168,7 @@ function registerLearningPathRoutes({ app: app2, storage: storage2, requireAuth,
     res.json({ ...path, items });
   }));
   app2.put("/api/learning-paths/:id", requireTeacher, asyncHandler(async (req, res) => {
-    const [path] = await db.select().from(learningPaths).where(eq12(learningPaths.id, req.params.id)).limit(1);
+    const [path] = await db.select().from(learningPaths).where(eq13(learningPaths.id, req.params.id)).limit(1);
     if (!path) return res.status(404).json({ message: "Path not found" });
     if (path.userId !== req.session.userId && !await isAdmin(req.session.userId)) {
       return res.status(403).json({ message: "Not authorized to update this path" });
@@ -7148,9 +7179,9 @@ function registerLearningPathRoutes({ app: app2, storage: storage2, requireAuth,
       if (parsed.name !== void 0) metaUpdates.name = parsed.name;
       if (parsed.description !== void 0) metaUpdates.description = parsed.description || null;
       if (parsed.classId !== void 0) metaUpdates.classId = parsed.classId;
-      const [result] = await tx.update(learningPaths).set(metaUpdates).where(eq12(learningPaths.id, path.id)).returning();
+      const [result] = await tx.update(learningPaths).set(metaUpdates).where(eq13(learningPaths.id, path.id)).returning();
       if (parsed.items) {
-        await tx.delete(learningPathItems).where(eq12(learningPathItems.pathId, path.id));
+        await tx.delete(learningPathItems).where(eq13(learningPathItems.pathId, path.id));
         if (parsed.items.length > 0) {
           await tx.insert(learningPathItems).values(
             parsed.items.map((item, i) => ({
@@ -7168,7 +7199,7 @@ function registerLearningPathRoutes({ app: app2, storage: storage2, requireAuth,
     res.json({ ...updated, items });
   }));
   app2.get("/api/learning-paths/:id/progress", requireAuth, asyncHandler(async (req, res) => {
-    const [path] = await db.select().from(learningPaths).where(eq12(learningPaths.id, req.params.id)).limit(1);
+    const [path] = await db.select().from(learningPaths).where(eq13(learningPaths.id, req.params.id)).limit(1);
     if (!path) return res.status(404).json({ message: "Path not found" });
     const userId = req.session.userId;
     if (path.userId !== userId) {
@@ -7197,7 +7228,7 @@ function registerLearningPathRoutes({ app: app2, storage: storage2, requireAuth,
     });
   }));
   app2.get("/api/learning-paths/:id/students", requireTeacher, asyncHandler(async (req, res) => {
-    const [path] = await db.select().from(learningPaths).where(eq12(learningPaths.id, req.params.id)).limit(1);
+    const [path] = await db.select().from(learningPaths).where(eq13(learningPaths.id, req.params.id)).limit(1);
     if (!path) return res.status(404).json({ message: "Path not found" });
     if (path.userId !== req.session.userId && !await isAdmin(req.session.userId)) {
       return res.status(403).json({ message: "Not authorized to view this path" });
@@ -7209,7 +7240,7 @@ function registerLearningPathRoutes({ app: app2, storage: storage2, requireAuth,
       id: profiles.id,
       fullName: profiles.fullName,
       email: profiles.email
-    }).from(classEnrollments).innerJoin(profiles, eq12(classEnrollments.userId, profiles.id)).where(eq12(classEnrollments.classId, path.classId));
+    }).from(classEnrollments).innerJoin(profiles, eq13(classEnrollments.userId, profiles.id)).where(eq13(classEnrollments.classId, path.classId));
     const items = await getPathItems(path.id);
     const contentIds = items.map((i) => i.contentId);
     const studentIds = enrolledStudents.map((s) => s.id);
@@ -7240,7 +7271,7 @@ function registerLearningPathRoutes({ app: app2, storage: storage2, requireAuth,
   }));
   app2.get("/api/student/learning-paths", requireAuth, asyncHandler(async (req, res) => {
     const userId = req.session.userId;
-    const enrollments = await db.select({ classId: classEnrollments.classId }).from(classEnrollments).where(eq12(classEnrollments.userId, userId));
+    const enrollments = await db.select({ classId: classEnrollments.classId }).from(classEnrollments).where(eq13(classEnrollments.userId, userId));
     const classIds = enrollments.map((e) => e.classId);
     if (classIds.length === 0) return res.json([]);
     const paths = await db.select().from(learningPaths).where(inArray5(learningPaths.classId, classIds)).orderBy(desc10(learningPaths.createdAt));
@@ -7276,12 +7307,12 @@ function registerLearningPathRoutes({ app: app2, storage: storage2, requireAuth,
     res.json(enriched);
   }));
   app2.delete("/api/learning-paths/:id", requireTeacher, asyncHandler(async (req, res) => {
-    const [path] = await db.select().from(learningPaths).where(eq12(learningPaths.id, req.params.id)).limit(1);
+    const [path] = await db.select().from(learningPaths).where(eq13(learningPaths.id, req.params.id)).limit(1);
     if (!path) return res.status(404).json({ message: "Path not found" });
     if (path.userId !== req.session.userId && !await isAdmin(req.session.userId)) {
       return res.status(403).json({ message: "Not authorized" });
     }
-    await db.delete(learningPaths).where(eq12(learningPaths.id, req.params.id));
+    await db.delete(learningPaths).where(eq13(learningPaths.id, req.params.id));
     res.json({ message: "Learning path deleted" });
   }));
 }
@@ -7314,7 +7345,7 @@ var init_learning_paths = __esm({
 });
 
 // server/routes/student-groups.ts
-import { eq as eq13, and as and9 } from "drizzle-orm";
+import { eq as eq14, and as and10 } from "drizzle-orm";
 import { z as z6 } from "zod";
 function registerStudentGroupRoutes({ app: app2, requireTeacher }) {
   app2.post("/api/student-groups", requireTeacher, asyncHandler(async (req, res) => {
@@ -7332,14 +7363,14 @@ function registerStudentGroupRoutes({ app: app2, requireTeacher }) {
     res.json(group);
   }));
   app2.get("/api/classes/:classId/groups", requireTeacher, asyncHandler(async (req, res) => {
-    const groups = await db.select().from(studentGroups).where(eq13(studentGroups.classId, req.params.classId));
+    const groups = await db.select().from(studentGroups).where(eq14(studentGroups.classId, req.params.classId));
     const enriched = await Promise.all(
       groups.map(async (group) => {
         const members = await db.select({
           userId: profiles.id,
           fullName: profiles.fullName,
           email: profiles.email
-        }).from(studentGroupMembers).innerJoin(profiles, eq13(studentGroupMembers.userId, profiles.id)).where(eq13(studentGroupMembers.groupId, group.id));
+        }).from(studentGroupMembers).innerJoin(profiles, eq14(studentGroupMembers.userId, profiles.id)).where(eq14(studentGroupMembers.groupId, group.id));
         return { ...group, members };
       })
     );
@@ -7356,12 +7387,12 @@ function registerStudentGroupRoutes({ app: app2, requireTeacher }) {
   }));
   app2.delete("/api/student-groups/:groupId/members/:userId", requireTeacher, asyncHandler(async (req, res) => {
     await db.delete(studentGroupMembers).where(
-      and9(eq13(studentGroupMembers.groupId, req.params.groupId), eq13(studentGroupMembers.userId, req.params.userId))
+      and10(eq14(studentGroupMembers.groupId, req.params.groupId), eq14(studentGroupMembers.userId, req.params.userId))
     );
     res.json({ message: "Member removed" });
   }));
   app2.delete("/api/student-groups/:id", requireTeacher, asyncHandler(async (req, res) => {
-    await db.delete(studentGroups).where(eq13(studentGroups.id, req.params.id));
+    await db.delete(studentGroups).where(eq14(studentGroups.id, req.params.id));
     res.json({ message: "Group deleted" });
   }));
 }
@@ -7382,7 +7413,7 @@ var init_student_groups = __esm({
 });
 
 // server/routes/parent-view.ts
-import { eq as eq14 } from "drizzle-orm";
+import { eq as eq15 } from "drizzle-orm";
 import crypto3 from "crypto";
 function registerParentViewRoutes({ app: app2, storage: storage2, requireAuth }) {
   app2.post("/api/student/parent-link", requireAuth, asyncHandler(async (req, res) => {
@@ -7390,13 +7421,13 @@ function registerParentViewRoutes({ app: app2, storage: storage2, requireAuth })
     const user = await storage2.getProfileById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
     const token = crypto3.randomBytes(32).toString("hex");
-    await db.update(profiles).set({ parentShareToken: token }).where(eq14(profiles.id, userId));
+    await db.update(profiles).set({ parentShareToken: token }).where(eq15(profiles.id, userId));
     res.json({ token });
   }));
   app2.get("/api/parent-view/:token", asyncHandler(async (req, res) => {
     const token = req.params.token;
     if (!token || token.length < 32) return res.status(400).json({ message: "Invalid token" });
-    const [student] = await db.select().from(profiles).where(eq14(profiles.parentShareToken, token)).limit(1);
+    const [student] = await db.select().from(profiles).where(eq15(profiles.parentShareToken, token)).limit(1);
     if (!student) return res.status(404).json({ message: "Invalid or expired link" });
     const assignments = await storage2.getStudentAssignments(student.id);
     const allProgress = await storage2.getAllUserProgress(student.id);
@@ -7442,7 +7473,7 @@ var init_parent_view = __esm({
 });
 
 // server/routes/rubrics.ts
-import { eq as eq15 } from "drizzle-orm";
+import { eq as eq16 } from "drizzle-orm";
 import { z as z7 } from "zod";
 function registerRubricRoutes({ app: app2, storage: storage2, requireTeacher, requireAuth }) {
   app2.post("/api/rubrics", requireTeacher, asyncHandler(async (req, res) => {
@@ -7456,7 +7487,7 @@ function registerRubricRoutes({ app: app2, storage: storage2, requireTeacher, re
     res.json(rubric);
   }));
   app2.get("/api/rubrics/content/:contentId", requireAuth, asyncHandler(async (req, res) => {
-    const [rubric] = await db.select().from(rubrics).where(eq15(rubrics.contentId, req.params.contentId)).limit(1);
+    const [rubric] = await db.select().from(rubrics).where(eq16(rubrics.contentId, req.params.contentId)).limit(1);
     if (!rubric) return res.status(404).json({ message: "No rubric found for this content" });
     res.json(rubric);
   }));
@@ -7489,15 +7520,15 @@ function registerRubricRoutes({ app: app2, storage: storage2, requireTeacher, re
       totalScore: rubricScores.totalScore,
       feedback: rubricScores.feedback,
       scoredAt: rubricScores.scoredAt
-    }).from(rubricScores).innerJoin(profiles, eq15(rubricScores.studentId, profiles.id)).where(eq15(rubricScores.rubricId, req.params.rubricId));
+    }).from(rubricScores).innerJoin(profiles, eq16(rubricScores.studentId, profiles.id)).where(eq16(rubricScores.rubricId, req.params.rubricId));
     res.json(scores);
   }));
   app2.delete("/api/rubrics/:id", requireTeacher, asyncHandler(async (req, res) => {
-    const [rubric] = await db.select().from(rubrics).where(eq15(rubrics.id, req.params.id)).limit(1);
+    const [rubric] = await db.select().from(rubrics).where(eq16(rubrics.id, req.params.id)).limit(1);
     if (!rubric || rubric.userId !== req.session.userId) {
       return res.status(403).json({ message: "Not authorized" });
     }
-    await db.delete(rubrics).where(eq15(rubrics.id, req.params.id));
+    await db.delete(rubrics).where(eq16(rubrics.id, req.params.id));
     res.json({ message: "Rubric deleted" });
   }));
 }
@@ -7646,7 +7677,7 @@ var init_curriculum = __esm({
 });
 
 // server/routes/admin.ts
-import { eq as eq16, desc as desc11, sql as sql5, count as count3, and as and11, gte, inArray as inArray6 } from "drizzle-orm";
+import { eq as eq17, desc as desc11, sql as sql5, count as count3, and as and12, gte, inArray as inArray6 } from "drizzle-orm";
 function registerAdminRoutes({ app: app2, requireAdmin }) {
   app2.get("/api/admin/stats", requireAdmin, asyncHandler(async (_req, res) => {
     const [[userStats], [contentStats], [classStats], [quizStats]] = await Promise.all([
@@ -7689,12 +7720,12 @@ function registerAdminRoutes({ app: app2, requireAdmin }) {
     const search = req.query.search;
     const conditions = [];
     if (typeFilter && typeFilter !== "all") {
-      conditions.push(eq16(h5pContent.type, typeFilter));
+      conditions.push(eq17(h5pContent.type, typeFilter));
     }
     if (search) {
       conditions.push(sql5`LOWER(${h5pContent.title}) LIKE LOWER(${"%" + search + "%"})`);
     }
-    const whereClause = conditions.length > 0 ? and11(...conditions) : void 0;
+    const whereClause = conditions.length > 0 ? and12(...conditions) : void 0;
     const [rows, [{ total }]] = await Promise.all([
       db.select({
         id: h5pContent.id,
@@ -7703,6 +7734,8 @@ function registerAdminRoutes({ app: app2, requireAdmin }) {
         type: h5pContent.type,
         isPublished: h5pContent.isPublished,
         isPublic: h5pContent.isPublic,
+        reviewStatus: h5pContent.reviewStatus,
+        reviewNotes: h5pContent.reviewNotes,
         subject: h5pContent.subject,
         gradeLevel: h5pContent.gradeLevel,
         tags: h5pContent.tags,
@@ -7711,7 +7744,7 @@ function registerAdminRoutes({ app: app2, requireAdmin }) {
         creatorId: profiles.id,
         creatorName: profiles.fullName,
         creatorEmail: profiles.email
-      }).from(h5pContent).leftJoin(profiles, eq16(h5pContent.userId, profiles.id)).where(whereClause).orderBy(desc11(h5pContent.createdAt)).limit(limit).offset(offset),
+      }).from(h5pContent).leftJoin(profiles, eq17(h5pContent.userId, profiles.id)).where(whereClause).orderBy(desc11(h5pContent.createdAt)).limit(limit).offset(offset),
       db.select({ total: count3() }).from(h5pContent).where(whereClause)
     ]);
     res.json({
@@ -7727,14 +7760,14 @@ function registerAdminRoutes({ app: app2, requireAdmin }) {
     const search = req.query.search;
     const conditions = [];
     if (roleFilter && roleFilter !== "all") {
-      conditions.push(eq16(profiles.role, roleFilter));
+      conditions.push(eq17(profiles.role, roleFilter));
     }
     if (search) {
       conditions.push(
         sql5`(LOWER(${profiles.fullName}) LIKE LOWER(${"%" + search + "%"}) OR LOWER(${profiles.email}) LIKE LOWER(${"%" + search + "%"}))`
       );
     }
-    const whereClause = conditions.length > 0 ? and11(...conditions) : void 0;
+    const whereClause = conditions.length > 0 ? and12(...conditions) : void 0;
     const [rows, [{ total }]] = await Promise.all([
       db.select({
         id: profiles.id,
@@ -7773,7 +7806,7 @@ function registerAdminRoutes({ app: app2, requireAdmin }) {
       createdAt: auditLog.createdAt,
       userName: profiles.fullName,
       userEmail: profiles.email
-    }).from(auditLog).leftJoin(profiles, eq16(auditLog.userId, profiles.id)).orderBy(desc11(auditLog.createdAt)).limit(limit);
+    }).from(auditLog).leftJoin(profiles, eq17(auditLog.userId, profiles.id)).orderBy(desc11(auditLog.createdAt)).limit(limit);
     res.json(rows);
   }));
   app2.get("/api/admin/content-timeline", requireAdmin, asyncHandler(async (_req, res) => {
@@ -7787,11 +7820,11 @@ function registerAdminRoutes({ app: app2, requireAdmin }) {
   }));
   app2.delete("/api/admin/content/:id", requireAdmin, asyncHandler(async (req, res) => {
     const contentId = req.params.id;
-    const content = await db.select().from(h5pContent).where(eq16(h5pContent.id, contentId)).limit(1);
+    const content = await db.select().from(h5pContent).where(eq17(h5pContent.id, contentId)).limit(1);
     if (content.length === 0) {
       return res.status(404).json({ message: "Content not found" });
     }
-    await db.delete(h5pContent).where(eq16(h5pContent.id, contentId));
+    await db.delete(h5pContent).where(eq17(h5pContent.id, contentId));
     await db.insert(auditLog).values({
       userId: req.session.userId,
       action: "admin_content_deleted",
@@ -7810,7 +7843,7 @@ function registerAdminRoutes({ app: app2, requireAdmin }) {
     if (userId === req.session.userId) {
       return res.status(400).json({ message: "Cannot change your own role" });
     }
-    const updated = await db.update(profiles).set({ role, updatedAt: /* @__PURE__ */ new Date() }).where(eq16(profiles.id, userId)).returning();
+    const updated = await db.update(profiles).set({ role, updatedAt: /* @__PURE__ */ new Date() }).where(eq17(profiles.id, userId)).returning();
     if (updated.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -7823,6 +7856,164 @@ function registerAdminRoutes({ app: app2, requireAdmin }) {
     });
     res.json({ message: "Role updated", user: { id: updated[0].id, role: updated[0].role } });
   }));
+  app2.patch("/api/admin/content/:id/publish", requireAdmin, asyncHandler(async (req, res) => {
+    const contentId = req.params.id;
+    const { isPublished } = req.body;
+    if (typeof isPublished !== "boolean") {
+      return res.status(400).json({ message: "isPublished must be a boolean" });
+    }
+    const content = await db.select().from(h5pContent).where(eq17(h5pContent.id, contentId)).limit(1);
+    if (content.length === 0) {
+      return res.status(404).json({ message: "Content not found" });
+    }
+    const updates = { isPublished, updatedAt: /* @__PURE__ */ new Date() };
+    if (!isPublished) {
+      updates.isPublic = false;
+    }
+    await db.update(h5pContent).set(updates).where(eq17(h5pContent.id, contentId));
+    await db.insert(auditLog).values({
+      userId: req.session.userId,
+      action: isPublished ? "admin_content_published" : "admin_content_unpublished",
+      entityType: "content",
+      entityId: contentId,
+      metadata: { title: content[0].title, type: content[0].type }
+    });
+    if (content[0].userId !== req.session.userId) {
+      await db.insert(notifications).values({
+        userId: content[0].userId,
+        type: "content_status",
+        title: isPublished ? "Content Published" : "Content Unpublished",
+        body: `Your content "${content[0].title}" has been ${isPublished ? "published" : "unpublished"} by an administrator.`,
+        linkUrl: `/content/${contentId}`
+      });
+    }
+    res.json({ message: `Content ${isPublished ? "published" : "unpublished"}` });
+  }));
+  app2.patch("/api/admin/content/:id/flag", requireAdmin, asyncHandler(async (req, res) => {
+    const contentId = req.params.id;
+    const { reviewStatus, reviewNotes } = req.body;
+    const validStatuses = ["none", "flagged", "in_review", "approved", "rejected"];
+    if (!validStatuses.includes(reviewStatus)) {
+      return res.status(400).json({ message: `reviewStatus must be one of: ${validStatuses.join(", ")}` });
+    }
+    const content = await db.select().from(h5pContent).where(eq17(h5pContent.id, contentId)).limit(1);
+    if (content.length === 0) {
+      return res.status(404).json({ message: "Content not found" });
+    }
+    const updates = { reviewStatus, updatedAt: /* @__PURE__ */ new Date() };
+    if (reviewNotes !== void 0) updates.reviewNotes = reviewNotes;
+    if (reviewStatus === "flagged") updates.flaggedBy = req.session.userId;
+    if (["approved", "rejected"].includes(reviewStatus)) updates.reviewedBy = req.session.userId;
+    await db.update(h5pContent).set(updates).where(eq17(h5pContent.id, contentId));
+    if (reviewStatus === "approved") {
+      await db.update(h5pContent).set({ isPublished: true }).where(eq17(h5pContent.id, contentId));
+    } else if (reviewStatus === "rejected") {
+      await db.update(h5pContent).set({ isPublished: false, isPublic: false }).where(eq17(h5pContent.id, contentId));
+    }
+    await db.insert(auditLog).values({
+      userId: req.session.userId,
+      action: `admin_content_${reviewStatus}`,
+      entityType: "content",
+      entityId: contentId,
+      metadata: { title: content[0].title, reviewNotes: reviewNotes || null }
+    });
+    if (content[0].userId !== req.session.userId) {
+      const statusLabels = {
+        flagged: "flagged for review",
+        in_review: "placed under review",
+        approved: "approved",
+        rejected: "rejected",
+        none: "cleared of review flags"
+      };
+      await db.insert(notifications).values({
+        userId: content[0].userId,
+        type: "content_review",
+        title: `Content ${statusLabels[reviewStatus] || reviewStatus}`,
+        body: `Your content "${content[0].title}" has been ${statusLabels[reviewStatus]}.${reviewNotes ? ` Notes: ${reviewNotes}` : ""}`,
+        linkUrl: `/content/${contentId}`
+      });
+    }
+    res.json({ message: `Content review status updated to ${reviewStatus}` });
+  }));
+  app2.post("/api/admin/content/:id/review", requireAdmin, asyncHandler(async (req, res) => {
+    const contentId = req.params.id;
+    const { assignedTo, email } = req.body;
+    if (!assignedTo && !email) {
+      return res.status(400).json({ message: "assignedTo (user ID) or email is required" });
+    }
+    const content = await db.select().from(h5pContent).where(eq17(h5pContent.id, contentId)).limit(1);
+    if (content.length === 0) {
+      return res.status(404).json({ message: "Content not found" });
+    }
+    const reviewer = assignedTo ? await db.select().from(profiles).where(eq17(profiles.id, assignedTo)).limit(1) : await db.select().from(profiles).where(eq17(profiles.email, email.trim().toLowerCase())).limit(1);
+    if (reviewer.length === 0) {
+      return res.status(404).json({ message: "No user found with that email address" });
+    }
+    const assignedToId = reviewer[0].id;
+    const [review] = await db.insert(contentReviews).values({
+      contentId,
+      requestedBy: req.session.userId,
+      assignedTo: assignedToId
+    }).returning();
+    await db.update(h5pContent).set({
+      reviewStatus: "in_review",
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq17(h5pContent.id, contentId));
+    await db.insert(auditLog).values({
+      userId: req.session.userId,
+      action: "admin_review_requested",
+      entityType: "content",
+      entityId: contentId,
+      metadata: { title: content[0].title, reviewerId: assignedToId, reviewerName: reviewer[0].fullName }
+    });
+    await db.insert(notifications).values({
+      userId: assignedToId,
+      type: "review_request",
+      title: "Content Review Requested",
+      body: `You have been asked to review "${content[0].title}".`,
+      linkUrl: `/reviews/${review.id}`
+    });
+    res.json({ message: "Review request created", review });
+  }));
+  app2.get("/api/admin/content/:id/reviews", requireAdmin, asyncHandler(async (req, res) => {
+    const contentId = req.params.id;
+    const reviews = await db.select({
+      id: contentReviews.id,
+      status: contentReviews.status,
+      feedback: contentReviews.feedback,
+      checklist: contentReviews.checklist,
+      recommendation: contentReviews.recommendation,
+      createdAt: contentReviews.createdAt,
+      completedAt: contentReviews.completedAt,
+      reviewerName: profiles.fullName,
+      reviewerEmail: profiles.email
+    }).from(contentReviews).leftJoin(profiles, eq17(contentReviews.assignedTo, profiles.id)).where(eq17(contentReviews.contentId, contentId)).orderBy(desc11(contentReviews.createdAt));
+    res.json(reviews);
+  }));
+  app2.patch("/api/admin/reviews/:id", requireAdmin, asyncHandler(async (req, res) => {
+    const reviewId = req.params.id;
+    const { feedback, status } = req.body;
+    if (!["completed"].includes(status)) {
+      return res.status(400).json({ message: "Status must be 'completed'" });
+    }
+    const review = await db.select().from(contentReviews).where(eq17(contentReviews.id, reviewId)).limit(1);
+    if (review.length === 0) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+    await db.update(contentReviews).set({
+      status: "completed",
+      feedback: feedback || null,
+      completedAt: /* @__PURE__ */ new Date()
+    }).where(eq17(contentReviews.id, reviewId));
+    await db.insert(auditLog).values({
+      userId: req.session.userId,
+      action: "review_completed",
+      entityType: "content_review",
+      entityId: reviewId,
+      metadata: { contentId: review[0].contentId }
+    });
+    res.json({ message: "Review feedback submitted" });
+  }));
 }
 var init_admin = __esm({
   "server/routes/admin.ts"() {
@@ -7830,6 +8021,134 @@ var init_admin = __esm({
     init_async_handler();
     init_db();
     init_schema();
+  }
+});
+
+// server/routes/reviews.ts
+import { eq as eq18, desc as desc12 } from "drizzle-orm";
+function registerReviewRoutes({ app: app2, requireAuth, requireTeacher }) {
+  app2.get("/api/reviews/mine", requireTeacher, asyncHandler(async (req, res) => {
+    const userId = req.session.userId;
+    const reviews = await db.select({
+      id: contentReviews.id,
+      contentId: contentReviews.contentId,
+      status: contentReviews.status,
+      checklist: contentReviews.checklist,
+      feedback: contentReviews.feedback,
+      recommendation: contentReviews.recommendation,
+      createdAt: contentReviews.createdAt,
+      completedAt: contentReviews.completedAt,
+      contentTitle: h5pContent.title,
+      contentType: h5pContent.type,
+      contentDescription: h5pContent.description,
+      requestedByName: profiles.fullName,
+      requestedByEmail: profiles.email
+    }).from(contentReviews).innerJoin(h5pContent, eq18(contentReviews.contentId, h5pContent.id)).innerJoin(profiles, eq18(contentReviews.requestedBy, profiles.id)).where(eq18(contentReviews.assignedTo, userId)).orderBy(desc12(contentReviews.createdAt));
+    res.json(reviews);
+  }));
+  app2.get("/api/reviews/:id", requireAuth, asyncHandler(async (req, res) => {
+    const reviewId = req.params.id;
+    const userId = req.session.userId;
+    const rows = await db.select({
+      id: contentReviews.id,
+      contentId: contentReviews.contentId,
+      status: contentReviews.status,
+      checklist: contentReviews.checklist,
+      feedback: contentReviews.feedback,
+      recommendation: contentReviews.recommendation,
+      createdAt: contentReviews.createdAt,
+      completedAt: contentReviews.completedAt,
+      assignedTo: contentReviews.assignedTo,
+      requestedBy: contentReviews.requestedBy,
+      contentTitle: h5pContent.title,
+      contentType: h5pContent.type,
+      contentDescription: h5pContent.description
+    }).from(contentReviews).innerJoin(h5pContent, eq18(contentReviews.contentId, h5pContent.id)).where(eq18(contentReviews.id, reviewId)).limit(1);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+    const review = rows[0];
+    const user = await db.select().from(profiles).where(eq18(profiles.id, userId)).limit(1);
+    if (review.assignedTo !== userId && user[0]?.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const result = {
+      ...review,
+      checklist: review.checklist || DEFAULT_CHECKLIST
+    };
+    res.json(result);
+  }));
+  app2.patch("/api/reviews/:id/submit", requireTeacher, asyncHandler(async (req, res) => {
+    const reviewId = req.params.id;
+    const userId = req.session.userId;
+    const { checklist, feedback, recommendation, status } = req.body;
+    const review = await db.select().from(contentReviews).where(eq18(contentReviews.id, reviewId)).limit(1);
+    if (review.length === 0) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+    if (review[0].assignedTo !== userId) {
+      return res.status(403).json({ message: "You are not assigned to this review" });
+    }
+    if (review[0].status === "completed") {
+      return res.status(400).json({ message: "Review already completed" });
+    }
+    const isSubmitting = status === "completed";
+    if (isSubmitting && !recommendation) {
+      return res.status(400).json({ message: "A recommendation (approve, reject, or needs_changes) is required to submit" });
+    }
+    const updates = {};
+    if (checklist !== void 0) updates.checklist = checklist;
+    if (feedback !== void 0) updates.feedback = feedback;
+    if (recommendation !== void 0) updates.recommendation = recommendation;
+    if (isSubmitting) {
+      updates.status = "completed";
+      updates.completedAt = /* @__PURE__ */ new Date();
+    } else {
+      updates.status = "in_progress";
+    }
+    await db.update(contentReviews).set(updates).where(eq18(contentReviews.id, reviewId));
+    if (isSubmitting) {
+      const content = await db.select().from(h5pContent).where(eq18(h5pContent.id, review[0].contentId)).limit(1);
+      const reviewer = await db.select().from(profiles).where(eq18(profiles.id, userId)).limit(1);
+      await db.insert(notifications).values({
+        userId: review[0].requestedBy,
+        type: "review_completed",
+        title: "Review Completed",
+        body: `${reviewer[0]?.fullName || "A reviewer"} has completed their review of "${content[0]?.title || "content"}". Recommendation: ${recommendation}.`,
+        linkUrl: `/admin?tab=content`
+      });
+      await db.insert(auditLog).values({
+        userId,
+        action: "review_submitted",
+        entityType: "content_review",
+        entityId: reviewId,
+        metadata: {
+          contentId: review[0].contentId,
+          recommendation,
+          contentTitle: content[0]?.title
+        }
+      });
+    }
+    res.json({ message: isSubmitting ? "Review submitted" : "Review progress saved" });
+  }));
+}
+var DEFAULT_CHECKLIST;
+var init_reviews = __esm({
+  "server/routes/reviews.ts"() {
+    "use strict";
+    init_async_handler();
+    init_db();
+    init_schema();
+    DEFAULT_CHECKLIST = [
+      { item: "Content is accurate and free of factual errors", checked: false, notes: "" },
+      { item: "Content is age-appropriate for the target audience", checked: false, notes: "" },
+      { item: "Instructions and questions are clear and unambiguous", checked: false, notes: "" },
+      { item: "Content is well-organized and logically structured", checked: false, notes: "" },
+      { item: "Media (images, videos) are appropriate and functional", checked: false, notes: "" },
+      { item: "Content aligns with stated learning objectives", checked: false, notes: "" },
+      { item: "No spelling, grammar, or formatting issues", checked: false, notes: "" },
+      { item: "Content is accessible and inclusive", checked: false, notes: "" }
+    ];
   }
 });
 
@@ -7955,6 +8274,7 @@ async function registerRoutes(app2) {
   registerRubricRoutes(ctx);
   registerCurriculumRoutes(ctx);
   registerAdminRoutes(ctx);
+  registerReviewRoutes(ctx);
   const httpServer = createServer(app2);
   setupWebSocket(httpServer);
   return httpServer;
@@ -7982,6 +8302,7 @@ var init_routes = __esm({
     init_rubrics();
     init_curriculum();
     init_admin();
+    init_reviews();
   }
 });
 
