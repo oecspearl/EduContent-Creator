@@ -938,6 +938,115 @@ export default function HelpPage() {
                 </div>
               </AccordionContent>
             </AccordionItem>
+
+            <AccordionItem value="admin-content">
+              <AccordionTrigger>
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-primary" />
+                  <span>Admin Content Management</span>
+                  <Badge variant="outline" className="ml-2 text-xs">Admin</Badge>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  <p className="text-sm text-muted-foreground">
+                    Administrators have full oversight of all content on the platform, including the ability to publish, unpublish, flag, and manage content created by any user.
+                  </p>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Publishing & Unpublishing Content:</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>Go to the <strong>Admin Dashboard</strong> and click the <strong>All Content</strong> tab</li>
+                      <li>Find the content you want to manage</li>
+                      <li>Click the <strong>three-dot menu</strong> (actions) on the right</li>
+                      <li>Select <strong>Publish</strong> or <strong>Unpublish</strong></li>
+                      <li>The content owner will be notified of the change</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Flagging Content for Review:</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>From the content actions menu, select <strong>Flag for Review</strong></li>
+                      <li>Add optional notes explaining why the content is being flagged</li>
+                      <li>Click <strong>Flag</strong> to mark the content</li>
+                      <li>Flagged content shows a yellow "Flagged" badge in the status column</li>
+                      <li>You can later <strong>Approve</strong> or <strong>Reject</strong> flagged content</li>
+                    </ol>
+                  </div>
+                  <div className="bg-accent/50 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-foreground mb-2">Review Status Workflow:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li><strong>None:</strong> Default state, no review action taken</li>
+                      <li><strong>Flagged:</strong> Content has been marked for attention</li>
+                      <li><strong>In Review:</strong> A reviewer has been assigned to evaluate the content</li>
+                      <li><strong>Approved:</strong> Content passes review and is automatically published</li>
+                      <li><strong>Rejected:</strong> Content fails review and is automatically unpublished</li>
+                    </ul>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="content-reviews">
+              <AccordionTrigger>
+                <div className="flex items-center gap-2">
+                  <Eye className="h-5 w-5 text-primary" />
+                  <span>Content Reviews</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  <p className="text-sm text-muted-foreground">
+                    The review system allows admins to request peer reviews of content from other teachers or admins. Reviewers use a structured checklist to evaluate content quality before it is published.
+                  </p>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">For Admins — Requesting a Review:</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>Go to the <strong>Admin Dashboard &gt; All Content</strong> tab</li>
+                      <li>Click the <strong>three-dot menu</strong> on the content you want reviewed</li>
+                      <li>Select <strong>Share for Review</strong></li>
+                      <li>Enter the <strong>email address</strong> of the teacher or admin you want to assign</li>
+                      <li>Click <strong>Send Review Request</strong></li>
+                      <li>The reviewer will receive a notification and can start the review from their sidebar</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">For Admins — Viewing Review Results:</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>Click the <strong>three-dot menu</strong> on any content</li>
+                      <li>Select <strong>View Reviews</strong> to see all submitted reviews</li>
+                      <li>Each review shows the checklist results, feedback, and recommendation</li>
+                      <li>You will also receive a notification when a reviewer completes their review</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">For Reviewers — Completing a Review:</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>Click the notification or go to <strong>Reviews</strong> in the sidebar</li>
+                      <li>Click <strong>Start Review</strong> on the assigned content</li>
+                      <li>Click <strong>View Content</strong> to open and examine the content</li>
+                      <li>Work through the <strong>review checklist</strong> — check each item and add notes where needed</li>
+                      <li>Write your <strong>overall feedback</strong> in the text area</li>
+                      <li>Select a <strong>recommendation</strong>: Approve, Needs Changes, or Reject</li>
+                      <li>Click <strong>Save Progress</strong> at any time to continue later</li>
+                      <li>Click <strong>Submit Review</strong> when finished — the admin will be notified</li>
+                    </ol>
+                  </div>
+                  <div className="bg-accent/50 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-foreground mb-2">Review Checklist Items:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>Content is accurate and free of factual errors</li>
+                      <li>Content is age-appropriate for the target audience</li>
+                      <li>Instructions and questions are clear and unambiguous</li>
+                      <li>Content is well-organized and logically structured</li>
+                      <li>Media (images, videos) are appropriate and functional</li>
+                      <li>Content aligns with stated learning objectives</li>
+                      <li>No spelling, grammar, or formatting issues</li>
+                      <li>Content is accessible and inclusive</li>
+                    </ul>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
         </div>
 
