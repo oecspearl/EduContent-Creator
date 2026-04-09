@@ -22,6 +22,7 @@ export default function FillBlanksCreator() {
     allowRetry: true,
   });
   const [showAIModal, setShowAIModal] = useState(false);
+  const [rawAnswerInputs, setRawAnswerInputs] = useState<Record<string, string>>({});
 
   const editor = useContentEditor<FillInBlanksData>({
     contentType: "fill-blanks",
@@ -224,14 +225,22 @@ export default function FillBlanksCreator() {
                   <div>
                     <Label>Correct Answers (comma-separated)</Label>
                     <Input
-                      value={blank.correctAnswers.join(", ")}
+                      value={rawAnswerInputs[blank.id] ?? blank.correctAnswers.join(", ")}
                       onChange={(e) => {
+                        setRawAnswerInputs(prev => ({ ...prev, [blank.id]: e.target.value }));
+                      }}
+                      onBlur={(e) => {
                         const updated = [...blanks];
                         updated[idx] = {
                           ...updated[idx],
                           correctAnswers: e.target.value.split(",").map(a => a.trim()).filter(Boolean)
                         };
                         setBlanks(updated);
+                        setRawAnswerInputs(prev => {
+                          const next = { ...prev };
+                          delete next[blank.id];
+                          return next;
+                        });
                       }}
                       placeholder="Paris, paris"
                       data-testid={`input-answers-${idx}`}

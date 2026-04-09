@@ -66,6 +66,7 @@ function CardPairEditor({
           return;
         }
         onImageUpload(card.id, file);
+        setShowImageDialog(false);
       }
     };
 

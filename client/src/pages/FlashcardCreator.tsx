@@ -287,6 +287,10 @@ export default function FlashcardCreator() {
                                   placeholder="https://example.com/image.jpg"
                                   value={card.frontImageUrl || ""}
                                   onChange={(e) => {
+                                    const value = e.target.value;
+                                    updateCard(index, { frontImageUrl: value.trim() ? value : undefined });
+                                  }}
+                                  onBlur={(e) => {
                                     const value = e.target.value.trim();
                                     updateCard(index, { frontImageUrl: value || undefined });
                                   }}
@@ -299,22 +303,26 @@ export default function FlashcardCreator() {
                                       placeholder="Image description (for accessibility)"
                                       value={card.frontImageAlt || ""}
                                       onChange={(e) => {
-                                        const value = e.target.value.trim();
-                                        updateCard(index, { frontImageAlt: value || undefined });
+                                        updateCard(index, { frontImageAlt: e.target.value || undefined });
                                       }}
                                       className="text-sm"
                                       data-testid={`input-front-image-alt-${index}`}
                                     />
                                     <div className="mt-2 rounded-md overflow-hidden border">
                                       <img
-                                        src={card.frontImageUrl}
+                                        src={card.frontImageUrl.trim()}
                                         alt={card.frontImageAlt || "Front preview"}
                                         className="w-full h-32 object-cover"
                                         loading="lazy"
                                         onError={(e) => {
                                           (e.target as HTMLImageElement).style.display = 'none';
+                                          const next = (e.target as HTMLImageElement).nextElementSibling as HTMLElement;
+                                          if (next) next.style.display = 'flex';
                                         }}
                                       />
+                                      <div className="hidden w-full h-24 items-center justify-center bg-muted text-xs text-muted-foreground text-center p-3">
+                                        Could not load image. Use a direct image URL ending in .jpg, .png, .gif, etc.
+                                      </div>
                                     </div>
                                   </>
                                 )}
@@ -338,6 +346,10 @@ export default function FlashcardCreator() {
                                   placeholder="https://example.com/image.jpg"
                                   value={card.backImageUrl || ""}
                                   onChange={(e) => {
+                                    const value = e.target.value;
+                                    updateCard(index, { backImageUrl: value.trim() ? value : undefined });
+                                  }}
+                                  onBlur={(e) => {
                                     const value = e.target.value.trim();
                                     updateCard(index, { backImageUrl: value || undefined });
                                   }}
@@ -350,22 +362,26 @@ export default function FlashcardCreator() {
                                       placeholder="Image description (for accessibility)"
                                       value={card.backImageAlt || ""}
                                       onChange={(e) => {
-                                        const value = e.target.value.trim();
-                                        updateCard(index, { backImageAlt: value || undefined });
+                                        updateCard(index, { backImageAlt: e.target.value || undefined });
                                       }}
                                       className="text-sm"
                                       data-testid={`input-back-image-alt-${index}`}
                                     />
                                     <div className="mt-2 rounded-md overflow-hidden border">
                                       <img
-                                        src={card.backImageUrl}
+                                        src={card.backImageUrl.trim()}
                                         alt={card.backImageAlt || "Back preview"}
                                         className="w-full h-32 object-cover"
                                         loading="lazy"
                                         onError={(e) => {
                                           (e.target as HTMLImageElement).style.display = 'none';
+                                          const next = (e.target as HTMLImageElement).nextElementSibling as HTMLElement;
+                                          if (next) next.style.display = 'flex';
                                         }}
                                       />
+                                      <div className="hidden w-full h-24 items-center justify-center bg-muted text-xs text-muted-foreground text-center p-3">
+                                        Could not load image. Use a direct image URL ending in .jpg, .png, .gif, etc.
+                                      </div>
                                     </div>
                                   </>
                                 )}
