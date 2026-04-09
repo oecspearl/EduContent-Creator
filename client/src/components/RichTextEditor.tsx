@@ -1,5 +1,6 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
 import {
   Bold,
   Italic,
+  Underline as UnderlineIcon,
   List,
   ListOrdered,
   Quote,
@@ -55,6 +57,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
   const editor = useEditor({
     extensions: [
       StarterKit,
+      Underline,
       Image.configure({
         inline: true,
         allowBase64: true,
@@ -182,6 +185,16 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
           data-testid="button-italic"
         >
           <Italic className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          className={editor.isActive("underline") ? "bg-accent" : ""}
+          data-testid="button-underline"
+        >
+          <UnderlineIcon className="h-4 w-4" />
         </Button>
         <Button
           type="button"

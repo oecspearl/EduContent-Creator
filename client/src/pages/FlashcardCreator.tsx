@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -271,12 +272,10 @@ export default function FlashcardCreator() {
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label>Front</Label>
-                              <Textarea
+                              <RichTextEditor
+                                content={card.front}
+                                onChange={(html) => updateCard(index, { front: html })}
                                 placeholder="Question or term..."
-                                value={card.front}
-                                onChange={(e) => updateCard(index, { front: e.target.value })}
-                                className="h-24 resize-none"
-                                data-testid={`textarea-front-${index}`}
                               />
                               <div className="space-y-1.5">
                                 <Label className="text-xs flex items-center gap-1">
@@ -330,12 +329,10 @@ export default function FlashcardCreator() {
                             </div>
                             <div className="space-y-2">
                               <Label>Back</Label>
-                              <Textarea
+                              <RichTextEditor
+                                content={card.back}
+                                onChange={(html) => updateCard(index, { back: html })}
                                 placeholder="Answer or definition..."
-                                value={card.back}
-                                onChange={(e) => updateCard(index, { back: e.target.value })}
-                                className="h-24 resize-none"
-                                data-testid={`textarea-back-${index}`}
                               />
                               <div className="space-y-1.5">
                                 <Label className="text-xs flex items-center gap-1">

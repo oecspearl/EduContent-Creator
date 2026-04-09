@@ -292,7 +292,10 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
                   </div>
                 )}
                 {currentCard.front && (
-                  <div className="text-2xl font-semibold">{currentCard.front}</div>
+                  <div
+                    className="text-2xl font-semibold prose prose-sm max-w-none [&_*]:text-inherit"
+                    dangerouslySetInnerHTML={{ __html: currentCard.front }}
+                  />
                 )}
                 {currentCard.category && (
                   <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs">
@@ -346,7 +349,10 @@ export function FlashcardPlayer({ data, contentId }: FlashcardPlayerProps) {
                   </div>
                 )}
                 {currentCard.back && (
-                  <div className="text-2xl font-semibold">{currentCard.back}</div>
+                  <div
+                    className="text-2xl font-semibold prose prose-sm max-w-none [&_*]:text-inherit"
+                    dangerouslySetInnerHTML={{ __html: currentCard.back }}
+                  />
                 )}
                 {currentCard.category && (
                   <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs">
