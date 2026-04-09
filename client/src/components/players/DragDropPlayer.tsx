@@ -279,7 +279,12 @@ export function DragDropPlayer({ data, contentId }: DragDropPlayerProps) {
                             <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{item.content}</p>
+                            <div className="flex items-center gap-2">
+                              {item.imageUrl && (
+                                <img src={item.imageUrl} alt={item.content || "Item"} className="h-8 w-8 object-contain rounded flex-shrink-0" />
+                              )}
+                              <p className="font-medium truncate">{item.content || "(image)"}</p>
+                            </div>
                             {isCorrect ? (
                               <p className="text-xs text-muted-foreground">
                                 ✓ Correctly placed in "{placedZoneLabel}"
@@ -314,7 +319,14 @@ export function DragDropPlayer({ data, contentId }: DragDropPlayerProps) {
                   className="p-3 bg-card border-2 border-border rounded-lg cursor-move hover-elevate active-elevate-2 select-none"
                   data-testid={`drag-item-${item.id}`}
                 >
-                  {item.content}
+                  {item.imageUrl && (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.content || "Item"}
+                      className="w-full h-20 object-contain rounded mb-1 pointer-events-none"
+                    />
+                  )}
+                  {item.content && <span>{item.content}</span>}
                 </div>
               ))}
             </div>
@@ -355,7 +367,7 @@ export function DragDropPlayer({ data, contentId }: DragDropPlayerProps) {
                       return (
                         <div
                           key={item.id}
-                          className={`p-3 rounded-lg flex items-center justify-between transition-all ${
+                          className={`p-3 rounded-lg flex items-center justify-between gap-2 transition-all ${
                             hasFeedback
                               ? isCorrect
                                 ? "bg-green-50 dark:bg-green-950 border-2 border-green-500"
@@ -364,9 +376,20 @@ export function DragDropPlayer({ data, contentId }: DragDropPlayerProps) {
                           }`}
                           data-testid={`placed-item-${item.id}`}
                         >
-                          <span className={hasFeedback && !isCorrect ? "line-through opacity-60" : ""}>
-                            {item.content}
-                          </span>
+                          <div className={`flex items-center gap-2 min-w-0 ${hasFeedback && !isCorrect ? "opacity-60" : ""}`}>
+                            {item.imageUrl && (
+                              <img
+                                src={item.imageUrl}
+                                alt={item.content || "Item"}
+                                className="h-10 w-10 object-contain rounded flex-shrink-0"
+                              />
+                            )}
+                            {item.content && (
+                              <span className={hasFeedback && !isCorrect ? "line-through" : ""}>
+                                {item.content}
+                              </span>
+                            )}
+                          </div>
                           {hasFeedback && (
                             feedback[item.id] ? (
                               <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" data-testid={`correct-${item.id}`} />

@@ -85,6 +85,7 @@ export type DragItem = {
   id: string;
   content: string;
   correctZone: string;
+  imageUrl?: string;
 };
 
 export type DropZone = {

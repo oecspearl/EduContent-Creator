@@ -5,8 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIGenerationModal } from "@/components/AIGenerationModal";
-import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Download, Save } from "lucide-react";
+import { ImageGeneratorDialog } from "@/components/ImageGeneratorDialog";
+import { ArrowLeft, Sparkles, Plus, Trash2, Globe, Download, Save, Image as ImageIcon, X } from "lucide-react";
 import type { DragAndDropData } from "@shared/schema";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
@@ -22,6 +25,8 @@ export default function DragDropCreator() {
     allowRetry: true,
   });
   const [showAIModal, setShowAIModal] = useState(false);
+  const [openImageDialogForItem, setOpenImageDialogForItem] = useState<string | null>(null);
+  const [imageUrlInputs, setImageUrlInputs] = useState<Record<string, string>>({});
 
   const editor = useContentEditor<DragAndDropData>({
     contentType: "drag-drop",
@@ -57,6 +62,31 @@ export default function DragDropCreator() {
     if (data.zones) setZones(data.zones);
     if (data.items) setItems(data.items);
     setShowAIModal(false);
+  };
+
+  const handleItemImageUpload = (itemId: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageUrl = e.target?.result as string;
+      setItems(prev => prev.map(i => i.id === itemId ? { ...i, imageUrl } : i));
+      setOpenImageDialogForItem(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleItemImageUrl = (itemId: string, url: string) => {
+    setItems(prev => prev.map(i => i.id === itemId ? { ...i, imageUrl: url } : i));
+    setImageUrlInputs(prev => { const next = { ...prev }; delete next[itemId]; return next; });
+    setOpenImageDialogForItem(null);
+  };
+
+  const handleItemImageGenerated = (itemId: string, imageUrl: string) => {
+    setItems(prev => prev.map(i => i.id === itemId ? { ...i, imageUrl } : i));
+    setOpenImageDialogForItem(null);
+  };
+
+  const removeItemImage = (itemId: string) => {
+    setItems(prev => prev.map(i => i.id === itemId ? { ...i, imageUrl: undefined } : i));
   };
 
   return (
@@ -282,9 +312,105 @@ export default function DragDropCreator() {
                       updated[idx] = { ...updated[idx], content: e.target.value };
                       setItems(updated);
                     }}
-                    placeholder="Item content"
+                    placeholder="Item label (shown below image if image is set)"
                     data-testid={`input-item-content-${idx}`}
                   />
+                  {item.imageUrl ? (
+                    <div className="relative border rounded-lg p-2">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.content || "Item image"}
+                        className="w-full h-24 object-contain rounded"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-1 right-1"
+                        onClick={() => removeItemImage(item.id)}
+                        data-testid={`button-remove-item-image-${idx}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Dialog
+                      open={openImageDialogForItem === item.id}
+                      onOpenChange={(open) => setOpenImageDialogForItem(open ? item.id : null)}
+                    >
+                      <DialogTrigger asChild>
+                        <Button type="button" variant="outline" size="sm" className="w-full" data-testid={`button-add-item-image-${idx}`}>
+                          <ImageIcon className="h-4 w-4 mr-2" />
+                          Add Image
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add Image to Item {idx + 1}</DialogTitle>
+                        </DialogHeader>
+                        <Tabs defaultValue="upload" className="py-4">
+                          <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="upload">Upload</TabsTrigger>
+                            <TabsTrigger value="url">URL</TabsTrigger>
+                            <TabsTrigger value="ai">AI Generate</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="upload" className="space-y-4 pt-4">
+                            <div>
+                              <Label>Choose an image file</Label>
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    if (file.size > 2 * 1024 * 1024) {
+                                      alert("File size must be less than 2MB");
+                                      return;
+                                    }
+                                    handleItemImageUpload(item.id, file);
+                                  }
+                                }}
+                                className="mt-2"
+                                data-testid={`input-item-image-file-${idx}`}
+                              />
+                              <p className="text-sm text-muted-foreground mt-2">
+                                Maximum file size: 2MB. Supported formats: JPG, PNG, GIF, WebP
+                              </p>
+                            </div>
+                          </TabsContent>
+                          <TabsContent value="url" className="space-y-4 pt-4">
+                            <div>
+                              <Label>Image URL</Label>
+                              <Input
+                                value={imageUrlInputs[item.id] || ""}
+                                onChange={(e) => setImageUrlInputs(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                placeholder="https://example.com/image.jpg"
+                                className="mt-2"
+                                data-testid={`input-item-image-url-${idx}`}
+                              />
+                            </div>
+                            <Button
+                              onClick={() => {
+                                const url = imageUrlInputs[item.id]?.trim();
+                                if (url) handleItemImageUrl(item.id, url);
+                              }}
+                              disabled={!imageUrlInputs[item.id]?.trim()}
+                              className="w-full"
+                            >
+                              Use URL
+                            </Button>
+                          </TabsContent>
+                          <TabsContent value="ai" className="space-y-4 pt-4">
+                            <ImageGeneratorDialog
+                              open={openImageDialogForItem === item.id}
+                              onOpenChange={(open) => setOpenImageDialogForItem(open ? item.id : null)}
+                              onImageGenerated={(imageUrl) => handleItemImageGenerated(item.id, imageUrl)}
+                            />
+                          </TabsContent>
+                        </Tabs>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                   <div>
                     <Label>Correct Zone</Label>
                     <select
