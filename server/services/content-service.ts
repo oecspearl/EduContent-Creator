@@ -32,7 +32,7 @@ export class ContentService {
 
     // Teachers/admins assigned as reviewers can access the content
     if (userRole === "teacher" || userRole === "admin") {
-      const reviewAssignment = await db.select()
+      const reviewAssignment = await db.select({ id: contentReviews.id })
         .from(contentReviews)
         .where(and(eq(contentReviews.contentId, id), eq(contentReviews.assignedTo, userId)))
         .limit(1);
