@@ -71,7 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Session middleware
   const sessionConfig: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
-    resave: false,
+    resave: isVercel, // Vercel serverless: always re-save to keep session alive
     saveUninitialized: false,
     proxy: true,
     cookie: {
@@ -79,6 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       httpOnly: true,
       sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      ...(process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {}),
     },
   };
   if (sessionStore) sessionConfig.store = sessionStore;
