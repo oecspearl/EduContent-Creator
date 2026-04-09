@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS content_reviews (
   assigned_to VARCHAR NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   status TEXT NOT NULL DEFAULT 'pending',
   feedback TEXT,
+  checklist JSONB,
+  recommendation TEXT,
   created_at TIMESTAMP DEFAULT NOW() NOT NULL,
   completed_at TIMESTAMP
 );

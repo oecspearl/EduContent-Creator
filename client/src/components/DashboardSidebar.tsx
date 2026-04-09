@@ -15,6 +15,7 @@ import {
   MessageCircle,
   Waypoints,
   Shield,
+  ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ const teacherNavItems: NavItem[] = [
   { label: "Learning Paths", icon: Waypoints, path: "/learning-paths" },
   { label: "Analytics", icon: BarChart3, path: "/analytics" },
   { label: "Messages", icon: MessageCircle, path: "/messages" },
+  { label: "Reviews", icon: ClipboardCheck, path: "/reviews" },
   { label: "Shared Resources", icon: Users, path: "/shared-resources" },
   { label: "Help", icon: HelpCircle, path: "/help" },
   { label: "Settings", icon: Settings, path: "/settings" },

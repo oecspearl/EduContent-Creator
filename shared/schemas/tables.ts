@@ -267,6 +267,8 @@ export const contentReviews = pgTable("content_reviews", {
   assignedTo: varchar("assigned_to").notNull().references(() => profiles.id, { onDelete: "cascade" }),
   status: text("status").default("pending").notNull(), // 'pending' | 'in_progress' | 'completed'
   feedback: text("feedback"),
+  checklist: jsonb("checklist"), // Array of { item: string, checked: boolean, notes?: string }
+  recommendation: text("recommendation"), // 'approve' | 'reject' | 'needs_changes'
   createdAt: timestamp("created_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
 }, (table) => ({

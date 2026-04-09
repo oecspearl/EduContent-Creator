@@ -128,6 +128,9 @@ export default function AdminDashboard() {
   const [usersRoleFilter, setUsersRoleFilter] = useState("all");
   const [roleChangeTarget, setRoleChangeTarget] = useState<{ id: string; name: string; newRole: string } | null>(null);
 
+  // Reviews viewer state
+  const [viewReviewsTarget, setViewReviewsTarget] = useState<{ id: string; title: string } | null>(null);
+
   // Flag / review dialog state
   const [flagTarget, setFlagTarget] = useState<{ id: string; title: string } | null>(null);
   const [flagNotes, setFlagNotes] = useState("");
@@ -161,6 +164,28 @@ export default function AdminDashboard() {
   const { data: usersData, isLoading: usersLoading } = useQuery<PaginatedResponse<AdminUser>>({
     queryKey: ["/api/admin/users", userFilters],
     enabled: activeTab === "users" || activeTab === "overview",
+  });
+
+  type ContentReview = {
+    id: string;
+    status: string;
+    feedback: string | null;
+    checklist: { item: string; checked: boolean; notes: string }[] | null;
+    recommendation: string | null;
+    createdAt: string;
+    completedAt: string | null;
+    reviewerName: string | null;
+    reviewerEmail: string | null;
+  };
+
+  const { data: reviewsData } = useQuery<ContentReview[]>({
+    queryKey: ["/api/admin/content", viewReviewsTarget?.id, "reviews"],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/content/${viewReviewsTarget!.id}/reviews`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load reviews");
+      return res.json();
+    },
+    enabled: !!viewReviewsTarget,
   });
 
   const { data: activityData } = useQuery<AuditEntry[]>({
@@ -568,6 +593,13 @@ export default function AdminDashboard() {
                               )}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
+                                onClick={() => setViewReviewsTarget({ id: item.id, title: item.title })}
+                                className="cursor-pointer"
+                              >
+                                <BookOpen className="h-4 w-4 mr-2" />
+                                View Reviews
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
                                 onClick={() => setReviewTarget({ id: item.id, title: item.title })}
                                 className="cursor-pointer"
                               >
@@ -963,6 +995,80 @@ export default function AdminDashboard() {
               {flagMutation.isPending ? "Updating..." : flagStatus === "flagged" ? "Flag" : flagStatus === "approved" ? "Approve" : "Reject"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View reviews dialog */}
+      <Dialog open={!!viewReviewsTarget} onOpenChange={() => setViewReviewsTarget(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Reviews for "{viewReviewsTarget?.title}"</DialogTitle>
+            <DialogDescription>
+              All review submissions for this content.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2 space-y-4">
+            {!reviewsData || reviewsData.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No reviews yet.</p>
+            ) : (
+              reviewsData.map((rev) => (
+                <Card key={rev.id} className="border-border/40">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">{rev.reviewerName || rev.reviewerEmail || "Unknown"}</p>
+                        <p className="text-xs text-muted-foreground">{rev.reviewerEmail}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={`text-xs ${
+                          rev.status === "completed" ? "border-green-200 text-green-700 dark:border-green-800 dark:text-green-400" :
+                          rev.status === "in_progress" ? "border-orange-200 text-orange-700 dark:border-orange-800 dark:text-orange-400" :
+                          "border-yellow-200 text-yellow-700 dark:border-yellow-800 dark:text-yellow-400"
+                        }`}>
+                          {rev.status === "completed" ? "Completed" : rev.status === "in_progress" ? "In Progress" : "Pending"}
+                        </Badge>
+                        {rev.recommendation && (
+                          <Badge className={`text-xs ${
+                            rev.recommendation === "approve" ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" :
+                            rev.recommendation === "reject" ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300" :
+                            "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+                          }`}>
+                            {rev.recommendation === "approve" ? "Approve" : rev.recommendation === "reject" ? "Reject" : "Needs Changes"}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {rev.checklist && rev.checklist.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Checklist ({rev.checklist.filter(c => c.checked).length}/{rev.checklist.length} passed)</p>
+                        <div className="space-y-1.5">
+                          {rev.checklist.map((item, i) => (
+                            <div key={i} className="flex items-start gap-2 text-xs">
+                              <span className={`mt-0.5 ${item.checked ? "text-green-600" : "text-red-500"}`}>
+                                {item.checked ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+                              </span>
+                              <div className="flex-1">
+                                <span className={item.checked ? "text-foreground" : "text-muted-foreground"}>{item.item}</span>
+                                {item.notes && <p className="text-muted-foreground italic mt-0.5">{item.notes}</p>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {rev.feedback && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Feedback</p>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">{rev.feedback}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

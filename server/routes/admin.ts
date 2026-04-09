@@ -437,6 +437,8 @@ export function registerAdminRoutes({ app, requireAdmin }: RouteContext) {
         id: contentReviews.id,
         status: contentReviews.status,
         feedback: contentReviews.feedback,
+        checklist: contentReviews.checklist,
+        recommendation: contentReviews.recommendation,
         createdAt: contentReviews.createdAt,
         completedAt: contentReviews.completedAt,
         reviewerName: profiles.fullName,

@@ -1,6 +1,9 @@
 import type { IStorage } from "../storage";
 import type { H5pContent, InsertH5pContent } from "@shared/schema";
+import { contentReviews } from "@shared/schema";
 import { filterContent } from "../utils/content-filters";
+import { db } from "../../db";
+import { eq, and } from "drizzle-orm";
 
 export type ContentResult<T = H5pContent> =
   | { ok: true; data: T }
@@ -26,6 +29,15 @@ export class ContentService {
     // Owner and admins can always access any content
     if (content.userId === userId) return { ok: true, data: content };
     if (userRole === "admin") return { ok: true, data: content };
+
+    // Teachers/admins assigned as reviewers can access the content
+    if (userRole === "teacher" || userRole === "admin") {
+      const reviewAssignment = await db.select()
+        .from(contentReviews)
+        .where(and(eq(contentReviews.contentId, id), eq(contentReviews.assignedTo, userId)))
+        .limit(1);
+      if (reviewAssignment.length > 0) return { ok: true, data: content };
+    }
 
     // Students can access content assigned to them via class enrollments
     if (userRole === "student") {

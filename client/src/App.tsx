@@ -41,6 +41,8 @@ import MessagesPage from "@/pages/MessagesPage";
 import ParentViewPage from "@/pages/ParentViewPage";
 import SettingsPage from "@/pages/SettingsPage";
 import AdminDashboard from "@/pages/AdminDashboard";
+import MyReviewsPage from "@/pages/MyReviewsPage";
+import ReviewPage from "@/pages/ReviewPage";
 import NotFound from "@/pages/not-found";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -211,6 +213,12 @@ function Router() {
       </Route>
       <Route path="/messages">
         <ProtectedRoute component={MessagesPage} />
+      </Route>
+      <Route path="/reviews">
+        <TeacherRoute component={MyReviewsPage} />
+      </Route>
+      <Route path="/reviews/:id">
+        <TeacherRoute component={ReviewPage} />
       </Route>
       <Route path="/preview/:id">
         <ProtectedRoute component={PreviewPage} />
