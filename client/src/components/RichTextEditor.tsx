@@ -1,5 +1,6 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Italic from "@tiptap/extension-italic";
 import Underline from "@tiptap/extension-underline";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -28,7 +29,6 @@ import {
   Heading1,
   Heading2,
   Heading3,
-  Upload,
   Sparkles,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -40,11 +40,17 @@ type RichTextEditorProps = {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
+  /**
+   * When true, disables TipTap's *text* → italic markdown shortcut so that
+   * asterisks (e.g. *blank*) are kept as literal characters. Italic formatting
+   * via the toolbar button still works.
+   */
+  keepAsterisksLiteral?: boolean;
 };
 
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
 
-export function RichTextEditor({ content, onChange, placeholder }: RichTextEditorProps) {
+export function RichTextEditor({ content, onChange, placeholder, keepAsterisksLiteral }: RichTextEditorProps) {
   const { toast } = useToast();
   const [imageUrl, setImageUrl] = useState("");
   const [showImageDialog, setShowImageDialog] = useState(false);
@@ -54,9 +60,17 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // When keepAsterisksLiteral is true: disable StarterKit's built-in italic so we
+  // can add a custom version that strips the *text* inputRule. The toolbar italic
+  // button continues to work — only the markdown shortcut is removed.
+  const italicExtension = keepAsterisksLiteral
+    ? Italic.extend({ addInputRules() { return []; } })
+    : undefined;
+
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      keepAsterisksLiteral ? StarterKit.configure({ italic: false }) : StarterKit,
+      ...(italicExtension ? [italicExtension] : []),
       Underline,
       Image.configure({
         inline: true,

@@ -36,7 +36,15 @@ export default function InteractiveBookCreator() {
   const editor = useContentEditor<InteractiveBookData>({
     contentType: "interactive-book",
     contentLabel: "Interactive book",
-    buildData: useCallback(() => ({ pages, settings }), [pages, settings]),
+    buildData: useCallback(() => ({
+      pages: pages.map(page => ({
+        ...page,
+        content: page.content
+          ? page.content.replace(/src="data:[^"]*"/g, 'src=""')
+          : page.content,
+      })),
+      settings,
+    }), [pages, settings]),
     populateFromContent: useCallback((content) => {
       const data = content.data as InteractiveBookData;
       const loadedPages = data.pages || [];

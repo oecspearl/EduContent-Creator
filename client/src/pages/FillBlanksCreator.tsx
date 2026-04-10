@@ -190,6 +190,7 @@ export default function FillBlanksCreator() {
                   content={text}
                   onChange={setText}
                   placeholder="Example: The capital of France is *blank*."
+                  keepAsterisksLiteral
                 />
               </div>
               <p className="text-sm text-muted-foreground mt-2">
