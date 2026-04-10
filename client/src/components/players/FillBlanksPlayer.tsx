@@ -108,7 +108,7 @@ export function FillBlanksPlayer({ data, contentId }: FillBlanksPlayerProps) {
   };
 
   const renderTextWithBlanks = () => {
-    const parts = data.text.split(/\*blank\*/i);
+    const parts = data.text.split(/\*blank\*|<em>blank<\/em>/i);
     const result: React.ReactElement[] = [];
 
     parts.forEach((part, idx) => {

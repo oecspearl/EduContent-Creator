@@ -33,7 +33,7 @@ export default function FillBlanksCreator() {
     buildData: useCallback(() => ({ text, blanks, wordBank, settings }), [text, blanks, wordBank, settings]),
     populateFromContent: useCallback((content) => {
       const data = content.data as FillInBlanksData;
-      setText(data.text || "");
+      setText((data.text || "").replace(/<em>blank<\/em>/gi, '*blank*'));
       setBlanks(data.blanks || []);
       setWordBank(data.wordBank || []);
       setSettings(data.settings || { caseSensitive: false, showHints: true, allowRetry: true });
@@ -194,7 +194,7 @@ export default function FillBlanksCreator() {
                 />
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Blanks detected: {(text.match(/\*blank\*/g) || []).length}
+                Blanks detected: {(text.match(/\*blank\*|<em>blank<\/em>/gi) || []).length}
               </p>
             </CardContent>
           </Card>
