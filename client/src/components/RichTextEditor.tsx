@@ -1,6 +1,6 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Italic from "@tiptap/extension-italic";
+import ItalicExtension from "@tiptap/extension-italic";
 import Underline from "@tiptap/extension-underline";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -64,7 +64,7 @@ export function RichTextEditor({ content, onChange, placeholder, keepAsterisksLi
   // can add a custom version that strips the *text* inputRule. The toolbar italic
   // button continues to work — only the markdown shortcut is removed.
   const italicExtension = keepAsterisksLiteral
-    ? Italic.extend({ addInputRules() { return []; } })
+    ? ItalicExtension.extend({ addInputRules() { return []; } })
     : undefined;
 
   const editor = useEditor({
