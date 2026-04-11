@@ -30,8 +30,16 @@ import {
   Heading2,
   Heading3,
   Sparkles,
+  Code,
+  Search,
+  Replace,
+  Maximize,
+  Minimize,
+  X,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageGeneratorDialog } from "./ImageGeneratorDialog";
 import { ImageEditorDialog } from "./ImageEditorDialog";
@@ -65,6 +73,23 @@ export function RichTextEditor({ content, onChange, placeholder, minimal, keepAs
   const [pendingImageUrl, setPendingImageUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Source code view
+  const [sourceMode, setSourceMode] = useState(false);
+  const [sourceCode, setSourceCode] = useState("");
+  const sourceRef = useRef<HTMLTextAreaElement>(null);
+
+  // Find & Replace
+  const [showFindReplace, setShowFindReplace] = useState(false);
+  const [findText, setFindText] = useState("");
+  const [replaceText, setReplaceText] = useState("");
+  const [matchCount, setMatchCount] = useState(0);
+  const [currentMatch, setCurrentMatch] = useState(0);
+  const findInputRef = useRef<HTMLInputElement>(null);
+
+  // Fullscreen
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // When keepAsterisksLiteral is true: disable StarterKit's built-in italic so we
   // can add a custom version that strips the *text* inputRule. The toolbar italic
@@ -187,8 +212,214 @@ export function RichTextEditor({ content, onChange, placeholder, minimal, keepAs
     });
   };
 
+  // --- Source code view ---
+  const toggleSourceMode = useCallback(() => {
+    if (!sourceMode) {
+      setSourceCode(editor.getHTML());
+    } else {
+      editor.commands.setContent(sourceCode);
+      onChange(sourceCode);
+    }
+    setSourceMode(!sourceMode);
+  }, [sourceMode, sourceCode, editor, onChange]);
+
+  const handleSourceChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setSourceCode(e.target.value);
+  }, []);
+
+  const handleSourceBlur = useCallback(() => {
+    editor.commands.setContent(sourceCode);
+    onChange(sourceCode);
+  }, [sourceCode, editor, onChange]);
+
+  // --- Find & Replace ---
+  const toggleFindReplace = useCallback(() => {
+    const next = !showFindReplace;
+    setShowFindReplace(next);
+    if (next) {
+      setTimeout(() => findInputRef.current?.focus(), 50);
+    } else {
+      setFindText("");
+      setReplaceText("");
+      setMatchCount(0);
+      setCurrentMatch(0);
+      // Clear any highlights
+      clearHighlights();
+    }
+  }, [showFindReplace]);
+
+  const clearHighlights = useCallback(() => {
+    if (!editor) return;
+    const el = containerRef.current?.querySelector(".ProseMirror");
+    if (!el) return;
+    el.querySelectorAll("mark[data-find-highlight]").forEach((m) => {
+      const parent = m.parentNode;
+      if (parent) {
+        parent.replaceChild(document.createTextNode(m.textContent || ""), m);
+        parent.normalize();
+      }
+    });
+  }, [editor]);
+
+  const performFind = useCallback(() => {
+    if (!editor || !findText) {
+      setMatchCount(0);
+      setCurrentMatch(0);
+      clearHighlights();
+      return;
+    }
+
+    clearHighlights();
+
+    const el = containerRef.current?.querySelector(".ProseMirror");
+    if (!el) return;
+
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    const textNodes: Text[] = [];
+    while (walker.nextNode()) {
+      textNodes.push(walker.currentNode as Text);
+    }
+
+    let count = 0;
+    const searchLower = findText.toLowerCase();
+
+    for (const node of textNodes) {
+      const text = node.textContent || "";
+      const textLower = text.toLowerCase();
+      let idx = textLower.indexOf(searchLower);
+      if (idx === -1) continue;
+
+      const frag = document.createDocumentFragment();
+      let lastIdx = 0;
+
+      while (idx !== -1) {
+        count++;
+        frag.appendChild(document.createTextNode(text.slice(lastIdx, idx)));
+        const mark = document.createElement("mark");
+        mark.setAttribute("data-find-highlight", String(count));
+        mark.style.backgroundColor = count === 1 ? "#ff9632" : "#ffff00";
+        mark.style.color = "#000";
+        mark.textContent = text.slice(idx, idx + findText.length);
+        frag.appendChild(mark);
+        lastIdx = idx + findText.length;
+        idx = textLower.indexOf(searchLower, lastIdx);
+      }
+
+      frag.appendChild(document.createTextNode(text.slice(lastIdx)));
+      node.parentNode?.replaceChild(frag, node);
+    }
+
+    setMatchCount(count);
+    setCurrentMatch(count > 0 ? 1 : 0);
+
+    if (count > 0) {
+      const first = el.querySelector('mark[data-find-highlight="1"]');
+      first?.scrollIntoView({ block: "nearest" });
+    }
+  }, [editor, findText, clearHighlights]);
+
+  const navigateMatch = useCallback((direction: "next" | "prev") => {
+    if (matchCount === 0) return;
+    const el = containerRef.current?.querySelector(".ProseMirror");
+    if (!el) return;
+
+    // Reset old highlight color
+    const oldMark = el.querySelector(`mark[data-find-highlight="${currentMatch}"]`);
+    if (oldMark) (oldMark as HTMLElement).style.backgroundColor = "#ffff00";
+
+    const next = direction === "next"
+      ? (currentMatch % matchCount) + 1
+      : ((currentMatch - 2 + matchCount) % matchCount) + 1;
+    setCurrentMatch(next);
+
+    const newMark = el.querySelector(`mark[data-find-highlight="${next}"]`);
+    if (newMark) {
+      (newMark as HTMLElement).style.backgroundColor = "#ff9632";
+      newMark.scrollIntoView({ block: "nearest" });
+    }
+  }, [matchCount, currentMatch]);
+
+  const handleReplace = useCallback(() => {
+    if (!editor || matchCount === 0) return;
+    const el = containerRef.current?.querySelector(".ProseMirror");
+    if (!el) return;
+
+    const mark = el.querySelector(`mark[data-find-highlight="${currentMatch}"]`);
+    if (mark) {
+      mark.replaceWith(document.createTextNode(replaceText));
+      el.normalize();
+      // Sync back to editor
+      const html = el.innerHTML;
+      editor.commands.setContent(html);
+      onChange(html);
+      // Re-run find
+      setTimeout(performFind, 10);
+    }
+  }, [editor, matchCount, currentMatch, replaceText, onChange, performFind]);
+
+  const handleReplaceAll = useCallback(() => {
+    if (!editor || matchCount === 0) return;
+    const el = containerRef.current?.querySelector(".ProseMirror");
+    if (!el) return;
+
+    el.querySelectorAll("mark[data-find-highlight]").forEach((mark) => {
+      mark.replaceWith(document.createTextNode(replaceText));
+    });
+    el.normalize();
+
+    const html = el.innerHTML;
+    editor.commands.setContent(html);
+    onChange(html);
+    setMatchCount(0);
+    setCurrentMatch(0);
+    toast({ title: "Replaced all", description: `All occurrences have been replaced.` });
+  }, [editor, matchCount, replaceText, onChange, toast]);
+
+  // Re-run find when findText changes
+  useEffect(() => {
+    if (showFindReplace) {
+      const timer = setTimeout(performFind, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [findText, showFindReplace, performFind]);
+
+  // --- Fullscreen ---
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen((prev) => !prev);
+  }, []);
+
+  // Escape key exits fullscreen and find/replace
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (isFullscreen) setIsFullscreen(false);
+        if (showFindReplace) {
+          setShowFindReplace(false);
+          clearHighlights();
+        }
+      }
+      // Ctrl+F to open find
+      if ((e.ctrlKey || e.metaKey) && e.key === "f" && containerRef.current?.contains(document.activeElement)) {
+        e.preventDefault();
+        if (!showFindReplace) {
+          setShowFindReplace(true);
+          setTimeout(() => findInputRef.current?.focus(), 50);
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isFullscreen, showFindReplace, clearHighlights]);
+
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div
+      ref={containerRef}
+      className={`border rounded-lg overflow-hidden ${
+        isFullscreen
+          ? "fixed inset-0 z-50 bg-background flex flex-col"
+          : ""
+      }`}
+    >
       <div className="border-b bg-muted/50 p-2 flex flex-wrap gap-1">
         <Button
           type="button"
@@ -380,7 +611,7 @@ export function RichTextEditor({ content, onChange, placeholder, minimal, keepAs
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().undo().run()}
-          disabled={!editor.can().undo()}
+          disabled={!editor.can().undo() || sourceMode}
           data-testid="button-undo"
         >
           <Undo className="h-4 w-4" />
@@ -390,13 +621,127 @@ export function RichTextEditor({ content, onChange, placeholder, minimal, keepAs
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().redo().run()}
-          disabled={!editor.can().redo()}
+          disabled={!editor.can().redo() || sourceMode}
           data-testid="button-redo"
         >
           <Redo className="h-4 w-4" />
         </Button>
+
+        {!minimal && (
+          <>
+            <div className="border-l mx-1" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={toggleSourceMode}
+              className={sourceMode ? "bg-accent" : ""}
+              title="Toggle HTML source"
+              data-testid="button-source"
+            >
+              <Code className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={toggleFindReplace}
+              className={showFindReplace ? "bg-accent" : ""}
+              title="Find & Replace (Ctrl+F)"
+              data-testid="button-find-replace"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Exit fullscreen (Esc)" : "Fullscreen"}
+              data-testid="button-fullscreen"
+            >
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            </Button>
+          </>
+        )}
       </div>
-      <EditorContent editor={editor} />
+      {/* Find & Replace bar */}
+      {showFindReplace && !sourceMode && (
+        <div className="border-b bg-muted/30 px-3 py-2 flex flex-wrap items-center gap-2 text-sm">
+          <div className="flex items-center gap-1">
+            <Search className="h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              ref={findInputRef}
+              value={findText}
+              onChange={(e) => setFindText(e.target.value)}
+              placeholder="Find..."
+              className="h-7 w-40 text-sm"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  navigateMatch(e.shiftKey ? "prev" : "next");
+                }
+              }}
+              data-testid="input-find"
+            />
+            {findText && (
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {matchCount > 0 ? `${currentMatch}/${matchCount}` : "No matches"}
+              </span>
+            )}
+            <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => navigateMatch("prev")} disabled={matchCount === 0} title="Previous">
+              <ChevronUp className="h-3.5 w-3.5" />
+            </Button>
+            <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => navigateMatch("next")} disabled={matchCount === 0} title="Next">
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <div className="flex items-center gap-1">
+            <Replace className="h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={replaceText}
+              onChange={(e) => setReplaceText(e.target.value)}
+              placeholder="Replace..."
+              className="h-7 w-40 text-sm"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleReplace();
+                }
+              }}
+              data-testid="input-replace"
+            />
+            <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={handleReplace} disabled={matchCount === 0}>
+              Replace
+            </Button>
+            <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={handleReplaceAll} disabled={matchCount === 0}>
+              All
+            </Button>
+          </div>
+          <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0 ml-auto" onClick={toggleFindReplace} title="Close">
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+
+      {/* Editor body: WYSIWYG or Source code */}
+      {sourceMode ? (
+        <textarea
+          ref={sourceRef}
+          value={sourceCode}
+          onChange={handleSourceChange}
+          onBlur={handleSourceBlur}
+          className={`w-full font-mono text-sm p-4 bg-zinc-950 text-green-400 focus:outline-none resize-none ${
+            isFullscreen ? "flex-1" : minimal ? "min-h-24" : "min-h-48"
+          }`}
+          spellCheck={false}
+          data-testid="textarea-source"
+        />
+      ) : (
+        <div className={isFullscreen ? "flex-1 overflow-auto" : ""}>
+          <EditorContent editor={editor} />
+        </div>
+      )}
 
       {!minimal && (
         <>
