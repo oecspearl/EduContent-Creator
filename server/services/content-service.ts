@@ -1,9 +1,9 @@
 import type { IStorage } from "../storage";
 import type { H5pContent, InsertH5pContent } from "@shared/schema";
-import { contentReviews } from "@shared/schema";
+import { contentReviews, learningPathItems, learningPaths, classEnrollments } from "@shared/schema";
 import { filterContent } from "../utils/content-filters";
 import { db } from "../../db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 
 export type ContentResult<T = H5pContent> =
   | { ok: true; data: T }
@@ -44,6 +44,26 @@ export class ContentService {
       const assignments = await this.storage.getStudentAssignments(userId);
       const isAssigned = assignments.some((a: any) => a.contentId === id);
       if (isAssigned) return { ok: true, data: content };
+
+      // Allow access to content within learning paths assigned to the student's classes
+      const studentClassIds = await db
+        .select({ classId: classEnrollments.classId })
+        .from(classEnrollments)
+        .where(eq(classEnrollments.userId, userId));
+
+      if (studentClassIds.length > 0) {
+        const classIds = studentClassIds.map(c => c.classId);
+        const pathContent = await db
+          .select({ contentId: learningPathItems.contentId })
+          .from(learningPathItems)
+          .innerJoin(learningPaths, eq(learningPathItems.pathId, learningPaths.id))
+          .where(and(
+            eq(learningPathItems.contentId, id),
+            inArray(learningPaths.classId, classIds)
+          ))
+          .limit(1);
+        if (pathContent.length > 0) return { ok: true, data: content };
+      }
 
       // Also allow access to published public content
       if (content.isPublished && content.isPublic) return { ok: true, data: content };
