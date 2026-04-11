@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import type { AIGenerationRequest, CurriculumContext, QuizQuestion, FlashcardData, VideoHotspot, ImageHotspot, DragAndDropData, FillInBlanksData, MemoryGameData, InteractiveBookData, PresentationGenerationRequest, SlideContent } from "@shared/schema";
+import { getTemplate, type TemplateId } from "@shared/presentationTemplates";
 import { callOpenAIJSON } from "./utils/openai-helper";
 
 // This is using OpenAI's API, which points to OpenAI's API servers and requires your own API key.
@@ -491,9 +492,52 @@ export async function generatePresentation(request: PresentationGenerationReques
 
   const curriculumSection = buildCurriculumBlock(request.curriculumContext);
 
-  const contentSlideCount = request.numberOfSlides - 6; // title + outcomes + questions + reflection + summary + closing
+  // Check for Gagné template
+  const template = request.templateId ? getTemplate(request.templateId as TemplateId) : null;
 
-  const prompt = `Create a pedagogically sound, visually varied presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
+  let systemMessage = "You are an expert Caribbean instructional designer creating visually engaging educational presentations for OECS schools. Always respond with valid JSON. Follow Universal Design for Learning (UDL) principles. Create varied, impactful slides that keep students engaged.";
+  let prompt: string;
+
+  if (template) {
+    // Template-aware generation: structured per-event prompt
+    systemMessage = `${template.systemPromptPrefix}\n\n${systemMessage}`;
+
+    const eventInstructions = template.events.map((event, i) =>
+      `Slide ${i + 1} (${event.slideTitle} — Gagné Event ${event.eventNumber}: ${event.eventLabel}):
+    Type: "${event.slideType}"
+    Directive: ${event.aiDirective}
+    Inject this teacher tip into the notes field verbatim: "${event.teacherTip}"`
+    ).join('\n\n');
+
+    prompt = `Create a presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
+
+Learning Outcomes:
+${learningOutcomesText}${customInstructionsSection}${curriculumSection}
+
+Generate exactly 9 slides following this Gagné instructional sequence.
+For each slide, populate the fields as directed below.
+Return a JSON array of 9 SlideContent objects.
+Each object must include: id, type, title, content, bulletPoints, questions, notes, imageUrl, imageAlt.
+
+IMAGE REQUIREMENTS:
+- imageUrl should be a short search query (2-4 words) for stock photos
+- Always include imageAlt with detailed accessibility description
+- At least 4 of the 9 slides should have an imageUrl
+
+${eventInstructions}
+
+Respond in JSON format:
+{
+  "slides": [
+    { "id": "slide-1", "type": "title", "title": "...", "content": "...", "bulletPoints": [], "questions": [], "notes": "...", "imageUrl": "...", "imageAlt": "..." },
+    ...
+  ]
+}`;
+  } else {
+    // Default generation (existing behaviour)
+    const contentSlideCount = request.numberOfSlides - 6;
+
+    prompt = `Create a pedagogically sound, visually varied presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
 
 Learning Outcomes:
 ${learningOutcomesText}${customInstructionsSection}${curriculumSection}
@@ -626,14 +670,33 @@ Respond in JSON format:
     }
   ]
 }`;
+  }
 
-  return callOpenAIJSON<SlideContent[]>(
+  let slides = await callOpenAIJSON<SlideContent[]>(
     {
-      systemMessage: "You are an expert Caribbean instructional designer creating visually engaging educational presentations for OECS schools. Always respond with valid JSON. Follow Universal Design for Learning (UDL) principles. Create varied, impactful slides that keep students engaged.",
+      systemMessage,
       prompt,
       maxTokens: 6000,
       timeout: 50000,
     },
     "slides",
   );
+
+  // For template presentations, merge teacher tips into notes to ensure they're never lost
+  if (template && Array.isArray(slides)) {
+    slides = slides.map((slide, i) => {
+      const event = template.events[i];
+      if (!event) return slide;
+      const tipPrefix = `\u{1F4DD} Teacher Tip (Event ${event.eventNumber} \u{2014} ${event.eventLabel}): ${event.teacherTip}`;
+      return {
+        ...slide,
+        type: event.slideType as SlideContent["type"],
+        notes: slide.notes
+          ? `${tipPrefix}\n\n${slide.notes}`
+          : tipPrefix,
+      };
+    });
+  }
+
+  return slides;
 }

@@ -98,6 +98,7 @@ export const presentationGenerationSchema = z.object({
   numberOfSlides: z.number().min(5).max(30).default(10),
   customInstructions: z.string().optional(),
   curriculumContext: curriculumContextSchema.optional(),
+  templateId: z.string().optional(),
 });
 
 export const aiGenerationSchema = z.object({

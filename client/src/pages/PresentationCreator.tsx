@@ -34,9 +34,12 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import type { PresentationData, SlideContent, H5pContent } from "@shared/schema";
+import { type TemplateId, getTemplate } from "@shared/presentationTemplates";
 import ShareToClassroomDialog from "@/components/ShareToClassroomDialog";
 import { generateHTMLExport, downloadHTML } from "@/lib/html-export";
 import { ContentMetadataFields } from "@/components/ContentMetadataFields";
+import { TemplateSelector } from "@/components/presentation/TemplateSelector";
+import { TemplateBadge } from "@/components/presentation/TemplateBadge";
 
 type PresentationImageProvider = "openrouter" | "unsplash";
 
@@ -77,6 +80,7 @@ export default function PresentationCreator() {
   const [imageProvider, setImageProvider] = useState<PresentationImageProvider>("openrouter");
   const [editingSlideId, setEditingSlideId] = useState<string | null>(null);
   const [editedSlide, setEditedSlide] = useState<SlideContent | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>("default");
 
   const { data: content, isLoading: isLoadingContent } = useQuery<H5pContent>({
     queryKey: [`/api/content/${contentId}`],
@@ -106,6 +110,9 @@ export default function PresentationCreator() {
       setPresentationUrl(data.presentationUrl || "");
       setColorScheme(data.colorScheme || "blue");
       setImageProvider(normalizePresentationImageProvider(data.imageProvider));
+      if ((data as any).templateId) {
+        setSelectedTemplate((data as any).templateId as TemplateId);
+      }
     }
   }, [content]);
 
@@ -161,7 +168,8 @@ export default function PresentationCreator() {
         imageProvider,
         ...(presentationId && { presentationId }),
         ...(presentationUrl && { presentationUrl }),
-      };
+        ...(selectedTemplate !== "default" && { templateId: selectedTemplate }),
+      } as PresentationData;
 
       if (isEditing) {
         const response = await apiRequest("PUT", `/api/content/${contentId}`, {
@@ -235,6 +243,7 @@ export default function PresentationCreator() {
     isPublic,
     autosave,
     isPublished,
+    selectedTemplate,
   ]);
   
   const handleManualSave = () => {
@@ -265,9 +274,10 @@ export default function PresentationCreator() {
         gradeLevel,
         ageRange,
         learningOutcomes: learningOutcomes.filter(o => o.trim()),
-        numberOfSlides,
+        numberOfSlides: selectedTemplate !== "default" ? 9 : numberOfSlides,
         ...(customInstructions && { customInstructions }),
         ...(curriculumContext && { curriculumContext }),
+        ...(selectedTemplate !== "default" && { templateId: selectedTemplate }),
       });
       return await response.json();
     },
@@ -686,11 +696,19 @@ export default function PresentationCreator() {
   const handleMoveSlide = (index: number, direction: "up" | "down") => {
     if (direction === "up" && index === 0) return;
     if (direction === "down" && index === slides.length - 1) return;
-    
+
     const newIndex = direction === "up" ? index - 1 : index + 1;
     const updatedSlides = [...slides];
     [updatedSlides[index], updatedSlides[newIndex]] = [updatedSlides[newIndex], updatedSlides[index]];
     setSlides(updatedSlides);
+  };
+
+  const handleTemplateChange = (id: TemplateId) => {
+    setSelectedTemplate(id);
+    const tpl = getTemplate(id);
+    if (!tpl) return; // 'default' — no overrides
+    setColorScheme(tpl.colorTheme);
+    setNumberOfSlides(9);
   };
 
   if (isLoadingContent) {
@@ -878,6 +896,15 @@ export default function PresentationCreator() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Lesson Template</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TemplateSelector value={selectedTemplate} onChange={handleTemplateChange} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Presentation Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -927,11 +954,16 @@ export default function PresentationCreator() {
                   type="number"
                   min="5"
                   max="30"
-                  value={numberOfSlides}
+                  value={selectedTemplate !== "default" ? 9 : numberOfSlides}
                   onChange={(e) => setNumberOfSlides(parseInt(e.target.value) || 10)}
+                  disabled={selectedTemplate !== "default"}
                   data-testid="input-slide-count"
                 />
-                <p className="text-xs text-muted-foreground mt-1">Between 5 and 30 slides</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {selectedTemplate !== "default"
+                    ? "Slide count is fixed at 9 for template presentations."
+                    : "Between 5 and 30 slides"}
+                </p>
               </div>
               <div>
                 <Label htmlFor="imageProvider">Slide images</Label>
@@ -1216,8 +1248,19 @@ export default function PresentationCreator() {
                                 </Button>
                               </div>
                               <div className="flex-1">
-                                <div className="text-xs text-muted-foreground mb-1">
-                                  Slide {index + 1} • {displaySlide.type}
+                                <div className="text-xs text-muted-foreground mb-1 flex items-center gap-2 flex-wrap">
+                                  <span>Slide {index + 1} &bull; {displaySlide.type}</span>
+                                  {selectedTemplate !== "default" && (() => {
+                                    const tpl = getTemplate(selectedTemplate);
+                                    const event = tpl?.events[index];
+                                    return event ? (
+                                      <TemplateBadge
+                                        eventNumber={event.eventNumber}
+                                        eventLabel={event.eventLabel}
+                                        primaryHex={tpl!.primaryHex}
+                                      />
+                                    ) : null;
+                                  })()}
                                 </div>
                                 {isEditing ? (
                                   <Input
