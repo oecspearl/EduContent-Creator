@@ -495,7 +495,59 @@ export async function generatePresentation(request: PresentationGenerationReques
   // Check for Gagné template
   const template = request.templateId ? getTemplate(request.templateId as TemplateId) : null;
 
-  let systemMessage = "You are an expert Caribbean instructional designer creating visually engaging educational presentations for OECS schools. Always respond with valid JSON. Follow Universal Design for Learning (UDL) principles. Create varied, impactful slides that keep students engaged.";
+  // ── Pedagogical depth block (shared by both paths) ──────────────────────
+  const PEDAGOGICAL_DEPTH = `
+PEDAGOGICAL DEPTH REQUIREMENTS (CRITICAL — follow these strictly):
+
+1. EXPLAIN, DON'T JUST LIST:
+   - Every concept must be explained with WHY it matters, not just WHAT it is.
+   - Use the pattern: State the concept → Explain how it works → Give a concrete example → Connect to students' lives.
+   - Avoid bare bullet lists. Each bullet point must be a complete thought with context, not a fragment.
+
+2. CONCRETE EXAMPLES ON EVERY CONTENT SLIDE:
+   - Every content, vocabulary, and comparison slide MUST include at least one worked example, real-world scenario, or analogy.
+   - Examples should be specific and vivid: "A coral reef in Dominica produces oxygen like a rainforest" not "Coral reefs are important."
+   - For maths/science: include step-by-step worked examples with labelled reasoning.
+   - For language arts: include model sentences, text excerpts, or writing samples.
+   - For social studies: include specific people, places, events, or community scenarios.
+
+3. BLOOM'S TAXONOMY PROGRESSION:
+   - Structure the presentation to move through: Remember → Understand → Apply → Analyse.
+   - Early slides: recall facts, define terms.
+   - Middle slides: explain relationships, give examples, compare/contrast.
+   - Later slides: apply to new situations, analyse patterns, evaluate choices.
+   - Label the cognitive level in speaker notes (e.g., "🧠 Bloom's: Apply").
+
+4. EMBEDDED CHECK-FOR-UNDERSTANDING:
+   - Every 2nd content slide must include a discussion prompt or quick check embedded in the content or notes.
+   - Use stems: "Turn and tell your partner…", "Show me with your fingers…", "Write one sentence about…"
+   - These are in ADDITION to the dedicated guiding-questions and reflection slides.
+
+5. VOCABULARY IN CONTEXT:
+   - Never define a word in isolation. Always provide: the definition, an example sentence using the word, and a non-example or contrast.
+   - For younger students, add a gesture or action cue (e.g., "Evaporation — make your hands rise like steam!").
+   - For the "terms" array, each definition must be a full sentence with an embedded example.
+
+6. RICH SPEAKER NOTES:
+   - Notes must include what to SAY (scripted talking points), what to ASK (specific questions with expected student responses), and what to DO (actions: point to image, distribute materials, form groups).
+   - Include anticipated misconceptions and how to address them.
+   - Include differentiation: one scaffold for struggling learners, one extension for advanced learners.
+
+7. ACTIVITY SLIDES MUST BE ACTIONABLE:
+   - Never say "Do an activity about X." Instead, specify exact steps, materials, time, grouping, and expected output.
+   - Include success criteria: "You're done when you can…" or "A strong response includes…"
+   - Provide sentence starters or graphic organisers for scaffolding.
+
+8. REFLECTION & QUESTION SLIDES MUST USE HIGHER-ORDER THINKING:
+   - Guiding questions must span Bloom's levels. Include at least:
+     * 1 recall question ("What is…?", "Name three…")
+     * 1 understanding question ("Explain why…", "How does… relate to…?")
+     * 1 application question ("What would happen if…?", "How could you use… to solve…?")
+     * 1 analysis/evaluation question ("Compare…", "Which approach is better and why?", "What evidence supports…?")
+   - Reflection slides should ask students to connect learning to their own experience, community, or future.
+`.trim();
+
+  let systemMessage = `You are an expert Caribbean instructional designer creating pedagogically rigorous, engaging educational presentations for OECS schools. You prioritise deep understanding over surface coverage. Always respond with valid JSON. Follow Universal Design for Learning (UDL) principles and Bloom's Taxonomy progression. Every slide must teach — not just display information.`;
   let prompt: string;
 
   if (template) {
@@ -506,7 +558,8 @@ export async function generatePresentation(request: PresentationGenerationReques
       `Slide ${i + 1} (${event.slideTitle} — Gagné Event ${event.eventNumber}: ${event.eventLabel}):
     Type: "${event.slideType}"
     Directive: ${event.aiDirective}
-    Inject this teacher tip into the notes field verbatim: "${event.teacherTip}"`
+    Inject this teacher tip into the notes field verbatim: "${event.teacherTip}"
+    Remember: Follow the PEDAGOGICAL DEPTH REQUIREMENTS above — include explanations, examples, and check-for-understanding prompts as appropriate for this event.`
     ).join('\n\n');
 
     prompt = `Create a presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
@@ -514,10 +567,16 @@ export async function generatePresentation(request: PresentationGenerationReques
 Learning Outcomes:
 ${learningOutcomesText}${customInstructionsSection}${curriculumSection}
 
+${PEDAGOGICAL_DEPTH}
+
 Generate exactly 9 slides following this Gagné instructional sequence.
 For each slide, populate the fields as directed below.
 Return a JSON array of 9 SlideContent objects.
 Each object must include: id, type, title, content, bulletPoints, questions, notes, imageUrl, imageAlt.
+
+The "content" field should contain 2-4 sentences of explanatory text (not just a title restatement).
+The "bulletPoints" field should contain substantive points with full sentences, examples, or steps — not fragments.
+The "notes" field must be detailed and actionable for the teacher (see PEDAGOGICAL DEPTH above).
 
 IMAGE REQUIREMENTS:
 - imageUrl should be a short search query (2-4 words) for stock photos
@@ -534,36 +593,47 @@ Respond in JSON format:
   ]
 }`;
   } else {
-    // Default generation (existing behaviour)
+    // Default generation
     const contentSlideCount = request.numberOfSlides - 6;
 
-    prompt = `Create a pedagogically sound, visually varied presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
+    prompt = `Create a pedagogically rigorous, visually varied presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
 
 Learning Outcomes:
 ${learningOutcomesText}${customInstructionsSection}${curriculumSection}
 
+${PEDAGOGICAL_DEPTH}
+
 Create exactly ${request.numberOfSlides} slides using a MIX of these slide types for visual variety:
 
 REQUIRED SLIDE SEQUENCE:
-1. **title** — Engaging title, brief subtitle. Add emoji to the title (e.g. "🌊 The Water Cycle").
-2. **learning-outcomes** — List learning outcomes as numbered bullet points. Use emoji "🎯".
+1. **title** — Engaging title, brief subtitle, and a hook question or surprising fact in the content field. Add emoji to the title.
+2. **learning-outcomes** — List learning outcomes as numbered bullet points. Each outcome should be an "I can…" or "Students will be able to…" statement. Use emoji "🎯".
 3-${request.numberOfSlides - 4}. **CONTENT SLIDES** (${contentSlideCount} slides) — Mix these types:
-   - **content** — Standard slide with title, body text, and/or bullet points. Include emoji in titles.
-   - **vocabulary** — Key terms with definitions (use "terms" array). Use for introducing new terminology.
-   - **comparison** — Two-column comparison (leftHeading/leftPoints vs rightHeading/rightPoints). Great for compare/contrast.
-   - **activity** — Student task or exercise. Use emoji "✏️" or "🤔". Frame as clear instructions.
-   - **image** — Image-focused content slide.
-${request.numberOfSlides - 3}. **guiding-questions** — 4-6 thought-provoking questions (recall → analysis → application).
-${request.numberOfSlides - 2}. **reflection** — 2-3 deeper reflection questions.
-${request.numberOfSlides - 1}. **summary** — Key takeaways as bullet points. Summarize main concepts.
-${request.numberOfSlides}. **closing** — Thank you / questions slide.
+   - **content** — Title + 2-4 sentences of explanatory text in the "content" field (explain the concept, not just name it) + bullet points with specific examples, evidence, or steps. Every content slide MUST include at least one concrete example or real-world scenario. Every 2nd content slide must embed a discussion prompt ("Turn and tell…", "What do you think…?").
+   - **vocabulary** — Key terms using the "terms" array. Each definition MUST be a complete sentence that includes an example (e.g., "Evaporation is when liquid water turns into water vapour, like when puddles disappear on a hot day in Castries."). Include 3-5 terms per vocabulary slide.
+   - **comparison** — Two-column comparison with substantive points (full sentences explaining differences, not just labels). Include a "So what?" bullet explaining why the comparison matters.
+   - **activity** — Specific student task with: clear steps (numbered), materials needed, grouping (individual/pairs/groups), time estimate, expected output, and success criteria. Include a scaffold option.
+   - **image** — Image-focused content slide with explanatory text describing what the image shows and why it matters.
+${request.numberOfSlides - 3}. **guiding-questions** — 4-6 questions following Bloom's Taxonomy:
+   * 1-2 Remember/Understand: "What is…?", "Explain why…"
+   * 1-2 Apply/Analyse: "What would happen if…?", "Compare… and…"
+   * 1-2 Evaluate/Create: "Which approach is better and why?", "Design a…"
+${request.numberOfSlides - 2}. **reflection** — 3-4 deeper reflection questions that connect learning to students' lives, community, and future:
+   * "How does this connect to your community?"
+   * "What surprised you about…?"
+   * "How could you teach this to someone younger?"
+   * "What would you change or investigate further?"
+${request.numberOfSlides - 1}. **summary** — Key takeaways as complete sentences (not fragments). Include a "Big Idea" statement and 3-4 specific things students should remember. Add a connection to the next lesson if applicable.
+${request.numberOfSlides}. **closing** — Thank you / questions slide with a take-home challenge or action item.
 
 IMPORTANT RULES:
 - Use AT LEAST 3 different slide types among the content slides (don't use only "content")
 - Include at least 1 "vocabulary" slide if the topic has key terms
 - Include at least 1 "activity" slide with a student task
-- Add a relevant emoji at the start of EVERY slide title (e.g. "🔬 The Scientific Method", "📖 Key Vocabulary")
+- Add a relevant emoji at the start of EVERY slide title
 - At least 40% of content slides should have an imageUrl (a 2-4 word search query for stock photos)
+- The "content" field must contain actual explanatory sentences, NOT just repeat the title
+- NEVER generate empty or placeholder bullet points — every point must teach something
 
 CARIBBEAN CONTEXT:
 This is for teachers in the Organisation of Eastern Caribbean States (OECS). Where appropriate:
@@ -574,8 +644,8 @@ This is for teachers in the Organisation of Eastern Caribbean States (OECS). Whe
 - This is a suggestion — only apply when it naturally fits the topic
 
 SPEAKER NOTES FORMAT:
-Every slide MUST have detailed speaker notes structured as:
-"⏱ Timing: X minutes | 💡 Key point: [main takeaway] | 🗣 Say: [suggested talking point] | ❓ Ask: [discussion prompt] | 🔄 Differentiation: [tip for different learners]"
+Every slide MUST have detailed, actionable speaker notes with ALL of these elements:
+"⏱ Timing: X minutes | 💡 Key point: [main takeaway] | 🗣 Say: [2-3 scripted sentences to say aloud] | ❓ Ask: [specific question + expected student response] | ⚠️ Misconception: [common error and how to address it] | 🔄 Differentiation: [scaffold for struggling learners + extension for advanced learners] | 🧠 Bloom's: [cognitive level of this slide]"
 
 IMAGE REQUIREMENTS:
 - imageUrl should be a short search query (2-4 words): "coral reef ecosystem", "volcanic island", "students laboratory"
@@ -590,83 +660,9 @@ Respond in JSON format:
       "type": "title",
       "title": "🌊 The Water Cycle",
       "subtitle": "Understanding Earth's most important process",
+      "content": "Did you know that the water you drink today is the same water dinosaurs drank millions of years ago? Water never disappears — it just keeps moving in a cycle.",
       "emoji": "🌊",
-      "notes": "⏱ Timing: 1 min | 💡 Key point: Set the stage | 🗣 Say: Welcome to today's lesson..."
-    },
-    {
-      "id": "slide-2",
-      "type": "learning-outcomes",
-      "title": "🎯 Learning Outcomes",
-      "emoji": "🎯",
-      "bulletPoints": ["Outcome 1", "Outcome 2"],
-      "notes": "..."
-    },
-    {
-      "id": "slide-3",
-      "type": "vocabulary",
-      "title": "📚 Key Vocabulary",
-      "emoji": "📚",
-      "terms": [
-        { "term": "Evaporation", "definition": "The process of water turning from liquid to gas" }
-      ],
-      "notes": "..."
-    },
-    {
-      "id": "slide-4",
-      "type": "content",
-      "title": "🔬 How It Works",
-      "emoji": "🔬",
-      "bulletPoints": ["point 1", "point 2"],
-      "imageUrl": "water cycle diagram",
-      "imageAlt": "Diagram showing the stages of the water cycle",
-      "notes": "..."
-    },
-    {
-      "id": "slide-5",
-      "type": "comparison",
-      "title": "⚖️ Evaporation vs Condensation",
-      "emoji": "⚖️",
-      "leftHeading": "Evaporation",
-      "leftPoints": ["Liquid to gas", "Happens at surface"],
-      "rightHeading": "Condensation",
-      "rightPoints": ["Gas to liquid", "Forms clouds"],
-      "notes": "..."
-    },
-    {
-      "id": "slide-6",
-      "type": "activity",
-      "title": "✏️ Class Activity",
-      "emoji": "✏️",
-      "bulletPoints": ["Step 1: ...", "Step 2: ..."],
-      "notes": "..."
-    },
-    {
-      "id": "slide-N-3",
-      "type": "guiding-questions",
-      "title": "❓ Guiding Questions",
-      "questions": ["Question 1?", "Question 2?"],
-      "notes": "..."
-    },
-    {
-      "id": "slide-N-2",
-      "type": "reflection",
-      "title": "💭 Reflection",
-      "questions": ["Reflection question 1?"],
-      "notes": "..."
-    },
-    {
-      "id": "slide-N-1",
-      "type": "summary",
-      "title": "📝 Summary",
-      "bulletPoints": ["Key takeaway 1", "Key takeaway 2"],
-      "notes": "..."
-    },
-    {
-      "id": "slide-N",
-      "type": "closing",
-      "title": "🙏 Thank You!",
-      "subtitle": "Any questions? Let's discuss!",
-      "notes": "..."
+      "notes": "⏱ Timing: 2 min | 💡 Key point: Hook curiosity about water recycling | 🗣 Say: Before we begin, think about this: every drop of water on Earth has been here for billions of years. The same water falls as rain, flows to the ocean, and rises again. Today we'll discover how. | ❓ Ask: Where do you think rain comes from? (Expected: clouds, sky, ocean) | ⚠️ Misconception: Students may think new water is created when it rains | 🔄 Differentiation: Show a simple diagram for visual learners; ask advanced students to predict the next step | 🧠 Bloom's: Remember"
     }
   ]
 }`;
@@ -676,8 +672,8 @@ Respond in JSON format:
     {
       systemMessage,
       prompt,
-      maxTokens: 6000,
-      timeout: 50000,
+      maxTokens: 10000,
+      timeout: 55000,
     },
     "slides",
   );
