@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -1281,14 +1282,13 @@ export default function PresentationCreator() {
                             <>
                               <div>
                                 <Label className="text-xs">Content</Label>
-                                <Textarea
-                                  value={displaySlide.content || ""}
-                                  onChange={(e) => setEditedSlide({ ...displaySlide, content: e.target.value })}
-                                  placeholder="Slide content"
-                                  rows={3}
-                                  className="text-sm"
-                                  data-testid={`textarea-slide-content-${index}`}
-                                />
+                                <div className="mt-1" data-testid={`richtext-slide-content-${index}`}>
+                                  <RichTextEditor
+                                    content={displaySlide.content || ""}
+                                    onChange={(html) => setEditedSlide({ ...displaySlide, content: html })}
+                                    placeholder="Slide content"
+                                  />
+                                </div>
                               </div>
                               <div>
                                 <Label className="text-xs">Bullet Points (one per line)</Label>
@@ -1320,14 +1320,14 @@ export default function PresentationCreator() {
                               </div>
                               <div>
                                 <Label className="text-xs">Speaker Notes</Label>
-                                <Textarea
-                                  value={displaySlide.notes || ""}
-                                  onChange={(e) => setEditedSlide({ ...displaySlide, notes: e.target.value })}
-                                  placeholder="Speaker notes and teaching tips"
-                                  rows={3}
-                                  className="text-sm"
-                                  data-testid={`textarea-slide-notes-${index}`}
-                                />
+                                <div className="mt-1" data-testid={`richtext-slide-notes-${index}`}>
+                                  <RichTextEditor
+                                    content={displaySlide.notes || ""}
+                                    onChange={(html) => setEditedSlide({ ...displaySlide, notes: html })}
+                                    placeholder="Speaker notes and teaching tips"
+                                    minimal
+                                  />
+                                </div>
                               </div>
                               <div className="bg-muted rounded overflow-hidden">
                                 {displaySlide.imageUrl && (displaySlide.imageUrl.startsWith('http') || displaySlide.imageUrl.startsWith('data:')) && (

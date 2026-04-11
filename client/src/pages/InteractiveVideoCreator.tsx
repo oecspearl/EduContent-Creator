@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -478,13 +479,14 @@ export default function InteractiveVideoCreator() {
 
                       <div className="space-y-2">
                         <Label>Content</Label>
-                        <Textarea
-                          placeholder="Description or question..."
-                          value={hotspot.content}
-                          onChange={(e) => updateHotspot(index, { content: e.target.value })}
-                          className="h-20 resize-none"
-                          data-testid={`textarea-content-${index}`}
-                        />
+                        <div data-testid={`richtext-content-${index}`}>
+                          <RichTextEditor
+                            content={hotspot.content}
+                            onChange={(html) => updateHotspot(index, { content: html })}
+                            placeholder="Description or question..."
+                            minimal
+                          />
+                        </div>
                       </div>
 
                       {hotspot.type === "question" && (

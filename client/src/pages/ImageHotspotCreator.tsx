@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -385,16 +386,16 @@ export default function ImageHotspotCreator() {
                           />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
                           <Label>Description</Label>
-                          <Textarea
-                            placeholder="Hotspot description..."
-                            value={hotspot.description}
-                            onChange={(e) => updateHotspot(index, { description: e.target.value })}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-20 resize-none"
-                            data-testid={`textarea-description-${index}`}
-                          />
+                          <div data-testid={`richtext-description-${index}`}>
+                            <RichTextEditor
+                              content={hotspot.description}
+                              onChange={(html) => updateHotspot(index, { description: html })}
+                              placeholder="Hotspot description..."
+                              minimal
+                            />
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

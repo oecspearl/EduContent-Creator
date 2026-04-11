@@ -41,6 +41,12 @@ type RichTextEditorProps = {
   onChange: (content: string) => void;
   placeholder?: string;
   /**
+   * When true, shows a compact toolbar with only basic formatting (B/I/U, lists,
+   * undo/redo). No headings, images, or blockquote. Useful for smaller fields
+   * like quiz explanations or hotspot descriptions.
+   */
+  minimal?: boolean;
+  /**
    * When true, disables TipTap's *text* → italic markdown shortcut so that
    * asterisks (e.g. *blank*) are kept as literal characters. Italic formatting
    * via the toolbar button still works.
@@ -50,7 +56,7 @@ type RichTextEditorProps = {
 
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
 
-export function RichTextEditor({ content, onChange, placeholder, keepAsterisksLiteral }: RichTextEditorProps) {
+export function RichTextEditor({ content, onChange, placeholder, minimal, keepAsterisksLiteral }: RichTextEditorProps) {
   const { toast } = useToast();
   const [imageUrl, setImageUrl] = useState("");
   const [showImageDialog, setShowImageDialog] = useState(false);
@@ -72,10 +78,14 @@ export function RichTextEditor({ content, onChange, placeholder, keepAsterisksLi
       keepAsterisksLiteral ? StarterKit.configure({ italic: false }) : StarterKit,
       ...(italicExtension ? [italicExtension] : []),
       Underline,
-      Image.configure({
-        inline: true,
-        allowBase64: true,
-      }),
+      ...(minimal
+        ? []
+        : [
+            Image.configure({
+              inline: true,
+              allowBase64: true,
+            }),
+          ]),
       Placeholder.configure({
         placeholder: placeholder || "Start writing...",
       }),
@@ -86,7 +96,7 @@ export function RichTextEditor({ content, onChange, placeholder, keepAsterisksLi
     },
     editorProps: {
       attributes: {
-        class: "prose max-w-none focus:outline-none min-h-48 p-4",
+        class: `prose max-w-none focus:outline-none ${minimal ? "min-h-24" : "min-h-48"} p-4`,
       },
     },
   });
@@ -210,36 +220,40 @@ export function RichTextEditor({ content, onChange, placeholder, keepAsterisksLi
         >
           <UnderlineIcon className="h-4 w-4" />
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={editor.isActive("heading", { level: 1 }) ? "bg-accent" : ""}
-          data-testid="button-h1"
-        >
-          <Heading1 className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={editor.isActive("heading", { level: 2 }) ? "bg-accent" : ""}
-          data-testid="button-h2"
-        >
-          <Heading2 className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={editor.isActive("heading", { level: 3 }) ? "bg-accent" : ""}
-          data-testid="button-h3"
-        >
-          <Heading3 className="h-4 w-4" />
-        </Button>
+        {!minimal && (
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+              className={editor.isActive("heading", { level: 1 }) ? "bg-accent" : ""}
+              data-testid="button-h1"
+            >
+              <Heading1 className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+              className={editor.isActive("heading", { level: 2 }) ? "bg-accent" : ""}
+              data-testid="button-h2"
+            >
+              <Heading2 className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+              className={editor.isActive("heading", { level: 3 }) ? "bg-accent" : ""}
+              data-testid="button-h3"
+            >
+              <Heading3 className="h-4 w-4" />
+            </Button>
+          </>
+        )}
         <Button
           type="button"
           variant="ghost"
@@ -260,17 +274,21 @@ export function RichTextEditor({ content, onChange, placeholder, keepAsterisksLi
         >
           <ListOrdered className="h-4 w-4" />
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={editor.isActive("blockquote") ? "bg-accent" : ""}
-          data-testid="button-blockquote"
-        >
-          <Quote className="h-4 w-4" />
-        </Button>
+        {!minimal && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            className={editor.isActive("blockquote") ? "bg-accent" : ""}
+            data-testid="button-blockquote"
+          >
+            <Quote className="h-4 w-4" />
+          </Button>
+        )}
 
+        {!minimal && (
+          <>
         <div className="border-l mx-1" />
 
         <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
@@ -354,6 +372,8 @@ export function RichTextEditor({ content, onChange, placeholder, keepAsterisksLi
         </Dialog>
 
         <div className="border-l mx-1" />
+          </>
+        )}
 
         <Button
           type="button"
@@ -377,19 +397,23 @@ export function RichTextEditor({ content, onChange, placeholder, keepAsterisksLi
         </Button>
       </div>
       <EditorContent editor={editor} />
-      
-      <ImageGeneratorDialog
-        open={showAIImageDialog}
-        onOpenChange={setShowAIImageDialog}
-        onImageGenerated={handleAIImageGenerated}
-      />
 
-      <ImageEditorDialog
-        open={showImageEditorDialog}
-        onOpenChange={setShowImageEditorDialog}
-        imageUrl={pendingImageUrl}
-        onImageEdited={handleImageEdited}
-      />
+      {!minimal && (
+        <>
+          <ImageGeneratorDialog
+            open={showAIImageDialog}
+            onOpenChange={setShowAIImageDialog}
+            onImageGenerated={handleAIImageGenerated}
+          />
+
+          <ImageEditorDialog
+            open={showImageEditorDialog}
+            onOpenChange={setShowImageEditorDialog}
+            imageUrl={pendingImageUrl}
+            onImageEdited={handleImageEdited}
+          />
+        </>
+      )}
     </div>
   );
 }
