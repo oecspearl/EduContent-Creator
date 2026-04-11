@@ -30,7 +30,7 @@ if (process.env.DATABASE_URL) {
 
   dbInstance = drizzle(pool, { schema });
 
-  console.log(`✓ Database pool created (max: ${isVercel ? 5 : 20})`);
+  console.log(`✓ Database pool created (max: ${isVercel ? 1 : 20})`);
   if (isSupabase) console.log('✓ Using Supabase PostgreSQL');
   else if (isNeon) console.log('✓ Using Neon PostgreSQL');
   else console.log('✓ Using PostgreSQL');
