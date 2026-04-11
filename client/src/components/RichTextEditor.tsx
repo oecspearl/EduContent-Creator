@@ -38,6 +38,8 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  Wand2,
+  Loader2,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -90,6 +92,14 @@ export function RichTextEditor({ content, onChange, placeholder, minimal, keepAs
   // Fullscreen
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // AI Enhance
+  const [showAIEnhance, setShowAIEnhance] = useState(false);
+  const [aiMode, setAiMode] = useState<string>("beautify");
+  const [aiCustomInstructions, setAiCustomInstructions] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiPreview, setAiPreview] = useState<string | null>(null);
+  const [aiOriginal, setAiOriginal] = useState<string>("");
 
   // When keepAsterisksLiteral is true: disable StarterKit's built-in italic so we
   // can add a custom version that strips the *text* inputRule. The toolbar italic
@@ -383,6 +393,82 @@ export function RichTextEditor({ content, onChange, placeholder, minimal, keepAs
     }
   }, [findText, showFindReplace, performFind]);
 
+  // --- AI Enhance ---
+  const AI_MODES = [
+    { value: "beautify", label: "Beautify", desc: "Add visual formatting, callouts, highlights" },
+    { value: "lesson-format", label: "Lesson Format", desc: "Professional educational layout" },
+    { value: "simplify", label: "Simplify", desc: "Reduce complexity, simpler language" },
+    { value: "expand", label: "Expand", desc: "Add detail, examples, explanations" },
+    { value: "summarize", label: "Summarize", desc: "Condense to key points" },
+    { value: "fix-grammar", label: "Fix Grammar", desc: "Correct grammar and spelling only" },
+    { value: "add-visuals", label: "Add Visuals", desc: "Insert visual components without changing text" },
+  ] as const;
+
+  const handleAIEnhance = useCallback(async () => {
+    if (!editor) return;
+
+    // Use selected text or full document
+    const { from, to } = editor.state.selection;
+    const hasSelection = from !== to;
+    const textToEnhance = hasSelection
+      ? editor.state.doc.textBetween(from, to, "\n")
+      : editor.getHTML();
+
+    if (!textToEnhance || textToEnhance.trim().length < 5) {
+      toast({ title: "Not enough content", description: "Write some content first, then enhance it.", variant: "destructive" });
+      return;
+    }
+
+    setAiOriginal(editor.getHTML());
+    setAiLoading(true);
+    setAiPreview(null);
+
+    try {
+      const res = await fetch("/api/ai/enhance-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: hasSelection ? textToEnhance : editor.getHTML(),
+          mode: aiMode,
+          customInstructions: aiCustomInstructions || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: "Enhancement failed" }));
+        throw new Error(err.message);
+      }
+
+      const { html } = await res.json();
+      setAiPreview(html);
+
+      // Show preview in the editor
+      editor.commands.setContent(html);
+    } catch (err: any) {
+      toast({ title: "AI Enhancement failed", description: err.message, variant: "destructive" });
+      setAiPreview(null);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [editor, aiMode, aiCustomInstructions, toast]);
+
+  const acceptAIPreview = useCallback(() => {
+    if (aiPreview && editor) {
+      onChange(aiPreview);
+      toast({ title: "Enhancement applied", description: "AI changes have been accepted." });
+    }
+    setAiPreview(null);
+    setShowAIEnhance(false);
+    setAiCustomInstructions("");
+  }, [aiPreview, editor, onChange, toast]);
+
+  const cancelAIPreview = useCallback(() => {
+    if (aiOriginal && editor) {
+      editor.commands.setContent(aiOriginal);
+    }
+    setAiPreview(null);
+  }, [aiOriginal, editor]);
+
   // --- Fullscreen ---
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen((prev) => !prev);
@@ -405,6 +491,11 @@ export function RichTextEditor({ content, onChange, placeholder, minimal, keepAs
           setShowFindReplace(true);
           setTimeout(() => findInputRef.current?.focus(), 50);
         }
+      }
+      // Ctrl+Shift+A to toggle AI Enhance
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "A" && containerRef.current?.contains(document.activeElement) && !minimal) {
+        e.preventDefault();
+        setShowAIEnhance((prev) => !prev);
       }
     };
     document.addEventListener("keydown", handleKeyDown);
@@ -662,9 +753,99 @@ export function RichTextEditor({ content, onChange, placeholder, minimal, keepAs
             >
               {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
             </Button>
+            <div className="border-l mx-1" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAIEnhance(!showAIEnhance)}
+              className={`${showAIEnhance ? "bg-accent" : ""} text-purple-600 hover:text-purple-700`}
+              title="AI Enhance (Ctrl+Shift+A)"
+              disabled={sourceMode}
+              data-testid="button-ai-enhance"
+            >
+              <Wand2 className="h-4 w-4" />
+            </Button>
           </>
         )}
       </div>
+
+      {/* AI Enhance panel */}
+      {showAIEnhance && !minimal && (
+        <div className="border-b bg-purple-50 dark:bg-purple-950/20 px-3 py-3 space-y-3">
+          {aiPreview ? (
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                Preview — review the enhanced content above
+              </span>
+              <div className="flex gap-2">
+                <Button type="button" size="sm" variant="outline" onClick={cancelAIPreview}>
+                  Cancel
+                </Button>
+                <Button type="button" size="sm" onClick={acceptAIPreview} className="bg-purple-600 hover:bg-purple-700 text-white">
+                  Accept Changes
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Enhancement Mode</Label>
+                  <select
+                    value={aiMode}
+                    onChange={(e) => setAiMode(e.target.value)}
+                    className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                    data-testid="select-ai-mode"
+                  >
+                    {AI_MODES.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1 min-w-48 space-y-1">
+                  <Label className="text-xs font-medium">Custom Instructions (optional)</Label>
+                  <Input
+                    value={aiCustomInstructions}
+                    onChange={(e) => setAiCustomInstructions(e.target.value)}
+                    placeholder="e.g. Use Caribbean examples, target grade 4 reading level..."
+                    className="h-8 text-sm"
+                    data-testid="input-ai-instructions"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleAIEnhance}
+                  disabled={aiLoading}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  data-testid="button-ai-generate"
+                >
+                  {aiLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      Enhancing...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="h-4 w-4 mr-1" />
+                      Enhance
+                    </>
+                  )}
+                </Button>
+                <Button type="button" size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setShowAIEnhance(false)} title="Close">
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {AI_MODES.find((m) => m.value === aiMode)?.desc} — works on selected text or the full document.
+              </p>
+            </>
+          )}
+        </div>
+      )}
       {/* Find & Replace bar */}
       {showFindReplace && !sourceMode && (
         <div className="border-b bg-muted/30 px-3 py-2 flex flex-wrap items-center gap-2 text-sm">

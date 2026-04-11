@@ -341,6 +341,63 @@ Be conversational, friendly, and educational. Provide specific, actionable advic
     }
   }));
 
+  // AI text enhancement (teachers only)
+  app.post("/api/ai/enhance-text", requireTeacher, aiGenerationRateLimit, withTimeoutMiddleware(30000), asyncHandler(async (req: any, res) => {
+    try {
+      if (!requireOpenAIKey(res)) return;
+
+      const { text, mode, customInstructions } = req.body;
+      if (!text || !mode) {
+        return res.status(400).json({ message: "text and mode are required" });
+      }
+
+      const validModes = ["beautify", "lesson-format", "simplify", "expand", "summarize", "fix-grammar", "add-visuals"] as const;
+      if (!validModes.includes(mode)) {
+        return res.status(400).json({ message: `Invalid mode. Must be one of: ${validModes.join(", ")}` });
+      }
+
+      const modePrompts: Record<string, string> = {
+        "beautify": "Enhance the visual formatting of this HTML content. Add callout boxes (using colored div elements with border-left styling for info/tip/warning), styled tables where appropriate, highlight key terms with <strong> or <mark>, and use headings to structure content. Keep all original information intact.",
+        "lesson-format": "Reformat this HTML content as a professional educational lesson. Structure it with clear section headings, numbered step cards (using ordered lists or styled divs), key takeaway boxes (styled div with background color), vocabulary highlights, and a summary section. Maintain all original content.",
+        "simplify": "Simplify this HTML content to reduce complexity while preserving the visual formatting. Use shorter sentences, simpler vocabulary, and clearer structure. Keep any existing formatting elements (bold, lists, etc.) but make the text more accessible.",
+        "expand": "Expand this HTML content with more detail, examples, and explanations. Add illustrative examples, analogies, and supporting details. Use formatted elements like lists, blockquotes for examples, and bold for key concepts.",
+        "summarize": "Condense this HTML content to its key points. Create a concise summary using a styled summary box, bullet points for main ideas, and bold for critical terms. Reduce length significantly while preserving essential information.",
+        "fix-grammar": "Fix all grammar, spelling, and punctuation errors in this HTML content. Do not change the meaning, structure, or formatting — only correct language errors.",
+        "add-visuals": "Add visual HTML components to enhance this content WITHOUT changing the existing text. Insert relevant callout boxes (info, tip, warning styled divs), comparison tables, styled blockquotes, horizontal rules as dividers, and visual emphasis. The original text must remain unchanged.",
+      };
+
+      const systemMessage = `You are an educational content enhancer. You receive HTML content and transform it according to the requested mode. Return ONLY valid HTML — no markdown, no code fences, no explanation. The output should be clean HTML that can be directly inserted into a WYSIWYG editor. Use inline styles for any visual enhancements (e.g., colored borders, backgrounds) since external CSS is not available. Keep formatting semantic and accessible.`;
+
+      const userPrompt = `Mode: ${mode}\n\n${modePrompts[mode]}\n\n${customInstructions ? `Additional instructions: ${customInstructions}\n\n` : ""}Content to enhance:\n${text}`;
+
+      const client = getOpenAIClient();
+      const response = await client.chat.completions.create(
+        {
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: systemMessage },
+            { role: "user", content: userPrompt },
+          ],
+          max_completion_tokens: 4096,
+          temperature: 0.7,
+        },
+        { timeout: 30000 },
+      );
+
+      const enhanced = response.choices[0].message.content || "";
+      // Strip markdown code fences if the model wraps the response
+      const cleaned = enhanced.replace(/^```html?\n?/i, "").replace(/\n?```$/i, "").trim();
+
+      res.json({ html: cleaned });
+    } catch (error: any) {
+      console.error("AI text enhancement error:", error);
+      if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+        return res.status(504).json({ message: "AI enhancement timed out. Please try with less content." });
+      }
+      throw error;
+    }
+  }));
+
   // YouTube search (teachers only)
   app.post("/api/youtube/search", requireTeacher, asyncHandler(async (req, res) => {
     try {
