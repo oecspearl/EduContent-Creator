@@ -85,13 +85,30 @@ export function registerAuthRoutes(
     res.json(result);
   }));
 
-  // Google OAuth
+  // Google OAuth — login only (profile + email, no sensitive scopes → no verification warning)
   app.get("/api/auth/google", (req, res, next) => {
     if (!isGoogleOAuthAvailable) {
       return res.status(503).json({
         message: "Google authentication is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.",
       });
     }
+    const returnTo = req.query.returnTo as string;
+    if (returnTo && returnTo.startsWith("/")) req.session.oauthReturnTo = returnTo;
+
+    passportConfig.authenticate("google", {
+      scope: ["profile", "email"],
+      accessType: "offline",
+      prompt: "consent",
+    } as any)(req, res, next);
+  });
+
+  // Google OAuth — connect Classroom/Slides (requests sensitive scopes; only shown to already-logged-in users)
+  app.get("/api/auth/google/classroom", (req: any, res: any, next: any) => {
+    if (!isGoogleOAuthAvailable) {
+      return res.status(503).json({ message: "Google authentication is not configured." });
+    }
+    if (!req.session.userId) return res.redirect("/login");
+    (req.session as any).classroomConnect = true;
     const returnTo = req.query.returnTo as string;
     if (returnTo && returnTo.startsWith("/")) req.session.oauthReturnTo = returnTo;
 
@@ -109,23 +126,27 @@ export function registerAuthRoutes(
     } as any)(req, res, next);
   });
 
-  app.get("/api/auth/google/callback", (req, res, next) => {
+  app.get("/api/auth/google/callback", (req: any, res: any, next: any) => {
     if (!isGoogleOAuthAvailable) return res.redirect("/login?error=google_not_configured");
 
+    const isClassroomConnect = !!(req.session as any).classroomConnect;
+    delete (req.session as any).classroomConnect;
+
     passportConfig.authenticate("google", {
-      failureRedirect: "/login?error=google_auth_failed",
+      failureRedirect: isClassroomConnect ? "/dashboard?error=classroom_connect_failed" : "/login?error=google_auth_failed",
       failureMessage: true,
     }, (err: any, user: any) => {
       if (err) {
         console.error("[Google OAuth] Authentication error:", err);
-        return res.redirect("/login?error=google_auth_error&message=" + encodeURIComponent(err.message || "Unknown error"));
+        const dest = isClassroomConnect ? "/dashboard" : "/login";
+        return res.redirect(`${dest}?error=google_auth_error&message=${encodeURIComponent(err.message || "Unknown error")}`);
       }
-      if (!user) return res.redirect("/login?error=google_no_user");
+      if (!user) return res.redirect(isClassroomConnect ? "/dashboard?error=classroom_connect_failed" : "/login?error=google_no_user");
 
       req.logIn(user, (loginErr: any) => {
         if (loginErr) {
           console.error("[Google OAuth] Login error:", loginErr);
-          return res.redirect("/login?error=login_failed");
+          return res.redirect(isClassroomConnect ? "/dashboard?error=login_failed" : "/login?error=login_failed");
         }
         req.session.userId = user.id;
         const returnTo = req.session.oauthReturnTo;
@@ -135,6 +156,12 @@ export function registerAuthRoutes(
           if (saveErr) {
             console.error("[Google OAuth] Session save error:", saveErr);
             return res.redirect("/login?error=session_save_failed");
+          }
+          if (isClassroomConnect) {
+            const target = (returnTo && returnTo.startsWith("/") && !returnTo.includes("//"))
+              ? returnTo + "?classroomConnected=true"
+              : "/dashboard?classroomConnected=true";
+            return res.redirect(target);
           }
           const target = (returnTo && returnTo.startsWith("/") && !returnTo.includes("//"))
             ? returnTo + "?googleAuthSuccess=true"

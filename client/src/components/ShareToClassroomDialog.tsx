@@ -63,9 +63,10 @@ export default function ShareToClassroomDialog({
   );
 
   // Fetch user's Google Classroom courses
-  const { data: coursesData, isLoading: loadingCourses } = useQuery<{ courses: GoogleClassroomCourse[] }>({
+  const { data: coursesData, isLoading: loadingCourses, isError: coursesError } = useQuery<{ courses: GoogleClassroomCourse[] }>({
     queryKey: ["/api/google-classroom/courses"],
     enabled: open,
+    retry: false,
   });
 
   const courses = coursesData?.courses || [];
@@ -200,9 +201,19 @@ export default function ShareToClassroomDialog({
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
+              ) : coursesError ? (
+                <div className="text-center py-6 space-y-3 border rounded-md">
+                  <SiGoogleclassroom className="h-8 w-8 mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Google Classroom access is required.</p>
+                  <Button asChild size="sm">
+                    <a href={`/api/auth/google/classroom?returnTo=${encodeURIComponent(window.location.pathname)}`}>
+                      Connect Google Classroom
+                    </a>
+                  </Button>
+                </div>
               ) : courses.length === 0 ? (
                 <div className="text-sm text-muted-foreground py-4 text-center border rounded-md">
-                  No courses found. Make sure you're signed in with Google and have active courses.
+                  No courses found. Make sure you have active courses in Google Classroom.
                 </div>
               ) : (
                 <Select value={selectedCourse} onValueChange={setSelectedCourse}>
