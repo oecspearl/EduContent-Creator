@@ -13,6 +13,7 @@ await esbuild.build({
   format: 'esm',
   outfile: 'api/bundled.js',
   packages: 'external',
+  external: ['./routes/webhook', './routes/webhook.js', '../server/routes/webhook', '../server/routes/webhook.js'],
   alias: {
     '@shared': path.resolve(__dirname, 'shared'),
     '@': path.resolve(__dirname, 'client/src'),
