@@ -52,7 +52,9 @@
       "Bash(sed -n '9218,10477p' ../add_curriculum_data.sql)",
       "Bash(ls tsconfig*.json)",
       "Bash(git pull:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(ls /Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/server/*.ts)",
+      "Bash(openssl rand:*)"
     ],
     "additionalDirectories": [
       "/Users/roystonemmanuel/Desktop/Applications/EduContent-Creator-main/server"

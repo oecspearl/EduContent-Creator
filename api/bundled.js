@@ -412,7 +412,8 @@ var init_api_schemas = __esm({
       learningOutcomes: z.array(z.string()).min(1).max(10),
       numberOfSlides: z.number().min(5).max(30).default(10),
       customInstructions: z.string().optional(),
-      curriculumContext: curriculumContextSchema.optional()
+      curriculumContext: curriculumContextSchema.optional(),
+      templateId: z.string().optional()
     });
     aiGenerationSchema = z.object({
       contentType: z.enum(["quiz", "flashcard", "interactive-video", "image-hotspot", "drag-drop", "fill-blanks", "memory-game", "interactive-book"]),
@@ -556,7 +557,7 @@ var init_db = __esm({
         console.error("Unexpected error on idle PostgreSQL client", err);
       });
       dbInstance = drizzle(pool, { schema: schema_exports });
-      console.log(`\u2713 Database pool created (max: ${isVercel ? 5 : 20})`);
+      console.log(`\u2713 Database pool created (max: ${isVercel ? 1 : 20})`);
       if (isSupabase) console.log("\u2713 Using Supabase PostgreSQL");
       else if (isNeon) console.log("\u2713 Using Neon PostgreSQL");
       else console.log("\u2713 Using PostgreSQL");
@@ -1391,19 +1392,9 @@ var init_passport_config = __esm({
             // Use relative path - Passport.js will automatically derive the full URL from the request
             // This ensures it works across localhost, workspace URLs, and custom domains
             callbackURL: "/api/auth/google/callback",
-            // Request Slides API and Classroom API access
-            scope: [
-              "profile",
-              "email",
-              "https://www.googleapis.com/auth/presentations",
-              // Google Slides API
-              "https://www.googleapis.com/auth/classroom.courses.readonly",
-              // List Classroom courses
-              "https://www.googleapis.com/auth/classroom.coursework.students",
-              // Create coursework/assignments
-              "https://www.googleapis.com/auth/classroom.announcements"
-              // Create announcements
-            ],
+            // Basic login scopes only — Classroom/Slides scopes requested separately
+            // via /api/auth/google/classroom to avoid Google's "unverified app" warning
+            scope: ["profile", "email"],
             // Request offline access to get refresh token
             accessType: "offline",
             // Force consent screen to ensure refresh token is provided
@@ -2024,6 +2015,20 @@ function registerAuthRoutes({ app: app2, storage: storage2 }, isGoogleOAuthAvail
     const returnTo = req.query.returnTo;
     if (returnTo && returnTo.startsWith("/")) req.session.oauthReturnTo = returnTo;
     passport_config_default.authenticate("google", {
+      scope: ["profile", "email"],
+      accessType: "offline",
+      prompt: "consent"
+    })(req, res, next);
+  });
+  app2.get("/api/auth/google/classroom", (req, res, next) => {
+    if (!isGoogleOAuthAvailable) {
+      return res.status(503).json({ message: "Google authentication is not configured." });
+    }
+    if (!req.session.userId) return res.redirect("/login");
+    req.session.classroomConnect = true;
+    const returnTo = req.query.returnTo;
+    if (returnTo && returnTo.startsWith("/")) req.session.oauthReturnTo = returnTo;
+    passport_config_default.authenticate("google", {
       scope: [
         "profile",
         "email",
@@ -2039,19 +2044,22 @@ function registerAuthRoutes({ app: app2, storage: storage2 }, isGoogleOAuthAvail
   });
   app2.get("/api/auth/google/callback", (req, res, next) => {
     if (!isGoogleOAuthAvailable) return res.redirect("/login?error=google_not_configured");
+    const isClassroomConnect = !!req.session.classroomConnect;
+    delete req.session.classroomConnect;
     passport_config_default.authenticate("google", {
-      failureRedirect: "/login?error=google_auth_failed",
+      failureRedirect: isClassroomConnect ? "/dashboard?error=classroom_connect_failed" : "/login?error=google_auth_failed",
       failureMessage: true
     }, (err, user) => {
       if (err) {
         console.error("[Google OAuth] Authentication error:", err);
-        return res.redirect("/login?error=google_auth_error&message=" + encodeURIComponent(err.message || "Unknown error"));
+        const dest = isClassroomConnect ? "/dashboard" : "/login";
+        return res.redirect(`${dest}?error=google_auth_error&message=${encodeURIComponent(err.message || "Unknown error")}`);
       }
-      if (!user) return res.redirect("/login?error=google_no_user");
+      if (!user) return res.redirect(isClassroomConnect ? "/dashboard?error=classroom_connect_failed" : "/login?error=google_no_user");
       req.logIn(user, (loginErr) => {
         if (loginErr) {
           console.error("[Google OAuth] Login error:", loginErr);
-          return res.redirect("/login?error=login_failed");
+          return res.redirect(isClassroomConnect ? "/dashboard?error=login_failed" : "/login?error=login_failed");
         }
         req.session.userId = user.id;
         const returnTo = req.session.oauthReturnTo;
@@ -2060,6 +2068,10 @@ function registerAuthRoutes({ app: app2, storage: storage2 }, isGoogleOAuthAvail
           if (saveErr) {
             console.error("[Google OAuth] Session save error:", saveErr);
             return res.redirect("/login?error=session_save_failed");
+          }
+          if (isClassroomConnect) {
+            const target2 = returnTo && returnTo.startsWith("/") && !returnTo.includes("//") ? returnTo + "?classroomConnected=true" : "/dashboard?classroomConnected=true";
+            return res.redirect(target2);
           }
           const target = returnTo && returnTo.startsWith("/") && !returnTo.includes("//") ? returnTo + "?googleAuthSuccess=true" : "/dashboard?googleAuthSuccess=true";
           res.redirect(target);
@@ -2231,7 +2243,7 @@ var init_content_filters = __esm({
 });
 
 // server/services/content-service.ts
-import { eq as eq7, and as and4 } from "drizzle-orm";
+import { eq as eq7, and as and4, inArray as inArray3 } from "drizzle-orm";
 var ContentService;
 var init_content_service = __esm({
   "server/services/content-service.ts"() {
@@ -2264,6 +2276,15 @@ var init_content_service = __esm({
           const assignments = await this.storage.getStudentAssignments(userId);
           const isAssigned = assignments.some((a) => a.contentId === id);
           if (isAssigned) return { ok: true, data: content };
+          const studentClassIds = await db.select({ classId: classEnrollments.classId }).from(classEnrollments).where(eq7(classEnrollments.userId, userId));
+          if (studentClassIds.length > 0) {
+            const classIds = studentClassIds.map((c) => c.classId);
+            const pathContent = await db.select({ contentId: learningPathItems.contentId }).from(learningPathItems).innerJoin(learningPaths, eq7(learningPathItems.pathId, learningPaths.id)).where(and4(
+              eq7(learningPathItems.contentId, id),
+              inArray3(learningPaths.classId, classIds)
+            )).limit(1);
+            if (pathContent.length > 0) return { ok: true, data: content };
+          }
           if (content.isPublished && content.isPublic) return { ok: true, data: content };
         }
         return { ok: false, status: 403, message: "Forbidden" };
@@ -2432,6 +2453,496 @@ var init_content = __esm({
     "use strict";
     init_content_service();
     init_async_handler();
+  }
+});
+
+// shared/presentationTemplates.ts
+function getTemplate(id) {
+  return PRESENTATION_TEMPLATES[id] ?? null;
+}
+var GAGNE_LABELS, wonderWorld, storyBuilders, numberNinjas, heartHeritage, sparkLab, PRESENTATION_TEMPLATES;
+var init_presentationTemplates = __esm({
+  "shared/presentationTemplates.ts"() {
+    "use strict";
+    GAGNE_LABELS = {
+      1: "Gain Attention",
+      2: "Share Objectives",
+      3: "Prior Knowledge",
+      4: "New Learning",
+      5: "Guided Practice",
+      6: "Try It Yourself",
+      7: "Feedback",
+      8: "Check Learning",
+      9: "Remember & Use"
+    };
+    wonderWorld = {
+      id: "wonder-world",
+      name: "Wonder World",
+      tagline: "Science & Nature",
+      subject: "Science",
+      gradeBand: "K\u20132",
+      colorTheme: "green",
+      primaryHex: "#2D7D46",
+      accentHex: "#F5C842",
+      slideCount: 9,
+      systemPromptPrefix: `You are designing an elementary science presentation for grades K\u20132.
+Use simple, concrete language appropriate for 5\u20138 year-olds.
+Every slide must include at least one vivid, nature-based example or analogy.
+Vocabulary must be kept to 3 words or fewer per slide.
+Favour active verbs: observe, explore, compare, describe.
+Where bullet points are generated, keep each point to one short sentence.
+The tone should be warm, curious, and encouraging \u2014 like a nature walk guide.`,
+      events: [
+        {
+          eventNumber: 1,
+          eventLabel: GAGNE_LABELS[1],
+          slideType: "title",
+          slideTitle: "Let's Explore! \u{1F33F}",
+          teacherTip: 'Open with a surprising image, a live specimen, or a "Did You Know?" fact. Give students 30 seconds to turn and share their first reaction.',
+          aiDirective: "Generate a hook: a short surprising fact or intriguing question about the topic. Suitable for 5\u20138 year-olds. One sentence maximum."
+        },
+        {
+          eventNumber: 2,
+          eventLabel: GAGNE_LABELS[2],
+          slideType: "content",
+          slideTitle: "What We Will Learn Today",
+          teacherTip: 'Read objectives aloud together. Ask: "What do you already know about this?" Record responses on a sticky-note wall.',
+          aiDirective: 'Generate 3 learning objectives as "I can\u2026" statements. Use simple vocabulary a 5-year-old would understand. Each objective should be one sentence.'
+        },
+        {
+          eventNumber: 3,
+          eventLabel: GAGNE_LABELS[3],
+          slideType: "guiding-questions",
+          slideTitle: "What Do You Already Know?",
+          teacherTip: "Use Think\u2013Pair\u2013Share. Give 60 seconds of quiet thinking, then partner talk, then 2\u20133 whole-class shares. Record key ideas on the board.",
+          aiDirective: "Generate a Think\u2013Pair\u2013Share prompt: one open question activating prior knowledge about the topic. Suitable for young learners."
+        },
+        {
+          eventNumber: 4,
+          eventLabel: GAGNE_LABELS[4],
+          slideType: "content",
+          slideTitle: "Let's Explore!",
+          teacherTip: "Present one key concept only. Use a photograph or diagram. Think aloud as you point to features. Introduce exactly 3 vocabulary words.",
+          aiDirective: "Present the core concept in 2\u20133 short sentences. Include 3 key vocabulary words with child-friendly definitions. Suggest one image that would illustrate the concept."
+        },
+        {
+          eventNumber: 5,
+          eventLabel: GAGNE_LABELS[5],
+          slideType: "activity",
+          slideTitle: "Let's Try Together! \u{1F331}",
+          teacherTip: "Use I Do \u2192 We Do \u2192 You Do. Model first (think aloud), then invite the class to participate step by step. Provide sentence starters on the board.",
+          aiDirective: "Describe a 3-step guided activity (I Do / We Do / You Do) teachers and students do together to practise the concept. Keep each step to one sentence."
+        },
+        {
+          eventNumber: 6,
+          eventLabel: GAGNE_LABELS[6],
+          slideType: "activity",
+          slideTitle: "Your Turn! \u2B50",
+          teacherTip: "Students work independently or in pairs. Provide a scaffold option (sentence frames, diagram to label) and an extension option for early finishers.",
+          aiDirective: "Design a short independent task (2\u20134 steps) students can complete to demonstrate understanding. Include one scaffolding option and one extension option."
+        },
+        {
+          eventNumber: 7,
+          eventLabel: GAGNE_LABELS[7],
+          slideType: "reflection",
+          slideTitle: "Let's See How We Did! \u{1F44F}",
+          teacherTip: "Celebrate specific successes by name. Address the most common error without singling out students. Give one concrete improvement tip.",
+          aiDirective: "Generate three feedback prompts: What went well, one common mistake to address, and one tip to improve. Frame positively for young learners."
+        },
+        {
+          eventNumber: 8,
+          eventLabel: GAGNE_LABELS[8],
+          slideType: "guiding-questions",
+          slideTitle: "Quick Check \u2705",
+          teacherTip: "Use an exit ticket: 3 levelled questions (recall \u2192 understand \u2192 apply). Collect slips and sort into three piles to guide next lesson planning.",
+          aiDirective: 'Generate 3 exit-ticket questions at increasing complexity: one recall, one explanation ("Why\u2026?"), one application ("What would happen if\u2026?"). Suitable for grades K\u20132.'
+        },
+        {
+          eventNumber: 9,
+          eventLabel: GAGNE_LABELS[9],
+          slideType: "closing",
+          slideTitle: "Remember It & Use It! \u{1F30D}",
+          teacherTip: `Connect today's learning to students' lives, the local environment, or a future lesson. End with an action: "Look for this tonight at home."`,
+          aiDirective: "Write a real-world connection statement linking the topic to students' daily lives or community. Then write a one-sentence bridge to the next lesson."
+        }
+      ]
+    };
+    storyBuilders = {
+      id: "story-builders",
+      name: "Story Builders",
+      tagline: "Language Arts & Literacy",
+      subject: "Language Arts",
+      gradeBand: "1\u20133",
+      colorTheme: "teal",
+      primaryHex: "#0D7A7A",
+      accentHex: "#E8614A",
+      slideCount: 9,
+      systemPromptPrefix: `You are designing an elementary Language Arts presentation for grades 1\u20133.
+All content must be literacy-focused: reading comprehension, writing skills,
+grammar, or oral language as appropriate to the topic.
+Generate sentence frames wherever possible to support ELL learners.
+Vocabulary instruction should follow the Frayer Model structure (definition,
+example, non-example, illustration cue) where relevant.
+The tone should be warm, narrative, and story-centred.`,
+      events: [
+        {
+          eventNumber: 1,
+          eventLabel: GAGNE_LABELS[1],
+          slideType: "title",
+          slideTitle: "Welcome, Story Builders! \u{1F4DA}",
+          teacherTip: 'Show the book cover or a dramatic illustration. Read the first line of the text aloud. Ask: "What do you think this story will be about?"',
+          aiDirective: "Generate a book-talk hook: one evocative sentence about the text or topic that creates intrigue. Suitable for ages 6\u20139."
+        },
+        {
+          eventNumber: 2,
+          eventLabel: GAGNE_LABELS[2],
+          slideType: "content",
+          slideTitle: "Today's Reading & Writing Goals",
+          teacherTip: "Present three objectives: one reading, one writing, one speaking/listening. Display them for the full lesson. Return to them at close.",
+          aiDirective: 'Generate 3 "I can\u2026" objectives: one reading, one writing, one speaking/listening. Use student-friendly language for grades 1\u20133.'
+        },
+        {
+          eventNumber: 3,
+          eventLabel: GAGNE_LABELS[3],
+          slideType: "guiding-questions",
+          slideTitle: "What Do You Already Know? \u{1F5FA}\uFE0F",
+          teacherTip: "Use a KWL chart. Fill in K (Know) and W (Want to know) now. Return to L (Learned) at the close of the lesson.",
+          aiDirective: "Generate a KWL-chart prompt: 2 questions for the K column and 2 questions for the W column related to the literacy topic."
+        },
+        {
+          eventNumber: 4,
+          eventLabel: GAGNE_LABELS[4],
+          slideType: "vocabulary",
+          slideTitle: "Reading & Discovery",
+          teacherTip: "Introduce the text. Do a picture walk first. Then read aloud (or shared reading). Pause at key vocabulary. Point to illustrations as you read.",
+          aiDirective: 'Provide a brief "book talk" (2 sentences) and 3 key vocabulary words with child-friendly definitions relevant to the literacy topic.'
+        },
+        {
+          eventNumber: 5,
+          eventLabel: GAGNE_LABELS[5],
+          slideType: "activity",
+          slideTitle: "We Read & Write Together \u270D\uFE0F",
+          teacherTip: "Model the skill (think aloud), then shared practice (class participates), then guided groups. Use a visible sentence frame throughout.",
+          aiDirective: "Design a 3-stage guided literacy activity: Teacher Models \u2192 Shared Practice \u2192 Guided Groups. Include one sentence frame for student use."
+        },
+        {
+          eventNumber: 6,
+          eventLabel: GAGNE_LABELS[6],
+          slideType: "activity",
+          slideTitle: "Your Writing Time \u270D\uFE0F",
+          teacherTip: "Post the writing prompt and the writer's checklist. Circulate and conference with 3\u20134 students. Collect work to inform tomorrow's lesson.",
+          aiDirective: "Generate a writing prompt connected to the topic, a 4-item writer's checklist, and 3 sentence starters or useful connective phrases."
+        },
+        {
+          eventNumber: 7,
+          eventLabel: GAGNE_LABELS[7],
+          slideType: "reflection",
+          slideTitle: "How Did We Do? \u{1F44F}",
+          teacherTip: 'Share 2 anonymous student samples (strong and developing). Guide class to name strengths and one next step. Use "warm/cool" feedback language.',
+          aiDirective: "Generate specific literacy feedback prompts: what strong responses include, one common error to address, one revision strategy. Grade 1\u20133 appropriate."
+        },
+        {
+          eventNumber: 8,
+          eventLabel: GAGNE_LABELS[8],
+          slideType: "guiding-questions",
+          slideTitle: "Quick Check \u2705",
+          teacherTip: "Exit slip: 3 questions \u2014 recall a fact, explain in own words, apply the skill. Use these to form next-day guided reading groups.",
+          aiDirective: 'Generate 3 exit-slip questions for literacy: one comprehension recall, one "explain in your own words", one written application of the skill.'
+        },
+        {
+          eventNumber: 9,
+          eventLabel: GAGNE_LABELS[9],
+          slideType: "closing",
+          slideTitle: "Take It Further! \u{1F680}",
+          teacherTip: "Complete the L column of the KWL chart. Suggest a home reading connection. Preview the next lesson to build anticipation.",
+          aiDirective: "Write a real-world literacy connection (where students might use this reading/writing skill in life) and a one-sentence preview of the next lesson."
+        }
+      ]
+    };
+    numberNinjas = {
+      id: "number-ninjas",
+      name: "Number Ninjas",
+      tagline: "Mathematics",
+      subject: "Mathematics",
+      gradeBand: "3\u20136",
+      colorTheme: "blue",
+      primaryHex: "#14213D",
+      accentHex: "#E76F0A",
+      slideCount: 9,
+      systemPromptPrefix: `You are designing an elementary Mathematics presentation for grades 3\u20136.
+Every slide should foreground mathematical reasoning, not just computation.
+Include at least one worked example with clearly labelled steps.
+Where possible, present problems in real-world Caribbean contexts
+(markets, cricket, sea distance, rainfall, cooking) to increase relevance.
+Vocabulary should be mathematically precise but explained in plain language.
+Scaffolding strategies include number lines, area models, and place-value charts.`,
+      events: [
+        {
+          eventNumber: 1,
+          eventLabel: GAGNE_LABELS[1],
+          slideType: "title",
+          slideTitle: "Number Ninjas: Mission Briefing \u26A1",
+          teacherTip: "Open with a real-world problem or a surprising number pattern. Give students 60 seconds to estimate or respond before beginning instruction.",
+          aiDirective: "Generate a number hook: a surprising real-world problem or intriguing number pattern related to the topic. One sentence, suitable for grades 3\u20136."
+        },
+        {
+          eventNumber: 2,
+          eventLabel: GAGNE_LABELS[2],
+          slideType: "content",
+          slideTitle: "Mission Objectives \u{1F3AF}",
+          teacherTip: 'State objectives as "understand", "solve", and "connect" goals. Display success criteria so students know what mastery looks like.',
+          aiDirective: "Generate 3 maths objectives: one conceptual understanding, one procedural skill, one real-world application. Include one success criterion."
+        },
+        {
+          eventNumber: 3,
+          eventLabel: GAGNE_LABELS[3],
+          slideType: "guiding-questions",
+          slideTitle: "Warm-Up: Activate Your Brain! \u{1F9E0}",
+          teacherTip: "Pose a number talk question. Accept multiple strategies. Record different approaches on the board. Explicitly name the strategy type.",
+          aiDirective: "Generate a number-talk warm-up problem that reviews a prerequisite concept. Include 2 discussion prompts to surface different solution strategies."
+        },
+        {
+          eventNumber: 4,
+          eventLabel: GAGNE_LABELS[4],
+          slideType: "content",
+          slideTitle: "Discover the Concept \u{1F4D0}",
+          teacherTip: "Show a fully worked example with every step labelled. Think aloud for each step. Use a visual model (area model, number line, table).",
+          aiDirective: "Present the core concept with a fully worked example (3\u20135 labelled steps). Include one visual model suggestion and 3 key maths vocabulary terms with definitions."
+        },
+        {
+          eventNumber: 5,
+          eventLabel: GAGNE_LABELS[5],
+          slideType: "activity",
+          slideTitle: "Let's Solve Together \u{1F9EE}",
+          teacherTip: "Work 2\u20133 practice problems as a class. Use cold-call or mini-whiteboards. Correct misconceptions immediately with guided questioning, not correction.",
+          aiDirective: "Generate 2 guided practice problems (with full solution steps) that the teacher and class solve together. Increasing difficulty from first to second."
+        },
+        {
+          eventNumber: 6,
+          eventLabel: GAGNE_LABELS[6],
+          slideType: "activity",
+          slideTitle: "Your Turn! \u26A1",
+          teacherTip: "Provide 3\u20135 problems at increasing difficulty. Offer a hint strip for students who need scaffolding. Use think-pair-share for checking answers.",
+          aiDirective: "Generate 3 independent practice problems at increasing complexity. Include one hint or scaffold for the hardest problem."
+        },
+        {
+          eventNumber: 7,
+          eventLabel: GAGNE_LABELS[7],
+          slideType: "reflection",
+          slideTitle: "Check Our Thinking \u{1F50D}",
+          teacherTip: "Go through solutions. Highlight efficient strategies. If more than 30% of the class has a common error, reteach that step before moving on.",
+          aiDirective: "Generate a worked solution for the most conceptually demanding practice problem. Identify the most likely student error and explain how to address it."
+        },
+        {
+          eventNumber: 8,
+          eventLabel: GAGNE_LABELS[8],
+          slideType: "guiding-questions",
+          slideTitle: "Exit Ticket \u2705",
+          teacherTip: 'Three questions: 1 recall, 1 procedural, 1 word problem. Collect and sort into "got it / nearly / needs reteach" piles. Use tomorrow.',
+          aiDirective: "Generate a 3-question maths exit ticket: one recall question, one procedural problem, one word problem. All three related to today's topic."
+        },
+        {
+          eventNumber: 9,
+          eventLabel: GAGNE_LABELS[9],
+          slideType: "closing",
+          slideTitle: "Real-World Connection \u{1F30D}",
+          teacherTip: 'Ask: "Where would you use this in real life?" Pose a take-home challenge problem. Preview the next lesson to connect the mathematical storyline.',
+          aiDirective: "Write a real-world connection showing where this maths skill appears in daily life (use Caribbean contexts where possible). Add a take-home challenge problem."
+        }
+      ]
+    };
+    heartHeritage = {
+      id: "heart-heritage",
+      name: "Heart & Heritage",
+      tagline: "Social Studies & Values",
+      subject: "Social Studies",
+      gradeBand: "K\u20134",
+      colorTheme: "orange",
+      primaryHex: "#B85042",
+      accentHex: "#4A7C59",
+      slideCount: 9,
+      systemPromptPrefix: `You are designing an elementary Social Studies or Values Education presentation
+for grades K\u20134. All content must be culturally grounded in the Caribbean
+OECS context: communities, national symbols, civic values, and Caribbean
+history where relevant. Integrate discussion, role-play, and community
+connection activities. Emphasise empathy, respect, and belonging.
+Language should be accessible to ages 5\u201310, with warmth and inclusivity.`,
+      events: [
+        {
+          eventNumber: 1,
+          eventLabel: GAGNE_LABELS[1],
+          slideType: "title",
+          slideTitle: "Our Community, Our World \u{1F33A}",
+          teacherTip: 'Show a photograph of a local community scene, national symbol, or cultural artefact. Ask: "What do you see? What does this mean to you?"',
+          aiDirective: "Generate an attention-hook using a culturally relevant scenario or object from Caribbean community life. One evocative sentence suitable for K\u20134."
+        },
+        {
+          eventNumber: 2,
+          eventLabel: GAGNE_LABELS[2],
+          slideType: "content",
+          slideTitle: "What We Will Learn Today \u{1F393}",
+          teacherTip: "Frame objectives as Know/Understand/Respect to signal that values are part of the learning. Return to these at end of lesson.",
+          aiDirective: "Generate 3 objectives framed as Know, Understand, and Respect/Value. Use community and values language appropriate for grades K\u20134."
+        },
+        {
+          eventNumber: 3,
+          eventLabel: GAGNE_LABELS[3],
+          slideType: "guiding-questions",
+          slideTitle: "What Do You Know? \u{1F5FA}\uFE0F",
+          teacherTip: "Use a KWL chart or a photograph-based discussion. Accept all contributions \u2014 misconceptions are learning opportunities, not problems to eliminate.",
+          aiDirective: "Generate a KWL-style activation: 2 questions for K and 2 for W, centred on students' prior experience with the social studies topic."
+        },
+        {
+          eventNumber: 4,
+          eventLabel: GAGNE_LABELS[4],
+          slideType: "content",
+          slideTitle: "Explore & Discover \u{1F30D}",
+          teacherTip: "Use images, maps, artefacts, or a short story. Keep direct instruction under 8 minutes. Use think-alouds as you interpret visual sources.",
+          aiDirective: "Present the core social studies content in 3\u20134 short sentences. Suggest one image (map, photograph, or artefact) that would illustrate the topic. Include 2 key vocabulary terms."
+        },
+        {
+          eventNumber: 5,
+          eventLabel: GAGNE_LABELS[5],
+          slideType: "activity",
+          slideTitle: "We Learn Together \u{1F91D}",
+          teacherTip: 'Use role-play, sorting, or shared reading. Guide discussion with open questions: "Why do you think\u2026?" "How would you feel if\u2026?" Record responses.',
+          aiDirective: "Design a guided group activity (role-play, sorting, or discussion) where teacher and students explore the social studies concept together. 3 steps maximum."
+        },
+        {
+          eventNumber: 6,
+          eventLabel: GAGNE_LABELS[6],
+          slideType: "activity",
+          slideTitle: "Your Turn to Show! \u2B50",
+          teacherTip: "Students choose a mode: draw a poster, write a journal entry, create a map, or conduct a mini-interview. Provide a simple rubric or checklist.",
+          aiDirective: "Generate a student task with 3 differentiated options (visual, written, oral) that demonstrate understanding of the social studies topic."
+        },
+        {
+          eventNumber: 7,
+          eventLabel: GAGNE_LABELS[7],
+          slideType: "reflection",
+          slideTitle: "How Did We Do? \u{1F44F}",
+          teacherTip: "Share anonymised responses. Celebrate diverse perspectives \u2014 in Social Studies, there are often multiple valid views. Use warm/cool feedback.",
+          aiDirective: "Generate feedback prompts that celebrate correct understanding, address a common misconception, and validate multiple perspectives on the social topic."
+        },
+        {
+          eventNumber: 8,
+          eventLabel: GAGNE_LABELS[8],
+          slideType: "guiding-questions",
+          slideTitle: "Exit Reflection \u{1FA9E}",
+          teacherTip: "Use a 3-2-1 reflection: 3 things learned, 2 things that surprised me, 1 question I still have. Or use journal sentence starters.",
+          aiDirective: "Generate a 3-2-1 exit reflection (3 facts, 2 surprises, 1 question) tailored to the social studies topic."
+        },
+        {
+          eventNumber: 9,
+          eventLabel: GAGNE_LABELS[9],
+          slideType: "closing",
+          slideTitle: "Take It Home! \u{1F3E0}",
+          teacherTip: 'Give a community-connection challenge: "Tell someone at home what you learned. Find an example of this in your neighbourhood." Preview next lesson.',
+          aiDirective: "Write a community-connection challenge for students to do at home related to the social studies topic. Add a one-sentence preview of the next lesson."
+        }
+      ]
+    };
+    sparkLab = {
+      id: "spark-lab",
+      name: "Spark Lab",
+      tagline: "STEAM & Inquiry",
+      subject: "STEAM",
+      gradeBand: "4\u20136",
+      colorTheme: "purple",
+      primaryHex: "#5B2D8E",
+      accentHex: "#00B5AD",
+      slideCount: 9,
+      systemPromptPrefix: `You are designing a STEAM inquiry-based presentation for grades 4\u20136.
+Structure the lesson around a driving inquiry question.
+Use the design-thinking cycle: Empathise \u2192 Define \u2192 Ideate \u2192 Prototype \u2192 Test.
+Encourage cross-curricular thinking: connect the science concept to mathematics,
+technology use, artistic design, and written communication.
+Integrate Caribbean environmental or engineering contexts where possible
+(renewable energy, coral reefs, hurricane resilience, food security).
+Promote scientific habits of mind: questioning, observing, inferring, testing.`,
+      events: [
+        {
+          eventNumber: 1,
+          eventLabel: GAGNE_LABELS[1],
+          slideType: "title",
+          slideTitle: "Spark Lab: Mission Activated! \u{1F680}",
+          teacherTip: 'Show a puzzling image, play a short video clip, or demonstrate a surprising phenomenon. Ask: "What do you notice? What do you wonder?"',
+          aiDirective: "Generate an inquiry hook: a puzzling real-world phenomenon, image description, or problem statement. Suitable for grades 4\u20136. One short paragraph."
+        },
+        {
+          eventNumber: 2,
+          eventLabel: GAGNE_LABELS[2],
+          slideType: "content",
+          slideTitle: "Mission Briefing: Learning Goals \u{1F4CB}",
+          teacherTip: "Frame objectives across STEAM strands. Display the driving inquiry question prominently throughout the lesson.",
+          aiDirective: "Generate 5 objectives \u2014 one per STEAM strand (Science, Technology, Engineering, Arts, Maths) \u2014 all connected to the central inquiry topic."
+        },
+        {
+          eventNumber: 3,
+          eventLabel: GAGNE_LABELS[3],
+          slideType: "guiding-questions",
+          slideTitle: "What Do You Wonder? \u{1F52D}",
+          teacherTip: 'Use a "Notice & Wonder" routine. Post a photograph or object. Students write independently, then share. Build the inquiry wall from their questions.',
+          aiDirective: "Generate a Notice & Wonder prompt with a photograph description and 3 seed questions to stimulate student inquiry about the STEAM topic."
+        },
+        {
+          eventNumber: 4,
+          eventLabel: GAGNE_LABELS[4],
+          slideType: "content",
+          slideTitle: "Discover & Investigate \u2697\uFE0F",
+          teacherTip: "Keep direct instruction under 10 minutes. Use demonstration, short video, or specimen. Introduce vocabulary in context, not in isolation.",
+          aiDirective: "Present the core STEAM concept (2\u20133 sentences). Suggest a 5-minute demonstration or investigation starter. Provide 3 key STEAM vocabulary terms with definitions."
+        },
+        {
+          eventNumber: 5,
+          eventLabel: GAGNE_LABELS[5],
+          slideType: "activity",
+          slideTitle: "Build & Explore Together \u{1F6E0}\uFE0F",
+          teacherTip: "Students work in design teams. Teacher circulates and asks guiding questions, not answers. Document with photos or sketches.",
+          aiDirective: "Design a guided team investigation (3\u20134 steps) where students explore the STEAM concept with teacher facilitation. Include a guiding question for each step."
+        },
+        {
+          eventNumber: 6,
+          eventLabel: GAGNE_LABELS[6],
+          slideType: "activity",
+          slideTitle: "Design & Create! \u{1F3A8}",
+          teacherTip: "Teams execute their prototype or experiment. Students record in science notebooks: hypothesis, observations, data, sketches. Teacher observes and documents.",
+          aiDirective: "Design a student-led making/testing task. Include: materials list (simple, locally available), procedure (4\u20136 steps), and a data-recording prompt."
+        },
+        {
+          eventNumber: 7,
+          eventLabel: GAGNE_LABELS[7],
+          slideType: "reflection",
+          slideTitle: "Test & Reflect \u{1F9EA}",
+          teacherTip: 'Teams present results or test prototypes. Use structured peer feedback: "I like\u2026 I wonder\u2026 What if\u2026?" Identify what to improve before next iteration.',
+          aiDirective: 'Generate peer-feedback prompts for STEAM: "I like\u2026", "I wonder\u2026", "What if\u2026?" plus 2 reflection questions about the investigation process.'
+        },
+        {
+          eventNumber: 8,
+          eventLabel: GAGNE_LABELS[8],
+          slideType: "reflection",
+          slideTitle: "Show What You Know \u{1F4CA}",
+          teacherTip: "Individual reflection: concept map, annotated diagram, or engineering journal entry. Prompts: What worked? What would I change? What did I learn?",
+          aiDirective: "Generate 3 STEAM reflection prompts for individual written assessment: one about the concept, one about the process, one about real-world application."
+        },
+        {
+          eventNumber: 9,
+          eventLabel: GAGNE_LABELS[9],
+          slideType: "closing",
+          slideTitle: "Innovate & Apply! \u{1F680}",
+          teacherTip: 'Ask: "How could this solution help our community?" Connect to a Caribbean environmental or engineering challenge. Plan a community showcase or next iteration.',
+          aiDirective: "Write a community-innovation challenge connecting the STEAM topic to a Caribbean environmental or social need. Add a one-sentence bridge to the next inquiry."
+        }
+      ]
+    };
+    PRESENTATION_TEMPLATES = {
+      "wonder-world": wonderWorld,
+      "story-builders": storyBuilders,
+      "number-ninjas": numberNinjas,
+      "heart-heritage": heartHeritage,
+      "spark-lab": sparkLab,
+      "default": null
+    };
   }
 });
 
@@ -2909,34 +3420,140 @@ ${request.customInstructions}
 
 Please carefully follow these custom instructions from the teacher when creating the presentation.` : "";
   const curriculumSection = buildCurriculumBlock(request.curriculumContext);
-  const contentSlideCount = request.numberOfSlides - 6;
-  const prompt = `Create a pedagogically sound, visually varied presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
+  const template = request.templateId ? getTemplate(request.templateId) : null;
+  const PEDAGOGICAL_DEPTH = `
+PEDAGOGICAL DEPTH REQUIREMENTS (CRITICAL \u2014 follow these strictly):
+
+1. EXPLAIN, DON'T JUST LIST:
+   - Every concept must be explained with WHY it matters, not just WHAT it is.
+   - Use the pattern: State the concept \u2192 Explain how it works \u2192 Give a concrete example \u2192 Connect to students' lives.
+   - Avoid bare bullet lists. Each bullet point must be a complete thought with context, not a fragment.
+
+2. CONCRETE EXAMPLES ON EVERY CONTENT SLIDE:
+   - Every content, vocabulary, and comparison slide MUST include at least one worked example, real-world scenario, or analogy.
+   - Examples should be specific and vivid: "A coral reef in Dominica produces oxygen like a rainforest" not "Coral reefs are important."
+   - For maths/science: include step-by-step worked examples with labelled reasoning.
+   - For language arts: include model sentences, text excerpts, or writing samples.
+   - For social studies: include specific people, places, events, or community scenarios.
+
+3. BLOOM'S TAXONOMY PROGRESSION:
+   - Structure the presentation to move through: Remember \u2192 Understand \u2192 Apply \u2192 Analyse.
+   - Early slides: recall facts, define terms.
+   - Middle slides: explain relationships, give examples, compare/contrast.
+   - Later slides: apply to new situations, analyse patterns, evaluate choices.
+   - Label the cognitive level in speaker notes (e.g., "\u{1F9E0} Bloom's: Apply").
+
+4. EMBEDDED CHECK-FOR-UNDERSTANDING:
+   - Every 2nd content slide must include a discussion prompt or quick check embedded in the content or notes.
+   - Use stems: "Turn and tell your partner\u2026", "Show me with your fingers\u2026", "Write one sentence about\u2026"
+   - These are in ADDITION to the dedicated guiding-questions and reflection slides.
+
+5. VOCABULARY IN CONTEXT:
+   - Never define a word in isolation. Always provide: the definition, an example sentence using the word, and a non-example or contrast.
+   - For younger students, add a gesture or action cue (e.g., "Evaporation \u2014 make your hands rise like steam!").
+   - For the "terms" array, each definition must be a full sentence with an embedded example.
+
+6. RICH SPEAKER NOTES:
+   - Notes must include what to SAY (scripted talking points), what to ASK (specific questions with expected student responses), and what to DO (actions: point to image, distribute materials, form groups).
+   - Include anticipated misconceptions and how to address them.
+   - Include differentiation: one scaffold for struggling learners, one extension for advanced learners.
+
+7. ACTIVITY SLIDES MUST BE ACTIONABLE:
+   - Never say "Do an activity about X." Instead, specify exact steps, materials, time, grouping, and expected output.
+   - Include success criteria: "You're done when you can\u2026" or "A strong response includes\u2026"
+   - Provide sentence starters or graphic organisers for scaffolding.
+
+8. REFLECTION & QUESTION SLIDES MUST USE HIGHER-ORDER THINKING:
+   - Guiding questions must span Bloom's levels. Include at least:
+     * 1 recall question ("What is\u2026?", "Name three\u2026")
+     * 1 understanding question ("Explain why\u2026", "How does\u2026 relate to\u2026?")
+     * 1 application question ("What would happen if\u2026?", "How could you use\u2026 to solve\u2026?")
+     * 1 analysis/evaluation question ("Compare\u2026", "Which approach is better and why?", "What evidence supports\u2026?")
+   - Reflection slides should ask students to connect learning to their own experience, community, or future.
+`.trim();
+  let systemMessage = `You are an expert Caribbean instructional designer creating pedagogically rigorous, engaging educational presentations for OECS schools. You prioritise deep understanding over surface coverage. Always respond with valid JSON. Follow Universal Design for Learning (UDL) principles and Bloom's Taxonomy progression. Every slide must teach \u2014 not just display information.`;
+  let prompt;
+  if (template) {
+    systemMessage = `${template.systemPromptPrefix}
+
+${systemMessage}`;
+    const eventInstructions = template.events.map(
+      (event, i) => `Slide ${i + 1} (${event.slideTitle} \u2014 Gagn\xE9 Event ${event.eventNumber}: ${event.eventLabel}):
+    Type: "${event.slideType}"
+    Directive: ${event.aiDirective}
+    Inject this teacher tip into the notes field verbatim: "${event.teacherTip}"
+    Remember: Follow the PEDAGOGICAL DEPTH REQUIREMENTS above \u2014 include explanations, examples, and check-for-understanding prompts as appropriate for this event.`
+    ).join("\n\n");
+    prompt = `Create a presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
 
 Learning Outcomes:
 ${learningOutcomesText}${customInstructionsSection}${curriculumSection}
 
+${PEDAGOGICAL_DEPTH}
+
+Generate exactly 9 slides following this Gagn\xE9 instructional sequence.
+For each slide, populate the fields as directed below.
+Return a JSON array of 9 SlideContent objects.
+Each object must include: id, type, title, content, bulletPoints, questions, notes, imageUrl, imageAlt.
+
+The "content" field should contain 2-4 sentences of explanatory text (not just a title restatement).
+The "bulletPoints" field should contain substantive points with full sentences, examples, or steps \u2014 not fragments.
+The "notes" field must be detailed and actionable for the teacher (see PEDAGOGICAL DEPTH above).
+
+IMAGE REQUIREMENTS:
+- imageUrl should be a short search query (2-4 words) for stock photos
+- Always include imageAlt with detailed accessibility description
+- At least 4 of the 9 slides should have an imageUrl
+
+${eventInstructions}
+
+Respond in JSON format:
+{
+  "slides": [
+    { "id": "slide-1", "type": "title", "title": "...", "content": "...", "bulletPoints": [], "questions": [], "notes": "...", "imageUrl": "...", "imageAlt": "..." },
+    ...
+  ]
+}`;
+  } else {
+    const contentSlideCount = request.numberOfSlides - 6;
+    prompt = `Create a pedagogically rigorous, visually varied presentation about "${request.topic}" for grade ${request.gradeLevel} students (age ${request.ageRange}).
+
+Learning Outcomes:
+${learningOutcomesText}${customInstructionsSection}${curriculumSection}
+
+${PEDAGOGICAL_DEPTH}
+
 Create exactly ${request.numberOfSlides} slides using a MIX of these slide types for visual variety:
 
 REQUIRED SLIDE SEQUENCE:
-1. **title** \u2014 Engaging title, brief subtitle. Add emoji to the title (e.g. "\u{1F30A} The Water Cycle").
-2. **learning-outcomes** \u2014 List learning outcomes as numbered bullet points. Use emoji "\u{1F3AF}".
+1. **title** \u2014 Engaging title, brief subtitle, and a hook question or surprising fact in the content field. Add emoji to the title.
+2. **learning-outcomes** \u2014 List learning outcomes as numbered bullet points. Each outcome should be an "I can\u2026" or "Students will be able to\u2026" statement. Use emoji "\u{1F3AF}".
 3-${request.numberOfSlides - 4}. **CONTENT SLIDES** (${contentSlideCount} slides) \u2014 Mix these types:
-   - **content** \u2014 Standard slide with title, body text, and/or bullet points. Include emoji in titles.
-   - **vocabulary** \u2014 Key terms with definitions (use "terms" array). Use for introducing new terminology.
-   - **comparison** \u2014 Two-column comparison (leftHeading/leftPoints vs rightHeading/rightPoints). Great for compare/contrast.
-   - **activity** \u2014 Student task or exercise. Use emoji "\u270F\uFE0F" or "\u{1F914}". Frame as clear instructions.
-   - **image** \u2014 Image-focused content slide.
-${request.numberOfSlides - 3}. **guiding-questions** \u2014 4-6 thought-provoking questions (recall \u2192 analysis \u2192 application).
-${request.numberOfSlides - 2}. **reflection** \u2014 2-3 deeper reflection questions.
-${request.numberOfSlides - 1}. **summary** \u2014 Key takeaways as bullet points. Summarize main concepts.
-${request.numberOfSlides}. **closing** \u2014 Thank you / questions slide.
+   - **content** \u2014 Title + 2-4 sentences of explanatory text in the "content" field (explain the concept, not just name it) + bullet points with specific examples, evidence, or steps. Every content slide MUST include at least one concrete example or real-world scenario. Every 2nd content slide must embed a discussion prompt ("Turn and tell\u2026", "What do you think\u2026?").
+   - **vocabulary** \u2014 Key terms using the "terms" array. Each definition MUST be a complete sentence that includes an example (e.g., "Evaporation is when liquid water turns into water vapour, like when puddles disappear on a hot day in Castries."). Include 3-5 terms per vocabulary slide.
+   - **comparison** \u2014 Two-column comparison with substantive points (full sentences explaining differences, not just labels). Include a "So what?" bullet explaining why the comparison matters.
+   - **activity** \u2014 Specific student task with: clear steps (numbered), materials needed, grouping (individual/pairs/groups), time estimate, expected output, and success criteria. Include a scaffold option.
+   - **image** \u2014 Image-focused content slide with explanatory text describing what the image shows and why it matters.
+${request.numberOfSlides - 3}. **guiding-questions** \u2014 4-6 questions following Bloom's Taxonomy:
+   * 1-2 Remember/Understand: "What is\u2026?", "Explain why\u2026"
+   * 1-2 Apply/Analyse: "What would happen if\u2026?", "Compare\u2026 and\u2026"
+   * 1-2 Evaluate/Create: "Which approach is better and why?", "Design a\u2026"
+${request.numberOfSlides - 2}. **reflection** \u2014 3-4 deeper reflection questions that connect learning to students' lives, community, and future:
+   * "How does this connect to your community?"
+   * "What surprised you about\u2026?"
+   * "How could you teach this to someone younger?"
+   * "What would you change or investigate further?"
+${request.numberOfSlides - 1}. **summary** \u2014 Key takeaways as complete sentences (not fragments). Include a "Big Idea" statement and 3-4 specific things students should remember. Add a connection to the next lesson if applicable.
+${request.numberOfSlides}. **closing** \u2014 Thank you / questions slide with a take-home challenge or action item.
 
 IMPORTANT RULES:
 - Use AT LEAST 3 different slide types among the content slides (don't use only "content")
 - Include at least 1 "vocabulary" slide if the topic has key terms
 - Include at least 1 "activity" slide with a student task
-- Add a relevant emoji at the start of EVERY slide title (e.g. "\u{1F52C} The Scientific Method", "\u{1F4D6} Key Vocabulary")
+- Add a relevant emoji at the start of EVERY slide title
 - At least 40% of content slides should have an imageUrl (a 2-4 word search query for stock photos)
+- The "content" field must contain actual explanatory sentences, NOT just repeat the title
+- NEVER generate empty or placeholder bullet points \u2014 every point must teach something
 
 CARIBBEAN CONTEXT:
 This is for teachers in the Organisation of Eastern Caribbean States (OECS). Where appropriate:
@@ -2947,8 +3564,8 @@ This is for teachers in the Organisation of Eastern Caribbean States (OECS). Whe
 - This is a suggestion \u2014 only apply when it naturally fits the topic
 
 SPEAKER NOTES FORMAT:
-Every slide MUST have detailed speaker notes structured as:
-"\u23F1 Timing: X minutes | \u{1F4A1} Key point: [main takeaway] | \u{1F5E3} Say: [suggested talking point] | \u2753 Ask: [discussion prompt] | \u{1F504} Differentiation: [tip for different learners]"
+Every slide MUST have detailed, actionable speaker notes with ALL of these elements:
+"\u23F1 Timing: X minutes | \u{1F4A1} Key point: [main takeaway] | \u{1F5E3} Say: [2-3 scripted sentences to say aloud] | \u2753 Ask: [specific question + expected student response] | \u26A0\uFE0F Misconception: [common error and how to address it] | \u{1F504} Differentiation: [scaffold for struggling learners + extension for advanced learners] | \u{1F9E0} Bloom's: [cognitive level of this slide]"
 
 IMAGE REQUIREMENTS:
 - imageUrl should be a short search query (2-4 words): "coral reef ecosystem", "volcanic island", "students laboratory"
@@ -2963,100 +3580,43 @@ Respond in JSON format:
       "type": "title",
       "title": "\u{1F30A} The Water Cycle",
       "subtitle": "Understanding Earth's most important process",
+      "content": "Did you know that the water you drink today is the same water dinosaurs drank millions of years ago? Water never disappears \u2014 it just keeps moving in a cycle.",
       "emoji": "\u{1F30A}",
-      "notes": "\u23F1 Timing: 1 min | \u{1F4A1} Key point: Set the stage | \u{1F5E3} Say: Welcome to today's lesson..."
-    },
-    {
-      "id": "slide-2",
-      "type": "learning-outcomes",
-      "title": "\u{1F3AF} Learning Outcomes",
-      "emoji": "\u{1F3AF}",
-      "bulletPoints": ["Outcome 1", "Outcome 2"],
-      "notes": "..."
-    },
-    {
-      "id": "slide-3",
-      "type": "vocabulary",
-      "title": "\u{1F4DA} Key Vocabulary",
-      "emoji": "\u{1F4DA}",
-      "terms": [
-        { "term": "Evaporation", "definition": "The process of water turning from liquid to gas" }
-      ],
-      "notes": "..."
-    },
-    {
-      "id": "slide-4",
-      "type": "content",
-      "title": "\u{1F52C} How It Works",
-      "emoji": "\u{1F52C}",
-      "bulletPoints": ["point 1", "point 2"],
-      "imageUrl": "water cycle diagram",
-      "imageAlt": "Diagram showing the stages of the water cycle",
-      "notes": "..."
-    },
-    {
-      "id": "slide-5",
-      "type": "comparison",
-      "title": "\u2696\uFE0F Evaporation vs Condensation",
-      "emoji": "\u2696\uFE0F",
-      "leftHeading": "Evaporation",
-      "leftPoints": ["Liquid to gas", "Happens at surface"],
-      "rightHeading": "Condensation",
-      "rightPoints": ["Gas to liquid", "Forms clouds"],
-      "notes": "..."
-    },
-    {
-      "id": "slide-6",
-      "type": "activity",
-      "title": "\u270F\uFE0F Class Activity",
-      "emoji": "\u270F\uFE0F",
-      "bulletPoints": ["Step 1: ...", "Step 2: ..."],
-      "notes": "..."
-    },
-    {
-      "id": "slide-N-3",
-      "type": "guiding-questions",
-      "title": "\u2753 Guiding Questions",
-      "questions": ["Question 1?", "Question 2?"],
-      "notes": "..."
-    },
-    {
-      "id": "slide-N-2",
-      "type": "reflection",
-      "title": "\u{1F4AD} Reflection",
-      "questions": ["Reflection question 1?"],
-      "notes": "..."
-    },
-    {
-      "id": "slide-N-1",
-      "type": "summary",
-      "title": "\u{1F4DD} Summary",
-      "bulletPoints": ["Key takeaway 1", "Key takeaway 2"],
-      "notes": "..."
-    },
-    {
-      "id": "slide-N",
-      "type": "closing",
-      "title": "\u{1F64F} Thank You!",
-      "subtitle": "Any questions? Let's discuss!",
-      "notes": "..."
+      "notes": "\u23F1 Timing: 2 min | \u{1F4A1} Key point: Hook curiosity about water recycling | \u{1F5E3} Say: Before we begin, think about this: every drop of water on Earth has been here for billions of years. The same water falls as rain, flows to the ocean, and rises again. Today we'll discover how. | \u2753 Ask: Where do you think rain comes from? (Expected: clouds, sky, ocean) | \u26A0\uFE0F Misconception: Students may think new water is created when it rains | \u{1F504} Differentiation: Show a simple diagram for visual learners; ask advanced students to predict the next step | \u{1F9E0} Bloom's: Remember"
     }
   ]
 }`;
-  return callOpenAIJSON(
+  }
+  let slides = await callOpenAIJSON(
     {
-      systemMessage: "You are an expert Caribbean instructional designer creating visually engaging educational presentations for OECS schools. Always respond with valid JSON. Follow Universal Design for Learning (UDL) principles. Create varied, impactful slides that keep students engaged.",
+      systemMessage,
       prompt,
-      maxTokens: 6e3,
-      timeout: 5e4
+      maxTokens: 1e4,
+      timeout: 55e3
     },
     "slides"
   );
+  if (template && Array.isArray(slides)) {
+    slides = slides.map((slide, i) => {
+      const event = template.events[i];
+      if (!event) return slide;
+      const tipPrefix = `\u{1F4DD} Teacher Tip (Event ${event.eventNumber} \u2014 ${event.eventLabel}): ${event.teacherTip}`;
+      return {
+        ...slide,
+        type: event.slideType,
+        notes: slide.notes ? `${tipPrefix}
+
+${slide.notes}` : tipPrefix
+      };
+    });
+  }
+  return slides;
 }
 var openai, EDUCATOR_SYSTEM;
 var init_openai = __esm({
   "server/openai.ts"() {
     "use strict";
+    init_presentationTemplates();
     init_openai_helper();
     openai = null;
     EDUCATOR_SYSTEM = (role) => `You are an expert educator creating ${role}. Always respond with valid JSON.`;
@@ -3754,6 +4314,59 @@ ${JSON.stringify(parsed.context, null, 2)}`;
     } catch (error) {
       console.error("YouTube search error:", error);
       if (error.name === "ZodError") return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      throw error;
+    }
+  }));
+  app2.post("/api/ai/enhance-text", requireTeacher, aiGenerationRateLimit, withTimeoutMiddleware(3e4), asyncHandler(async (req, res) => {
+    try {
+      if (!requireOpenAIKey(res)) return;
+      const { text: text2, mode, customInstructions } = req.body;
+      if (!text2 || !mode) {
+        return res.status(400).json({ message: "text and mode are required" });
+      }
+      const validModes = ["beautify", "lesson-format", "simplify", "expand", "summarize", "fix-grammar", "add-visuals"];
+      if (!validModes.includes(mode)) {
+        return res.status(400).json({ message: `Invalid mode. Must be one of: ${validModes.join(", ")}` });
+      }
+      const modePrompts = {
+        "beautify": "Enhance the visual formatting of this HTML content. Add callout boxes (using colored div elements with border-left styling for info/tip/warning), styled tables where appropriate, highlight key terms with <strong> or <mark>, and use headings to structure content. Keep all original information intact.",
+        "lesson-format": "Reformat this HTML content as a professional educational lesson. Structure it with clear section headings, numbered step cards (using ordered lists or styled divs), key takeaway boxes (styled div with background color), vocabulary highlights, and a summary section. Maintain all original content.",
+        "simplify": "Simplify this HTML content to reduce complexity while preserving the visual formatting. Use shorter sentences, simpler vocabulary, and clearer structure. Keep any existing formatting elements (bold, lists, etc.) but make the text more accessible.",
+        "expand": "Expand this HTML content with more detail, examples, and explanations. Add illustrative examples, analogies, and supporting details. Use formatted elements like lists, blockquotes for examples, and bold for key concepts.",
+        "summarize": "Condense this HTML content to its key points. Create a concise summary using a styled summary box, bullet points for main ideas, and bold for critical terms. Reduce length significantly while preserving essential information.",
+        "fix-grammar": "Fix all grammar, spelling, and punctuation errors in this HTML content. Do not change the meaning, structure, or formatting \u2014 only correct language errors.",
+        "add-visuals": "Add visual HTML components to enhance this content WITHOUT changing the existing text. Insert relevant callout boxes (info, tip, warning styled divs), comparison tables, styled blockquotes, horizontal rules as dividers, and visual emphasis. The original text must remain unchanged."
+      };
+      const systemMessage = `You are an educational content enhancer. You receive HTML content and transform it according to the requested mode. Return ONLY valid HTML \u2014 no markdown, no code fences, no explanation. The output should be clean HTML that can be directly inserted into a WYSIWYG editor. Use inline styles for any visual enhancements (e.g., colored borders, backgrounds) since external CSS is not available. Keep formatting semantic and accessible.`;
+      const userPrompt = `Mode: ${mode}
+
+${modePrompts[mode]}
+
+${customInstructions ? `Additional instructions: ${customInstructions}
+
+` : ""}Content to enhance:
+${text2}`;
+      const client = getOpenAIClient();
+      const response = await client.chat.completions.create(
+        {
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: systemMessage },
+            { role: "user", content: userPrompt }
+          ],
+          max_completion_tokens: 4096,
+          temperature: 0.7
+        },
+        { timeout: 3e4 }
+      );
+      const enhanced = response.choices[0].message.content || "";
+      const cleaned = enhanced.replace(/^```html?\n?/i, "").replace(/\n?```$/i, "").trim();
+      res.json({ html: cleaned });
+    } catch (error) {
+      console.error("AI text enhancement error:", error);
+      if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+        return res.status(504).json({ message: "AI enhancement timed out. Please try with less content." });
+      }
       throw error;
     }
   }));
@@ -6659,7 +7272,7 @@ var init_classroom = __esm({
 
 // server/routes/student.ts
 import { z as z3 } from "zod";
-import { eq as eq11, desc as desc8, and as and7, inArray as inArray4 } from "drizzle-orm";
+import { eq as eq11, desc as desc8, and as and7, inArray as inArray5 } from "drizzle-orm";
 function registerStudentRoutes({ app: app2, storage: storage2, requireAuth }) {
   app2.get("/api/student/my-assignments", requireAuth, asyncHandler(async (req, res) => {
     const userId = req.session.userId;
@@ -6679,7 +7292,7 @@ function registerStudentRoutes({ app: app2, storage: storage2, requireAuth }) {
       ...individualAssignments.filter((a) => !seenContentIds.has(a.contentId)).map((a) => ({ ...a, classId: null, className: "Individual Assignment" }))
     ];
     const contentIds = merged.map((a) => a.contentId);
-    const allProgress = contentIds.length > 0 ? await db.select().from(learnerProgress).where(and7(eq11(learnerProgress.userId, userId), inArray4(learnerProgress.contentId, contentIds))) : [];
+    const allProgress = contentIds.length > 0 ? await db.select().from(learnerProgress).where(and7(eq11(learnerProgress.userId, userId), inArray5(learnerProgress.contentId, contentIds))) : [];
     const progressMap = new Map(allProgress.map((p) => [p.contentId, p]));
     const enriched = merged.map((a) => {
       const progress = progressMap.get(a.contentId);
@@ -6696,7 +7309,7 @@ function registerStudentRoutes({ app: app2, storage: storage2, requireAuth }) {
     const userId = req.session.userId;
     const assignments = await storage2.getStudentAssignments(userId);
     const contentIds = Array.from(new Set(assignments.map((a) => a.contentId)));
-    const allAttempts = contentIds.length > 0 ? await db.select().from(quizAttempts).where(and7(eq11(quizAttempts.userId, userId), inArray4(quizAttempts.contentId, contentIds))) : [];
+    const allAttempts = contentIds.length > 0 ? await db.select().from(quizAttempts).where(and7(eq11(quizAttempts.userId, userId), inArray5(quizAttempts.contentId, contentIds))) : [];
     const attemptsByContent = /* @__PURE__ */ new Map();
     for (const a of allAttempts) {
       const list = attemptsByContent.get(a.contentId) || [];
@@ -6777,8 +7390,8 @@ function registerStudentRoutes({ app: app2, storage: storage2, requireAuth }) {
       ...individualRows.map((a) => a.contentId)
     ]));
     const [allAttempts, allProgress] = await Promise.all([
-      allContentIds.length > 0 ? db.select().from(quizAttempts).where(and7(eq11(quizAttempts.userId, userId), inArray4(quizAttempts.contentId, allContentIds))) : Promise.resolve([]),
-      allContentIds.length > 0 ? db.select().from(learnerProgress).where(and7(eq11(learnerProgress.userId, userId), inArray4(learnerProgress.contentId, allContentIds))) : Promise.resolve([])
+      allContentIds.length > 0 ? db.select().from(quizAttempts).where(and7(eq11(quizAttempts.userId, userId), inArray5(quizAttempts.contentId, allContentIds))) : Promise.resolve([]),
+      allContentIds.length > 0 ? db.select().from(learnerProgress).where(and7(eq11(learnerProgress.userId, userId), inArray5(learnerProgress.contentId, allContentIds))) : Promise.resolve([])
     ]);
     const attemptsByContent = /* @__PURE__ */ new Map();
     for (const a of allAttempts) {
@@ -7082,7 +7695,7 @@ var init_messages = __esm({
 });
 
 // server/routes/learning-paths.ts
-import { eq as eq13, asc, desc as desc10, inArray as inArray5, and as and9 } from "drizzle-orm";
+import { eq as eq13, asc, desc as desc10, inArray as inArray6, and as and9 } from "drizzle-orm";
 import { z as z5 } from "zod";
 async function getPathItems(pathId) {
   return db.select({
@@ -7102,8 +7715,8 @@ async function batchGetProgress(userIds, contentIds) {
     completionPercentage: learnerProgress.completionPercentage,
     completedAt: learnerProgress.completedAt
   }).from(learnerProgress).where(and9(
-    inArray5(learnerProgress.userId, userIds),
-    inArray5(learnerProgress.contentId, contentIds)
+    inArray6(learnerProgress.userId, userIds),
+    inArray6(learnerProgress.contentId, contentIds)
   ));
   const map = /* @__PURE__ */ new Map();
   for (const row of rows) {
@@ -7274,13 +7887,13 @@ function registerLearningPathRoutes({ app: app2, storage: storage2, requireAuth,
     const enrollments = await db.select({ classId: classEnrollments.classId }).from(classEnrollments).where(eq13(classEnrollments.userId, userId));
     const classIds = enrollments.map((e) => e.classId);
     if (classIds.length === 0) return res.json([]);
-    const paths = await db.select().from(learningPaths).where(inArray5(learningPaths.classId, classIds)).orderBy(desc10(learningPaths.createdAt));
+    const paths = await db.select().from(learningPaths).where(inArray6(learningPaths.classId, classIds)).orderBy(desc10(learningPaths.createdAt));
     if (paths.length === 0) return res.json([]);
     const pathIds = paths.map((p) => p.id);
     const allItems = await db.select({
       pathId: learningPathItems.pathId,
       contentId: learningPathItems.contentId
-    }).from(learningPathItems).where(inArray5(learningPathItems.pathId, pathIds));
+    }).from(learningPathItems).where(inArray6(learningPathItems.pathId, pathIds));
     const allContentIds = Array.from(new Set(allItems.map((i) => i.contentId)));
     const progressMap = await batchGetProgress([userId], allContentIds);
     const itemsByPath = /* @__PURE__ */ new Map();
@@ -7677,7 +8290,7 @@ var init_curriculum = __esm({
 });
 
 // server/routes/admin.ts
-import { eq as eq17, desc as desc11, sql as sql5, count as count3, and as and12, gte, inArray as inArray6 } from "drizzle-orm";
+import { eq as eq17, desc as desc11, sql as sql5, count as count3, and as and12, gte, inArray as inArray7 } from "drizzle-orm";
 function registerAdminRoutes({ app: app2, requireAdmin }) {
   app2.get("/api/admin/stats", requireAdmin, asyncHandler(async (_req, res) => {
     const [[userStats], [contentStats], [classStats], [quizStats]] = await Promise.all([
@@ -7784,7 +8397,7 @@ function registerAdminRoutes({ app: app2, requireAdmin }) {
     const contentCounts = userIds.length > 0 ? await db.select({
       userId: h5pContent.userId,
       count: count3()
-    }).from(h5pContent).where(inArray6(h5pContent.userId, userIds)).groupBy(h5pContent.userId) : [];
+    }).from(h5pContent).where(inArray7(h5pContent.userId, userIds)).groupBy(h5pContent.userId) : [];
     const countMap = new Map(contentCounts.map((c) => [c.userId, c.count]));
     const usersWithCounts = rows.map((u) => ({
       ...u,
@@ -8275,6 +8888,10 @@ async function registerRoutes(app2) {
   registerCurriculumRoutes(ctx);
   registerAdminRoutes(ctx);
   registerReviewRoutes(ctx);
+  if (!process.env.VERCEL) {
+    const { registerWebhookRoutes } = await import("./routes/webhook");
+    registerWebhookRoutes(ctx);
+  }
   const httpServer = createServer(app2);
   setupWebSocket(httpServer);
   return httpServer;
