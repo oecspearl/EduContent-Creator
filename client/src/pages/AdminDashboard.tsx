@@ -909,11 +909,13 @@ export default function AdminDashboard() {
             })}
           </div>
 
-          {/* Tab content */}
-          {activeTab === "overview" && renderOverview()}
-          {activeTab === "content" && renderContentTab()}
-          {activeTab === "users" && renderUsersTab()}
-          {activeTab === "activity" && renderActivityTab()}
+          {/* Tab content — pb-24 keeps pagination clear of the fixed chat button */}
+          <div className="pb-24">
+            {activeTab === "overview" && renderOverview()}
+            {activeTab === "content" && renderContentTab()}
+            {activeTab === "users" && renderUsersTab()}
+            {activeTab === "activity" && renderActivityTab()}
+          </div>
         </main>
       </div>
 
