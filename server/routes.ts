@@ -25,7 +25,7 @@ import { registerRubricRoutes } from "./routes/rubrics";
 import { registerCurriculumRoutes } from "./routes/curriculum";
 import { registerAdminRoutes } from "./routes/admin";
 import { registerReviewRoutes } from "./routes/reviews";
-import { registerWebhookRoutes } from "./routes/webhook";
+// Webhook is dynamically imported — uses child_process which is unavailable on Vercel
 import type { AuthMiddleware } from "./routes/types";
 
 // Type augmentation for session
@@ -172,7 +172,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerCurriculumRoutes(ctx);
   registerAdminRoutes(ctx);
   registerReviewRoutes(ctx);
-  registerWebhookRoutes(ctx);
+
+  // Webhook uses child_process/git — skip on Vercel (serverless has no git)
+  if (!process.env.VERCEL) {
+    const { registerWebhookRoutes } = await import("./routes/webhook");
+    registerWebhookRoutes(ctx);
+  }
 
   const httpServer = createServer(app);
   setupWebSocket(httpServer);
