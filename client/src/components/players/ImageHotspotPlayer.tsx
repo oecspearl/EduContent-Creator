@@ -157,7 +157,7 @@ export function ImageHotspotPlayer({ data, contentId }: ImageHotspotPlayerProps)
                   <X className="h-4 w-4" />
                 </button>
                 <h4 className="font-semibold mb-2">{data.hotspots[selectedHotspot].title}</h4>
-                <p className="text-sm text-muted-foreground">{data.hotspots[selectedHotspot].description}</p>
+                <div className="text-sm text-muted-foreground prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: data.hotspots[selectedHotspot].description }} />
               </div>
             )}
           </div>
@@ -184,7 +184,7 @@ export function ImageHotspotPlayer({ data, contentId }: ImageHotspotPlayerProps)
                   </div>
                   <div className="flex-1">
                     <h4 className="font-medium mb-1">{hotspot.title}</h4>
-                    <p className="text-sm text-muted-foreground">{hotspot.description}</p>
+                    <div className="text-sm text-muted-foreground prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: hotspot.description }} />
                   </div>
                 </div>
               </div>
