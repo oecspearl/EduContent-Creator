@@ -25,6 +25,7 @@ import { registerRubricRoutes } from "./routes/rubrics";
 import { registerCurriculumRoutes } from "./routes/curriculum";
 import { registerAdminRoutes } from "./routes/admin";
 import { registerReviewRoutes } from "./routes/reviews";
+import { registerWebhookRoutes } from "./routes/webhook";
 import type { AuthMiddleware } from "./routes/types";
 
 // Type augmentation for session
@@ -171,6 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerCurriculumRoutes(ctx);
   registerAdminRoutes(ctx);
   registerReviewRoutes(ctx);
+  registerWebhookRoutes(ctx);
 
   const httpServer = createServer(app);
   setupWebSocket(httpServer);
